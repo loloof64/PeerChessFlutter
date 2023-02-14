@@ -397,6 +397,9 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+
     return Scaffold(
       appBar: AppBar(
         title: I18nText('game_page.title'),
@@ -422,36 +425,73 @@ class _GameScreenState extends State<GameScreen> {
         ],
       ),
       body: Center(
-        child: Row(
-          children: [
-            SimpleChessBoard(
-              engineThinking: false,
-              whitePlayerType: PlayerType.human,
-              blackPlayerType: PlayerType.human,
-              orientation: _orientation,
-              lastMoveToHighlight: _lastMoveToHighlight,
-              fen: _gameManager.position,
-              onMove: _makeMove,
-              onPromote: _makePromotion,
-            ),
-            Expanded(
-              child: LayoutBuilder(builder: (ctx2, constraints2) {
-                double fontSize = constraints2.biggest.shortestSide * 0.09;
-                if (fontSize < 25) {
-                  fontSize = 25;
-                }
-                return ChessHistory(
-                  scrollController: _historyScrollController,
-                  requestGotoFirst: _historyManager.gotoFirst,
-                  requestGotoPrevious: _historyManager.gotoPrevious,
-                  requestGotoNext: _historyManager.gotoNext,
-                  requestGotoLast: _historyManager.gotoLast,
-                  children: _buildHistoryWidgetsTree(fontSize),
-                );
-              }),
-            )
-          ],
-        ),
+        child: isLandscape
+            ? Row(
+                children: [
+                  Flexible(
+                    child: SimpleChessBoard(
+                      engineThinking: false,
+                      whitePlayerType: PlayerType.human,
+                      blackPlayerType: PlayerType.human,
+                      orientation: _orientation,
+                      lastMoveToHighlight: _lastMoveToHighlight,
+                      fen: _gameManager.position,
+                      onMove: _makeMove,
+                      onPromote: _makePromotion,
+                    ),
+                  ),
+                  Expanded(
+                    child: LayoutBuilder(builder: (ctx2, constraints2) {
+                      double fontSize =
+                          constraints2.biggest.shortestSide * 0.09;
+                      if (fontSize < 25) {
+                        fontSize = 25;
+                      }
+                      return ChessHistory(
+                        scrollController: _historyScrollController,
+                        requestGotoFirst: _historyManager.gotoFirst,
+                        requestGotoPrevious: _historyManager.gotoPrevious,
+                        requestGotoNext: _historyManager.gotoNext,
+                        requestGotoLast: _historyManager.gotoLast,
+                        children: _buildHistoryWidgetsTree(fontSize),
+                      );
+                    }),
+                  )
+                ],
+              )
+            : Column(
+                children: [
+                  Flexible(
+                    child: SimpleChessBoard(
+                      engineThinking: false,
+                      whitePlayerType: PlayerType.human,
+                      blackPlayerType: PlayerType.human,
+                      orientation: _orientation,
+                      lastMoveToHighlight: _lastMoveToHighlight,
+                      fen: _gameManager.position,
+                      onMove: _makeMove,
+                      onPromote: _makePromotion,
+                    ),
+                  ),
+                  Expanded(
+                    child: LayoutBuilder(builder: (ctx2, constraints2) {
+                      double fontSize =
+                          constraints2.biggest.shortestSide * 0.09;
+                      if (fontSize < 25) {
+                        fontSize = 25;
+                      }
+                      return ChessHistory(
+                        scrollController: _historyScrollController,
+                        requestGotoFirst: _historyManager.gotoFirst,
+                        requestGotoPrevious: _historyManager.gotoPrevious,
+                        requestGotoNext: _historyManager.gotoNext,
+                        requestGotoLast: _historyManager.gotoLast,
+                        children: _buildHistoryWidgetsTree(fontSize),
+                      );
+                    }),
+                  )
+                ],
+              ),
       ),
     );
   }
