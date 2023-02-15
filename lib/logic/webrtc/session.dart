@@ -89,7 +89,6 @@ class Signaling {
     'mandatory': {},
     'optional': [
       {'DtlsSrtpKeyAgreement': true},
-      /*{'RtpDataChannels': true}*/
     ]
   };
 

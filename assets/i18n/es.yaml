@@ -45,3 +45,5 @@ session:
     dialog_new:
         title: "Nueva sesión (esperando a tu compañero)"
         message: "Envíe la siguiente identificación a su compañero:"
+        message_2: "Ingrese su identificación de compañero aquí:"
+        peerIdPlaceholder: "Su identificación de compañero"

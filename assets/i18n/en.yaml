@@ -46,3 +46,5 @@ session:
     dialog_new:
         title: "New session (waiting for your peer)"
         message: "Send the following id to your peer: "
+        message_2: "Enter your peer id here: "
+        peerIdPlaceholder: "Peer ID"

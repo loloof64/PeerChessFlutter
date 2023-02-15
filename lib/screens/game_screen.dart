@@ -49,6 +49,8 @@ class _GameScreenState extends State<GameScreen> {
   late String _turnPassword;
   late Signaling _signaling;
   bool _showConnectButton = false;
+  String _peerId = '';
+  late TextEditingController _peerIdController;
 
   final ScrollController _historyScrollController =
       ScrollController(initialScrollOffset: 0.0, keepScrollOffset: true);
@@ -56,6 +58,7 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
+    _peerIdController = TextEditingController(text: _peerId);
     _gameManager = GameManager();
     _historyManager = HistoryManager(
       onUpdateChildrenWidgets: _updateHistoryChildrenWidgets,
@@ -424,6 +427,15 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
+  Future<void> _copyTextFromClipboard() async {
+    final text = await Clipboard.getData('text/plain');
+    if (text != null && text.text != null) {
+      setState(() {
+        _peerIdController.text = text.text!;
+      });
+    }
+  }
+
   Future<void> _startConnection(BuildContext context) async {
     return showDialog(
         context: context,
@@ -453,13 +465,35 @@ class _GameScreenState extends State<GameScreen> {
                     Icons.copy,
                   ),
                 ),
+                Container(
+                  height: 30.0,
+                ),
+                I18nText('session.dialog_new.message_2'),
+                IconButton(
+                  onPressed: _copyTextFromClipboard,
+                  icon: const Icon(
+                    Icons.paste,
+                  ),
+                ),
+                TextField(
+                  controller: _peerIdController,
+                  decoration: InputDecoration(
+                    label: I18nText(
+                      'session.dialog_new.peerIdPlaceholder',
+                    ),
+                  ),
+                )
               ],
             ),
             actions: [
-              TextButton(
+              DialogActionButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: I18nText('buttons.cancel'),
-              ),
+                textContent: I18nText(
+                  'buttons.cancel',
+                ),
+                textColor: Colors.white,
+                backgroundColor: Colors.redAccent,
+              )
             ],
           );
         });

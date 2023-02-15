@@ -46,3 +46,5 @@ session:
     dialog_new:
         title: "Nouvelle session (en attente de votre contact)"
         message: "Veuillez envoyer cet identifiant à votre contact: "
+        message_2: "Veuillez entrer l'identifiant de votre contact ici: "
+        peerIdPlaceholder: "Identifiant de votre contact"
