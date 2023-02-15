@@ -44,6 +44,7 @@ dependencies:
   chess_vectors_flutter: ^1.0.18
   editable_chess_board: ^0.1.6
   flutter_webrtc: ^0.9.22
+  collection_ext: ^1.0.0
 
 dev_dependencies:
   flutter_test:

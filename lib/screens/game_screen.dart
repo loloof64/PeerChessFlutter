@@ -22,6 +22,7 @@ import 'dart:math';
 
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import 'package:collection_ext/ranges.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:logger/logger.dart';
 import 'package:peer_chess/screens/websocket.dart';
@@ -586,8 +587,9 @@ class Session {
   List<RTCIceCandidate> remoteCandidates = [];
 }
 
-const asciiStart = 33;
-const asciiEnd = 126;
+final asciiDigits = 48.upTo(57);
+final asciiLowercase = 97.upTo(122);
+final asciiUppercase = 65.upTo(90);
 
 /// Generates a random integer where [from] <= [to].
 int randomBetween(int from, int to) {
@@ -596,12 +598,16 @@ int randomBetween(int from, int to) {
   return ((to - from) * rand.nextDouble()).toInt() + from;
 }
 
-/// Generates a random string of [length] with characters
-/// between ascii [from] to [to].
-/// Defaults to characters of ascii '!' to '~'.
-String randomString(int length, {int from = asciiStart, int to = asciiEnd}) {
-  return String.fromCharCodes(
-      List.generate(length, (index) => randomBetween(from, to)));
+String randomString(int length) {
+  return String.fromCharCodes(List.generate(length, (index) {
+    var result = 0;
+    while (!asciiDigits.contains(result) &&
+        !asciiLowercase.contains(result) &&
+        !asciiUppercase.contains(result)) {
+      result = randomBetween(48, 122);
+    }
+    return result;
+  }));
 }
 
 enum SignalingState {

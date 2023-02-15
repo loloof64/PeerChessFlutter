@@ -65,6 +65,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.17.0"
+  collection_ext:
+    dependency: "direct main"
+    description:
+      name: collection_ext
+      sha256: bf6b6d9417ea8d4624b5fba7788ebbf0030db23a9681add600dd92089ff118c8
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   cupertino_icons:
     dependency: "direct main"
     description:
