@@ -41,3 +41,7 @@ new_game:
         label_clear_position: "Effacer posición"
         illegal_position_error: "Ilícita posición !"
         label_player_side: "Su lado"
+session:
+    dialog_new:
+        title: "Nueva sesión (esperando a tu compañero)"
+        message: "Envíe la siguiente identificación a su compañero:"

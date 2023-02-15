@@ -42,3 +42,7 @@ new_game:
         label_clear_position: "Clear position"
         illegal_position_error: "Illegal position !"
         label_player_side: "Your side"
+session:
+    dialog_new:
+        title: "New session (waiting for your peer)"
+        message: "Send the following id to your peer: "
