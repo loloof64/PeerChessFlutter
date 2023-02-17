@@ -44,7 +44,15 @@ new_game:
         label_player_side: "Your side"
 session:
     dialog_new:
-        title: "New session (waiting for your peer)"
+        title: "New session"
         message: "Send the following id to your peer: "
         message_2: "Enter your peer id here: "
         peerIdPlaceholder: "Peer ID"
+        ringingMessagePlaceholder: "Your message"
+    dialog_waiting_peer:
+        title: "Waiting for your peer"
+        message: "Waiting ..."
+    dialog_accept:
+        title: "Connect to peer ?"
+        message: "Do you want to connect to peer ?"
+    blocked_incoming_request: "Blocked an incoming request."

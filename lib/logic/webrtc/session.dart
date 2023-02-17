@@ -28,8 +28,8 @@ import './websocket.dart';
 class Session {
   Session({required this.pid});
   String pid;
-  RTCPeerConnection? pc;
-  RTCDataChannel? dc;
+  RTCPeerConnection? peerConnection;
+  RTCDataChannel? dataChannel;
   List<RTCIceCandidate> remoteCandidates = [];
 }
 
@@ -74,7 +74,8 @@ class Signaling {
   final JsonEncoder _encoder;
   final JsonDecoder _decoder;
 
-  String get sdpSemantics => 'unified-plan';
+  RTCDataChannel? _dataChannel;
+
   SimpleWebSocket? _socket;
 
   late Session _session;
@@ -125,8 +126,8 @@ class Signaling {
             },
           ]
         },
-        _encoder = JsonEncoder(),
-        _decoder = JsonDecoder();
+        _encoder = const JsonEncoder(),
+        _decoder = const JsonDecoder();
 
   String get selfId => _selfId;
 
@@ -138,22 +139,35 @@ class Signaling {
   Function(Session session, RTCDataChannel dc)? onDataChannel;
 
   void invite(String peerId) async {
-    Session session = await _createSession(null, peerId: peerId);
-    _session = session;
-    _createDataChannel(session);
-    _createOffer(session);
-    onCallStateChange?.call(session, CallState.callStateNew);
-    onCallStateChange?.call(session, CallState.callStateInvite);
+    await _createSession(peerId: peerId);
+    _createDataChannel(_session);
+    _createOffer(_session);
+    onCallStateChange?.call(_session, CallState.callStateNew);
+    onCallStateChange?.call(_session, CallState.callStateInvite);
   }
 
-  Future<Session> _createSession(
-    Session? session, {
+  void bye() {
+    _send('bye', {
+      'from': _selfId,
+    });
+    _closeSession();
+  }
+
+  void accept() {
+    _createAnswer();
+  }
+
+  void reject() {
+    bye();
+  }
+
+  Future<void> _createSession({
     required String peerId,
   }) async {
-    var newSession = session ?? Session(pid: peerId);
+    var newSession = Session(pid: peerId);
     RTCPeerConnection pc = await createPeerConnection({
       ..._iceServers,
-      ...{'sdpSemantics': sdpSemantics}
+      ...{'sdpSemantics': 'unified-plan'}
     }, _config);
     pc.onIceCandidate = (candidate) async {
       // This delay is needed to allow enough time to try an ICE candidate
@@ -175,25 +189,26 @@ class Signaling {
     pc.onIceConnectionState = (state) {};
 
     pc.onDataChannel = (channel) {
-      _addDataChannel(newSession, channel);
+      _addDataChannel(channel);
     };
 
-    newSession.pc = pc;
-    return newSession;
+    newSession.peerConnection = pc;
+    _session = newSession;
   }
 
-  Future<void> _closeSession(Session session) async {
-    await session.pc?.close();
-    await session.dc?.close();
+  Future<void> _closeSession() async {
+    await _session.peerConnection?.close();
+    await _session.dataChannel?.close();
+    _socket?.close();
   }
 
-  void _addDataChannel(Session session, RTCDataChannel channel) {
+  void _addDataChannel(RTCDataChannel channel) {
     channel.onDataChannelState = (e) {};
     channel.onMessage = (RTCDataChannelMessage data) {
-      onDataChannelMessage?.call(session, channel, data);
+      onDataChannelMessage?.call(_session, channel, data);
     };
-    session.dc = channel;
-    onDataChannel?.call(session, channel);
+    _session.dataChannel = channel;
+    onDataChannel?.call(_session, channel);
   }
 
   Future<void> _createDataChannel(Session session,
@@ -201,14 +216,15 @@ class Signaling {
     RTCDataChannelInit dataChannelDict = RTCDataChannelInit()
       ..maxRetransmits = 30;
     RTCDataChannel channel =
-        await session.pc!.createDataChannel(label, dataChannelDict);
-    _addDataChannel(session, channel);
+        await session.peerConnection!.createDataChannel(label, dataChannelDict);
+    _addDataChannel(channel);
   }
 
   Future<void> _createOffer(Session session) async {
     try {
-      RTCSessionDescription s = await session.pc!.createOffer(_dcConstraints);
-      await session.pc!.setLocalDescription(_fixSdp(s));
+      RTCSessionDescription s =
+          await session.peerConnection!.createOffer(_dcConstraints);
+      await session.peerConnection!.setLocalDescription(_fixSdp(s));
       _send('offer', {
         'to': session.pid,
         'from': _selfId,
@@ -226,13 +242,13 @@ class Signaling {
     return s;
   }
 
-  Future<void> _createAnswer(Session session, String media) async {
+  Future<void> _createAnswer() async {
     try {
       RTCSessionDescription s =
-          await session.pc!.createAnswer(media == 'data' ? _dcConstraints : {});
-      await session.pc!.setLocalDescription(_fixSdp(s));
+          await _session.peerConnection!.createAnswer(_dcConstraints);
+      await _session.peerConnection!.setLocalDescription(_fixSdp(s));
       _send('answer', {
-        'to': session.pid,
+        'to': _session.pid,
         'from': _selfId,
         'description': {'sdp': s.sdp, 'type': s.type},
       });
@@ -246,10 +262,5 @@ class Signaling {
     request["type"] = event;
     request["data"] = data;
     _socket?.send(_encoder.convert(request));
-  }
-
-  Future<void> _cleanSession() async {
-    await _session.pc?.close();
-    await _session.dc?.close();
   }
 }

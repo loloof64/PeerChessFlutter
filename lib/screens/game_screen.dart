@@ -20,6 +20,8 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:logger/logger.dart';
 import 'package:simple_chess_board/models/board_arrow.dart';
 import 'package:simple_chess_board/simple_chess_board.dart';
 import 'package:chess_vectors_flutter/chess_vectors_flutter.dart';
@@ -32,6 +34,8 @@ import '../components/history.dart';
 import '../components/dialog_buttons.dart';
 import '../screens/new_game_screen.dart';
 import "package:flutter_i18n/flutter_i18n.dart";
+
+const ringingMessageKey = 'ringingMessage';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -48,9 +52,15 @@ class _GameScreenState extends State<GameScreen> {
   late String _turnUserName;
   late String _turnPassword;
   late Signaling _signaling;
+  Map<String, String> _receivedPeerData = {};
+  RTCDataChannel? _dataChannel;
   bool _showConnectButton = false;
   String _peerId = '';
+  Session? _session;
+  bool _waitAccept = false;
+  bool _communicating = false;
   late TextEditingController _peerIdController;
+  late TextEditingController _ringingMessageController;
 
   final ScrollController _historyScrollController =
       ScrollController(initialScrollOffset: 0.0, keepScrollOffset: true);
@@ -59,6 +69,7 @@ class _GameScreenState extends State<GameScreen> {
   void initState() {
     super.initState();
     _peerIdController = TextEditingController(text: _peerId);
+    _ringingMessageController = TextEditingController();
     _gameManager = GameManager();
     _historyManager = HistoryManager(
       onUpdateChildrenWidgets: _updateHistoryChildrenWidgets,
@@ -421,6 +432,24 @@ class _GameScreenState extends State<GameScreen> {
         });
   }
 
+  _hangUp() {
+    if (_session != null) {
+      _signaling.bye();
+    }
+  }
+
+  void _sendMove(ShortMove move) {
+    final moveData = {
+      "from": move.from,
+      "to": move.to,
+      "promotion": move.promotion.isNone()
+          ? ""
+          : move.promotion.getOrElse(() => PieceType.queen).name,
+    };
+    final moveAsJson = jsonEncode(moveData);
+    _dataChannel?.send(RTCDataChannelMessage(moveAsJson));
+  }
+
   Future<void> _copyIdToClipboard() async {
     await Clipboard.setData(
       ClipboardData(text: _signaling.selfId),
@@ -436,7 +465,148 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
+  Future<bool?> _showWaitingPeerDialog(BuildContext context) {
+    return showDialog<bool?>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: I18nText("session.dialog_waiting_peer.title"),
+            content: I18nText("session.dialog_waiting_peer.message"),
+            actions: [
+              DialogActionButton(
+                onPressed: () {
+                  Navigator.of(context).pop(false);
+                  _hangUp();
+                },
+                textContent: I18nText(
+                  'buttons.cancel',
+                ),
+                textColor: Colors.white,
+                backgroundColor: Colors.redAccent,
+              )
+            ],
+          );
+        });
+  }
+
+  Future<bool?> _showAcceptDialog(BuildContext context, String peerMessage) {
+    return showDialog<bool?>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: I18nText('session.dialog_accept.title'),
+            content: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                I18nText('session.dialog_accept.message'),
+                Text(
+                  peerMessage,
+                  style: TextStyle(
+                    backgroundColor: Colors.grey[300],
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          );
+        });
+  }
+
+  Future<void> _startSession(BuildContext context) async {
+    setState(() {
+      _peerId = _peerIdController.text;
+
+      _signaling.onDataChannelMessage = (_, dc, RTCDataChannelMessage data) {
+        setState(() {
+          _receivedPeerData = jsonDecode(data.text);
+        });
+      };
+
+      _signaling.onDataChannel = (_, channel) {
+        _dataChannel = channel;
+      };
+
+      _signaling.onCallStateChange = (Session session, CallState state) async {
+        switch (state) {
+          case CallState.callStateNew:
+            setState(() {
+              _session = session;
+            });
+            break;
+          case CallState.callStateInvite:
+            setState(() {
+              _waitAccept = true;
+              _showWaitingPeerDialog(context);
+            });
+            break;
+          case CallState.callStateConnected:
+            if (_communicating) {
+              Logger().d("Blocked an incoming connection.");
+              return;
+            }
+            if (_waitAccept) {
+              _waitAccept = false;
+              Navigator.of(context).pop(false);
+            }
+            setState(() {
+              _communicating = true;
+            });
+            break;
+          case CallState.callStateBye:
+            if (_waitAccept) {
+              Logger().e('peer reject');
+              _waitAccept = false;
+              Navigator.of(context).pop(false);
+            }
+            setState(() {
+              _communicating = false;
+              _session = null;
+            });
+            break;
+          case CallState.callStateRinging:
+            if (_communicating) {
+              Logger().d("Blocked an incoming request.");
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: I18nText('session.blocked_incoming_request'),
+                ),
+              );
+              return;
+            }
+            final peerMessage = _receivedPeerData[ringingMessageKey] ?? '';
+            bool? accept = await _showAcceptDialog(context, peerMessage);
+            if (accept!) {
+              _accept();
+              setState(() {
+                _communicating = true;
+              });
+            } else {
+              _reject();
+            }
+            break;
+        }
+      };
+    });
+  }
+
+  void _accept() {
+    if (_session != null) {
+      _signaling.accept();
+    }
+  }
+
+  _reject() {
+    if (_session != null) {
+      _signaling.reject();
+    }
+  }
+
   Future<void> _startConnection(BuildContext context) async {
+    setState(() {
+      _peerIdController.text = '';
+      _ringingMessageController.text = '';
+    });
     return showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -482,10 +652,32 @@ class _GameScreenState extends State<GameScreen> {
                       'session.dialog_new.peerIdPlaceholder',
                     ),
                   ),
+                ),
+                Container(
+                  height: 30.0,
+                ),
+                TextField(
+                  controller: _ringingMessageController,
+                  maxLines: 5,
+                  decoration: InputDecoration(
+                      label: I18nText(
+                    'session.dialog_new.ringingMessagePlaceholder',
+                  )),
                 )
               ],
             ),
             actions: [
+              DialogActionButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _startSession(context);
+                },
+                textContent: I18nText(
+                  'buttons.ok',
+                ),
+                backgroundColor: Colors.tealAccent,
+                textColor: Colors.white,
+              ),
               DialogActionButton(
                 onPressed: () => Navigator.of(context).pop(),
                 textContent: I18nText(

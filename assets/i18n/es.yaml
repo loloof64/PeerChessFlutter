@@ -43,7 +43,16 @@ new_game:
         label_player_side: "Su lado"
 session:
     dialog_new:
-        title: "Nueva sesión (esperando a tu compañero)"
+        title: "Nueva sesión"
         message: "Envíe la siguiente identificación a su compañero:"
         message_2: "Ingrese su identificación de compañero aquí:"
         peerIdPlaceholder: "Su identificación de compañero"
+        ringingMessagePlaceholder: "Su mensaje"
+    dialog_waiting_peer:
+        title: "Esperando a tu compañero"
+        message: "Esperando ..."
+    dialog_accept:
+        title: "¿Conectar con un compañero?"
+        message: "¿Quieres conectarte a compañero?"
+    blocked_incoming_request: "Bloqueó una solicitud entrante."
+

@@ -44,7 +44,15 @@ new_game:
         label_player_side: "Votre côté"
 session:
     dialog_new:
-        title: "Nouvelle session (en attente de votre contact)"
+        title: "Nouvelle session"
         message: "Veuillez envoyer cet identifiant à votre contact: "
         message_2: "Veuillez entrer l'identifiant de votre contact ici: "
         peerIdPlaceholder: "Identifiant de votre contact"
+        ringingMessagePlaceholder: "Votre message"
+    dialog_waiting_peer:
+        title: "En attente de votre contact"
+        message: "En attente ..."
+    dialog_accept:
+        title: "Connexion avec le contact ?"
+        message: "Souhaitez-vous vous connecter à ce contact ?"
+    blocked_incoming_request: "Une requête de connexion a été bloquée."
