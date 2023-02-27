@@ -20,12 +20,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_i18n/flutter_i18n.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_i18n/loaders/decoders/yaml_decode_strategy.dart';
+import 'package:window_manager/window_manager.dart';
+import 'package:parse_server_sdk_flutter/parse_server_sdk.dart';
 import 'package:logger/logger.dart';
 import 'screens/game_screen.dart';
 import 'screens/new_game_screen.dart';
 import 'screens/new_game_position_editor_screen.dart';
 
-void main() {
+const parseServerUrl = 'https://parseapi.back4app.com';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await windowManager.ensureInitialized();
+
+  windowManager.setTitle("Peer chess");
+  windowManager.setMinimumSize(
+    const Size(600, 400),
+  );
+
+  await Parse().initialize(
+      'miDs69HfuESoNcAmft4555vsH4mCpPf7L1HNUZaE', parseServerUrl,
+      clientKey: 'ewc4mqE5ukU2DIgWGtU5m7A7bsiYGMjTnutfH9iX',
+      autoSendSessionId: true);
+
   runApp(const MyApp());
 }
 

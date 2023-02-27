@@ -49,8 +49,6 @@ class _GameScreenState extends State<GameScreen> {
   BoardArrow? _lastMoveToHighlight;
   late GameManager _gameManager;
   late HistoryManager _historyManager;
-  late String _turnUserName;
-  late String _turnPassword;
   late Signaling _signaling;
   Map<String, String> _receivedPeerData = {};
   RTCDataChannel? _dataChannel;
@@ -59,6 +57,7 @@ class _GameScreenState extends State<GameScreen> {
   Session? _session;
   bool _waitAccept = false;
   bool _communicating = false;
+  late TextEditingController _usernameController;
   late TextEditingController _peerIdController;
   late TextEditingController _ringingMessageController;
 
@@ -68,6 +67,8 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
+    _usernameController =
+        TextEditingController(text: "user#${randomString(8)}");
     _peerIdController = TextEditingController(text: _peerId);
     _ringingMessageController = TextEditingController();
     _gameManager = GameManager();
@@ -77,21 +78,25 @@ class _GameScreenState extends State<GameScreen> {
       onSelectStartPosition: _selectStartPosition,
       isStartMoveNumber: _isStartMoveNumber,
     );
-    _setupTurnCredentials().then((value) {
+
+    setState(() {
+      _signaling = Signaling(username: _usernameController.text);
+      _showConnectButton = true;
+    });
+
+    _usernameController.addListener(() {
       setState(() {
-        _signaling =
-            Signaling(turnUsername: _turnUserName, turnPassword: _turnPassword);
-        _showConnectButton = true;
+        _signaling.changeUserNameTo(_usernameController.text);
       });
     });
   }
 
-  Future<void> _setupTurnCredentials() async {
-    final String credentialsString =
-        await rootBundle.loadString('assets/credentials/turn_credentials.json');
-    final data = await json.decode(credentialsString);
-    _turnUserName = data['username'];
-    _turnPassword = data['password'];
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _peerIdController.dispose();
+    _ringingMessageController.dispose();
+    super.dispose();
   }
 
   bool _isStartMoveNumber(int moveNumber) {
@@ -725,6 +730,27 @@ class _GameScreenState extends State<GameScreen> {
               Icons.swap_vert_circle,
             ),
           ),
+          Flexible(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              mainAxisSize: MainAxisSize.min,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                I18nText('game_page.username'),
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                    width: 150,
+                    child: TextField(
+                      controller: _usernameController,
+                      style: const TextStyle(color: Colors.greenAccent),
+                    ),
+                  ),
+                )
+              ],
+            ),
+          ),
         ],
       ),
       body: Center(
@@ -762,38 +788,40 @@ class _GameScreenState extends State<GameScreen> {
                   )
                 ],
               )
-            : Column(
-                children: [
-                  Flexible(
-                    child: SimpleChessBoard(
-                      engineThinking: false,
-                      whitePlayerType: PlayerType.human,
-                      blackPlayerType: PlayerType.human,
-                      orientation: _orientation,
-                      lastMoveToHighlight: _lastMoveToHighlight,
-                      fen: _gameManager.position,
-                      onMove: _makeMove,
-                      onPromote: _makePromotion,
+            : Expanded(
+                child: Column(
+                  children: [
+                    Flexible(
+                      child: SimpleChessBoard(
+                        engineThinking: false,
+                        whitePlayerType: PlayerType.human,
+                        blackPlayerType: PlayerType.human,
+                        orientation: _orientation,
+                        lastMoveToHighlight: _lastMoveToHighlight,
+                        fen: _gameManager.position,
+                        onMove: _makeMove,
+                        onPromote: _makePromotion,
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: LayoutBuilder(builder: (ctx2, constraints2) {
-                      double fontSize =
-                          constraints2.biggest.shortestSide * 0.09;
-                      if (fontSize < 25) {
-                        fontSize = 25;
-                      }
-                      return ChessHistory(
-                        scrollController: _historyScrollController,
-                        requestGotoFirst: _historyManager.gotoFirst,
-                        requestGotoPrevious: _historyManager.gotoPrevious,
-                        requestGotoNext: _historyManager.gotoNext,
-                        requestGotoLast: _historyManager.gotoLast,
-                        children: _buildHistoryWidgetsTree(fontSize),
-                      );
-                    }),
-                  )
-                ],
+                    Expanded(
+                      child: LayoutBuilder(builder: (ctx2, constraints2) {
+                        double fontSize =
+                            constraints2.biggest.shortestSide * 0.09;
+                        if (fontSize < 25) {
+                          fontSize = 25;
+                        }
+                        return ChessHistory(
+                          scrollController: _historyScrollController,
+                          requestGotoFirst: _historyManager.gotoFirst,
+                          requestGotoPrevious: _historyManager.gotoPrevious,
+                          requestGotoNext: _historyManager.gotoNext,
+                          requestGotoLast: _historyManager.gotoLast,
+                          children: _buildHistoryWidgetsTree(fontSize),
+                        );
+                      }),
+                    )
+                  ],
+                ),
               ),
       ),
     );

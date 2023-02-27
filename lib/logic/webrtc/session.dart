@@ -23,14 +23,14 @@ import 'dart:convert';
 import 'package:collection_ext/ranges.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:logger/logger.dart';
-import './websocket.dart';
+import 'package:parse_server_sdk_flutter/parse_server_sdk.dart';
 
 class Session {
-  Session({required this.pid});
-  String pid;
+  Session({required this.peerId});
+  String peerId;
   RTCPeerConnection? peerConnection;
   RTCDataChannel? dataChannel;
-  List<RTCIceCandidate> remoteCandidates = [];
+  RTCIceCandidate? remoteCandidates;
 }
 
 final asciiDigits = 48.upTo(57);
@@ -70,18 +70,22 @@ enum CallState {
   callStateBye,
 }
 
+const turnUsername = 'e70ea9d69e030b5e912b12b2';
+const turnPassword = 'wKYehfEx0+I4Q1G';
+
 class Signaling {
+  String username;
   final JsonEncoder _encoder;
   final JsonDecoder _decoder;
 
   RTCDataChannel? _dataChannel;
 
-  SimpleWebSocket? _socket;
+  void changeUserNameTo(String username) {
+    this.username = username;
+  }
 
   late Session _session;
 
-  final String turnUsername;
-  final String turnPassword;
   final String _selfId = randomString(15);
 
   final Map<String, dynamic> _iceServers;
@@ -101,10 +105,8 @@ class Signaling {
     'optional': [],
   };
 
-  Signaling({
-    required this.turnUsername,
-    required this.turnPassword,
-  })  : _iceServers = {
+  Signaling({required this.username})
+      : _iceServers = {
           'iceServers': [
             {
               'urls': "stun:openrelay.metered.ca:80",
@@ -127,7 +129,16 @@ class Signaling {
           ]
         },
         _encoder = const JsonEncoder(),
-        _decoder = const JsonDecoder();
+        _decoder = const JsonDecoder() {
+    _createPeerInDatabase();
+  }
+
+  Future<void> _createPeerInDatabase() async {
+    final peer = ParseObject('Peer')
+      ..set('genId', _selfId)
+      ..set('username', username);
+    await peer.save();
+  }
 
   String get selfId => _selfId;
 
@@ -138,7 +149,7 @@ class Signaling {
       onDataChannelMessage;
   Function(Session session, RTCDataChannel dc)? onDataChannel;
 
-  void invite(String peerId) async {
+  void invite({required String peerId}) async {
     await _createSession(peerId: peerId);
     _createDataChannel(_session);
     _createOffer(_session);
@@ -147,9 +158,11 @@ class Signaling {
   }
 
   void bye() {
+    /*
     _send('bye', {
       'from': _selfId,
     });
+    */
     _closeSession();
   }
 
@@ -164,26 +177,18 @@ class Signaling {
   Future<void> _createSession({
     required String peerId,
   }) async {
-    var newSession = Session(pid: peerId);
-    RTCPeerConnection pc = await createPeerConnection({
-      ..._iceServers,
-      ...{'sdpSemantics': 'unified-plan'}
-    }, _config);
-    pc.onIceCandidate = (candidate) async {
-      // This delay is needed to allow enough time to try an ICE candidate
-      // before skipping to the next one. 1 second is just an heuristic value
-      // and should be thoroughly tested in your own environment.
-      await Future.delayed(
-          const Duration(seconds: 1),
-          () => _send('candidate', {
-                'to': peerId,
-                'from': _selfId,
-                'candidate': {
-                  'sdpMLineIndex': candidate.sdpMLineIndex,
-                  'sdpMid': candidate.sdpMid,
-                  'candidate': candidate.candidate,
-                },
-              }));
+    /*
+    var newSession = Session(peerId: peerId);
+    pc.onIceCandidate = (candidate) {
+      _send('candidate', {
+        'to': peerId,
+        'from': _selfId,
+        'candidate': {
+          'sdpMLineIndex': candidate.sdpMLineIndex,
+          'sdpMid': candidate.sdpMid,
+          'candidate': candidate.candidate,
+        },
+      });
     };
 
     pc.onIceConnectionState = (state) {};
@@ -194,12 +199,12 @@ class Signaling {
 
     newSession.peerConnection = pc;
     _session = newSession;
+    */
   }
 
   Future<void> _closeSession() async {
     await _session.peerConnection?.close();
     await _session.dataChannel?.close();
-    _socket?.close();
   }
 
   void _addDataChannel(RTCDataChannel channel) {
@@ -212,7 +217,7 @@ class Signaling {
   }
 
   Future<void> _createDataChannel(Session session,
-      {label = 'fileTransfer'}) async {
+      {label = 'dataTransfer'}) async {
     RTCDataChannelInit dataChannelDict = RTCDataChannelInit()
       ..maxRetransmits = 30;
     RTCDataChannel channel =
@@ -224,43 +229,32 @@ class Signaling {
     try {
       RTCSessionDescription s =
           await session.peerConnection!.createOffer(_dcConstraints);
+      /*
       await session.peerConnection!.setLocalDescription(_fixSdp(s));
       _send('offer', {
         'to': session.pid,
         'from': _selfId,
         'description': {'sdp': s.sdp, 'type': s.type},
       });
+      */
     } catch (e) {
       Logger().e(e.toString());
     }
-  }
-
-  RTCSessionDescription _fixSdp(RTCSessionDescription s) {
-    var sdp = s.sdp;
-    s.sdp =
-        sdp!.replaceAll('profile-level-id=640c1f', 'profile-level-id=42e032');
-    return s;
   }
 
   Future<void> _createAnswer() async {
     try {
       RTCSessionDescription s =
           await _session.peerConnection!.createAnswer(_dcConstraints);
-      await _session.peerConnection!.setLocalDescription(_fixSdp(s));
+      /*
       _send('answer', {
         'to': _session.pid,
         'from': _selfId,
         'description': {'sdp': s.sdp, 'type': s.type},
       });
+      */
     } catch (e) {
       Logger().e(e.toString());
     }
-  }
-
-  _send(event, data) {
-    var request = {};
-    request["type"] = event;
-    request["data"] = data;
-    _socket?.send(_encoder.convert(request));
   }
 }

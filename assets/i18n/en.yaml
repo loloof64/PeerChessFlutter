@@ -1,5 +1,6 @@
 game_page:
   title: "Game page"
+  username: "Username"
 buttons:
     ok: "OK"
     cancel: "Cancel"
