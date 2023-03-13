@@ -10,6 +10,7 @@ game:
     stop_game_msg: "¿Quieres detener el juego actual?"
     stopped: "Juego terminado."
     restart_game_title: "¿Nuevo juego?"
+    no_matching_peer: "No hay compañero con esta identificación."
 game_termination:
     black_checkmate_white: "Los Negros ha ganado por jaque mate."
     white_checkmate_black: "Los Blancos ha ganado por jaque mate."
@@ -55,5 +56,7 @@ session:
     dialog_accept:
         title: "¿Conectar con un compañero?"
         message: "¿Quieres conectarte a compañero?"
+    dialog_my_id:
+        title: "Your id"
     blocked_incoming_request: "Bloqueó una solicitud entrante."
 

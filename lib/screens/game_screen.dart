@@ -517,7 +517,7 @@ class _GameScreenState extends State<GameScreen> {
         });
   }
 
-  Future<void> _startSession(BuildContext context) async {
+  Future<void> _startSession() async {
     setState(() {
       _peerId = _peerIdController.text;
 
@@ -592,6 +592,15 @@ class _GameScreenState extends State<GameScreen> {
         }
       };
     });
+    final otherPeerExists = await _signaling.makeCall(peerId: _peerId);
+    if (otherPeerExists) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: I18nText('game.no_matching_peer'),
+        ),
+      );
+    }
   }
 
   void _accept() {
@@ -606,14 +615,14 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
-  Future<void> _startConnection(BuildContext context) async {
+  Future<void> _startConnection() async {
     setState(() {
       _peerIdController.text = '';
       _ringingMessageController.text = '';
     });
     return showDialog(
         context: context,
-        builder: (BuildContext context) {
+        builder: (BuildContext context2) {
           return AlertDialog(
             title: I18nText('session.dialog_new.title'),
             content: Column(
@@ -674,7 +683,7 @@ class _GameScreenState extends State<GameScreen> {
               DialogActionButton(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  _startSession(context);
+                  _startSession();
                 },
                 textContent: I18nText(
                   'buttons.ok',
@@ -687,11 +696,43 @@ class _GameScreenState extends State<GameScreen> {
                 textContent: I18nText(
                   'buttons.cancel',
                 ),
-                textColor: Colors.white,
                 backgroundColor: Colors.redAccent,
+                textColor: Colors.white,
               )
             ],
           );
+        });
+  }
+
+  Future<void> _displayMyOwnId() async {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+              title: I18nText('session.dialog_my_id.title'),
+              content: Row(
+                children: [
+                  Text(_signaling.selfId),
+                  IconButton(
+                    onPressed: _copyIdToClipboard,
+                    icon: const Icon(
+                      Icons.paste,
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                DialogActionButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  textContent: I18nText(
+                    'buttons.ok',
+                  ),
+                  backgroundColor: Colors.tealAccent,
+                  textColor: Colors.white,
+                ),
+              ]);
         });
   }
 
@@ -706,9 +747,16 @@ class _GameScreenState extends State<GameScreen> {
         actions: [
           if (_showConnectButton)
             IconButton(
-              onPressed: () => _startConnection(context),
+              onPressed: _startConnection,
               icon: const Icon(
                 Icons.call,
+              ),
+            ),
+          if (_showConnectButton)
+            IconButton(
+              onPressed: _displayMyOwnId,
+              icon: const Icon(
+                Icons.question_mark_rounded,
               ),
             ),
           IconButton(

@@ -11,6 +11,7 @@ game:
     stopped: "Partie interrompue."
     restart_game_title: "Nouvelle partie ?"
     restart_game_msg: "Voulez-vous arrêter la partie en cours et en démarrer une nouvelle ?"
+    no_matching_peer: "Personne ne possède cet identifiant."
 game_termination:
     black_checkmate_white: "Les Noirs gagnent par échec et mat."
     white_checkmate_black: "Les Blancs gagnent par échec et mat."
@@ -56,4 +57,6 @@ session:
     dialog_accept:
         title: "Connexion avec le contact ?"
         message: "Souhaitez-vous vous connecter à ce contact ?"
+    dialog_my_id:
+        title: "Votre identifiant"
     blocked_incoming_request: "Une requête de connexion a été bloquée."

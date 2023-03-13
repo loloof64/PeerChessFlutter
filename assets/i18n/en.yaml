@@ -11,6 +11,7 @@ game:
     stopped: "Game stopped."
     restart_game_title: "New game ?"
     restart_game_msg: "Do you want to finish current game and start a new one ?"
+    no_matching_peer: "There's no peer with this id."
 game_termination:
     black_checkmate_white: "Black has won by checkmate."
     white_checkmate_black: "White has won by checkmate."
@@ -56,4 +57,6 @@ session:
     dialog_accept:
         title: "Connect to peer ?"
         message: "Do you want to connect to peer ?"
+    dialog_my_id:
+        title: "Your id"
     blocked_incoming_request: "Blocked an incoming request."

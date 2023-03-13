@@ -18,7 +18,6 @@
 // Using code from https://github.com/flutter-webrtc/flutter-webrtc-demo/blob/master/lib/src/call_sample/random_string.dart
 
 import 'dart:math';
-import 'dart:convert';
 
 import 'package:collection_ext/ranges.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
@@ -122,47 +121,50 @@ class Signaling {
     if (response.error != null) {
       Logger().e(response.error);
     }
-
-    _myConnection.onIceCandidate = (candidate) async {
-      QueryBuilder<ParseObject> queryPeer =
-          QueryBuilder<ParseObject>(ParseObject('Peer'));
-      queryPeer.whereContains('genId', _selfId);
-      //update DB with candidate
-      final ParseResponse apiResponse = await queryPeer.query();
-      if (apiResponse.success && apiResponse.results != null) {
-        final response = apiResponse.results!.first as ParseObject;
-        response.set('candidate', candidate.toMap());
-        await response.save();
-      }
-    };
-
-    final offerDescription = await _myConnection.createOffer();
-    await _myConnection.setLocalDescription(offerDescription);
-
-    final offer = {"sdp": offerDescription.sdp, "type": offerDescription.type};
-    // Update DB with sdp
-    QueryBuilder<ParseObject> queryPeer =
-        QueryBuilder<ParseObject>(ParseObject('Peer'));
-    queryPeer.whereContains('genId', _selfId);
-    final ParseResponse apiResponse = await queryPeer.query();
-    if (apiResponse.success && apiResponse.results != null) {
-      final response = apiResponse.results!.first as ParseObject;
-      response.set('offer', offer);
-      await response.save();
-    }
   }
 
   Future<void> removePeerFromDB() async {
+    // Remove offer
     final QueryBuilder<ParseObject> parseQuery =
-        QueryBuilder<ParseObject>(ParseObject('Peer'));
-    parseQuery.whereContains('genId', _selfId);
+        QueryBuilder<ParseObject>(ParseObject('OfferCandidates'));
+    parseQuery.whereContains('ownerGenId', _selfId);
 
     final ParseResponse apiResponse = await parseQuery.query();
 
     if (apiResponse.success &&
         apiResponse.results != null &&
         apiResponse.results!.isNotEmpty) {
-      final response = apiResponse.results!.first as ParseObject;
+      for (var result in apiResponse.results! as List<ParseObject>) {
+        await result.delete();
+      }
+    }
+
+    // Remove answer
+    final QueryBuilder<ParseObject> parseQuery2 =
+        QueryBuilder<ParseObject>(ParseObject('AnswerCandidates'));
+    parseQuery.whereContains('ownerGenId', _selfId);
+
+    final ParseResponse apiResponse2 = await parseQuery2.query();
+
+    if (apiResponse2.success &&
+        apiResponse2.results != null &&
+        apiResponse2.results!.isNotEmpty) {
+      for (var result in apiResponse2.results! as List<ParseObject>) {
+        await result.delete();
+      }
+    }
+
+    // Remove peer
+    final QueryBuilder<ParseObject> parseQuery3 =
+        QueryBuilder<ParseObject>(ParseObject('Peer'));
+    parseQuery.whereContains('genId', _selfId);
+
+    final ParseResponse apiResponse3 = await parseQuery3.query();
+
+    if (apiResponse3.success &&
+        apiResponse3.results != null &&
+        apiResponse3.results!.isNotEmpty) {
+      final response = apiResponse3.results!.first as ParseObject;
       await response.delete();
     }
   }
@@ -176,9 +178,39 @@ class Signaling {
       onDataChannelMessage;
   Function(Session session, RTCDataChannel dc)? onDataChannel;
 
-  Future<void> _makeCall({
+  ///
+  /// Returns true if the other peer exists, false otherwise.
+  ///
+  Future<bool> makeCall({
     required String peerId,
-  }) async {}
+  }) async {
+    // make sure other peer exists
+    final QueryBuilder<ParseObject> parseQuery =
+        QueryBuilder<ParseObject>(ParseObject('Peer'));
+    parseQuery.whereContains('genId', peerId);
+
+    final ParseResponse apiResponse = await parseQuery.query();
+
+    if (!apiResponse.success ||
+        apiResponse.results == null ||
+        apiResponse.results!.isEmpty ||
+        apiResponse.error != null) {
+      return false;
+    }
+
+    // create call object
+    _myConnection.onIceCandidate = (candidate) async {
+      final dbCandidate = ParseObject('OfferCandidates')
+        ..set('ownerGenId', _selfId)
+        ..set('data', candidate.toMap());
+      await dbCandidate.save();
+    };
+
+    final offerDescription = await _myConnection.createOffer();
+    await _myConnection.setLocalDescription(offerDescription);
+
+    return true;
+  }
 
   Future<void> _closeCall() async {
     await _session.peerConnection?.close();
