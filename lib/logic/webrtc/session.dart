@@ -74,9 +74,6 @@ const turnUsername = 'e70ea9d69e030b5e912b12b2';
 const turnPassword = 'wKYehfEx0+I4Q1G';
 
 class Signaling {
-  final JsonEncoder _encoder;
-  final JsonDecoder _decoder;
-
   RTCDataChannel? _dataChannel;
   late RTCPeerConnection _myConnection;
 
@@ -116,9 +113,7 @@ class Signaling {
               'credential': turnPassword,
             },
           ]
-        },
-        _encoder = const JsonEncoder(),
-        _decoder = const JsonDecoder();
+        };
 
   Future<void> createMyConnection() async {
     _myConnection = await createPeerConnection(_iceServers);
@@ -128,19 +123,32 @@ class Signaling {
       Logger().e(response.error);
     }
 
+    _myConnection.onIceCandidate = (candidate) async {
+      QueryBuilder<ParseObject> queryPeer =
+          QueryBuilder<ParseObject>(ParseObject('Peer'));
+      queryPeer.whereContains('genId', _selfId);
+      //update DB with candidate
+      final ParseResponse apiResponse = await queryPeer.query();
+      if (apiResponse.success && apiResponse.results != null) {
+        final response = apiResponse.results!.first as ParseObject;
+        response.set('candidate', candidate.toMap());
+        await response.save();
+      }
+    };
+
     final offerDescription = await _myConnection.createOffer();
-    _myConnection.setLocalDescription(offerDescription);
+    await _myConnection.setLocalDescription(offerDescription);
 
     final offer = {"sdp": offerDescription.sdp, "type": offerDescription.type};
+    // Update DB with sdp
     QueryBuilder<ParseObject> queryPeer =
         QueryBuilder<ParseObject>(ParseObject('Peer'));
     queryPeer.whereContains('genId', _selfId);
     final ParseResponse apiResponse = await queryPeer.query();
     if (apiResponse.success && apiResponse.results != null) {
-      final objId = (apiResponse.results!.first as ParseObject).objectId;
-      final parseInstance = ParseObject('Peer')..objectId = objId;
-      parseInstance.set('offer', offer);
-      await parseInstance.save();
+      final response = apiResponse.results!.first as ParseObject;
+      response.set('offer', offer);
+      await response.save();
     }
   }
 
@@ -168,60 +176,11 @@ class Signaling {
       onDataChannelMessage;
   Function(Session session, RTCDataChannel dc)? onDataChannel;
 
-  void invite({required String peerId}) async {
-    await _createSession(peerId: peerId);
-    _createDataChannel(_session);
-    _createOffer(_session);
-    onCallStateChange?.call(_session, CallState.callStateNew);
-    onCallStateChange?.call(_session, CallState.callStateInvite);
-  }
-
-  void bye() {
-    /* TODO correct
-    _send('bye', {
-      'from': _selfId,
-    });
-    */
-    _closeSession();
-  }
-
-  void accept() {
-    _createAnswer();
-  }
-
-  void reject() {
-    bye();
-  }
-
-  Future<void> _createSession({
+  Future<void> _makeCall({
     required String peerId,
-  }) async {
-    /* TODO correct
-    var newSession = Session(peerId: peerId);
-    pc.onIceCandidate = (candidate) {
-      _send('candidate', {
-        'to': peerId,
-        'from': _selfId,
-        'candidate': {
-          'sdpMLineIndex': candidate.sdpMLineIndex,
-          'sdpMid': candidate.sdpMid,
-          'candidate': candidate.candidate,
-        },
-      });
-    };
+  }) async {}
 
-    pc.onIceConnectionState = (state) {};
-
-    pc.onDataChannel = (channel) {
-      _addDataChannel(channel);
-    };
-
-    newSession.peerConnection = pc;
-    _session = newSession;
-    */
-  }
-
-  Future<void> _closeSession() async {
+  Future<void> _closeCall() async {
     await _session.peerConnection?.close();
     await _session.dataChannel?.close();
   }
@@ -242,38 +201,5 @@ class Signaling {
     RTCDataChannel channel =
         await session.peerConnection!.createDataChannel(label, dataChannelDict);
     _addDataChannel(channel);
-  }
-
-  Future<void> _createOffer(Session session) async {
-    try {
-      RTCSessionDescription s =
-          await session.peerConnection!.createOffer(_dcConstraints);
-      /* TODO correct
-      await session.peerConnection!.setLocalDescription(_fixSdp(s));
-      _send('offer', {
-        'to': session.pid,
-        'from': _selfId,
-        'description': {'sdp': s.sdp, 'type': s.type},
-      });
-      */
-    } catch (e) {
-      Logger().e(e.toString());
-    }
-  }
-
-  Future<void> _createAnswer() async {
-    try {
-      RTCSessionDescription s =
-          await _session.peerConnection!.createAnswer(_dcConstraints);
-      /* TODO correct 
-      _send('answer', {
-        'to': _session.pid,
-        'from': _selfId,
-        'description': {'sdp': s.sdp, 'type': s.type},
-      });
-      */
-    } catch (e) {
-      Logger().e(e.toString());
-    }
   }
 }

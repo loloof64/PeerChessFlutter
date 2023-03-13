@@ -438,7 +438,7 @@ class _GameScreenState extends State<GameScreen> {
 
   _hangUp() {
     if (_session != null) {
-      _signaling.bye();
+      // TODO _signaling.bye();
     }
   }
 
@@ -596,13 +596,13 @@ class _GameScreenState extends State<GameScreen> {
 
   void _accept() {
     if (_session != null) {
-      _signaling.accept();
+      // TODO _signaling.accept();
     }
   }
 
   _reject() {
     if (_session != null) {
-      _signaling.reject();
+      //TODO _signaling.reject();
     }
   }
 
