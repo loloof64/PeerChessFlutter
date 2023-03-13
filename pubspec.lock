@@ -245,6 +245,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.9.22"
+  flutter_window_close:
+    dependency: "direct main"
+    description:
+      name: flutter_window_close
+      sha256: "63f5846efbf0974ec233e6b5f468aa604a4857157f4c6c44fd482621804a0464"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.2"
   fpdart:
     dependency: transitive
     description:
@@ -625,10 +633,10 @@ packages:
     dependency: "direct main"
     description:
       name: simple_chess_board
-      sha256: ff426085f0c42dd4d10f6c01bcf60377c9bfc2c5e7667ec7943a5ce0cbfd9d28
+      sha256: "86aff056188c17c78cfa28b57a15b20ed39f76db01d18e058ce84b6a61d643ce"
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.2"
+    version: "0.7.0"
   sky_engine:
     dependency: transitive
     description: flutter

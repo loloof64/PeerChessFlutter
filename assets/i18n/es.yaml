@@ -1,6 +1,6 @@
 game_page:
   title: "Página del juego"
-  username: "Nombre de usuario"
+  userid: "Su identificación"
 buttons:
     ok: "De acuerdo"
     cancel: "Anular"

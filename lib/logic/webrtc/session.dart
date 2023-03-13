@@ -74,28 +74,17 @@ const turnUsername = 'e70ea9d69e030b5e912b12b2';
 const turnPassword = 'wKYehfEx0+I4Q1G';
 
 class Signaling {
-  String username;
   final JsonEncoder _encoder;
   final JsonDecoder _decoder;
 
   RTCDataChannel? _dataChannel;
-
-  void changeUserNameTo(String username) {
-    this.username = username;
-  }
+  late RTCPeerConnection _myConnection;
 
   late Session _session;
 
   final String _selfId = randomString(15);
 
   final Map<String, dynamic> _iceServers;
-
-  final Map<String, dynamic> _config = {
-    'mandatory': {},
-    'optional': [
-      {'DtlsSrtpKeyAgreement': true},
-    ]
-  };
 
   final Map<String, dynamic> _dcConstraints = {
     'mandatory': {
@@ -105,7 +94,7 @@ class Signaling {
     'optional': [],
   };
 
-  Signaling({required this.username})
+  Signaling()
       : _iceServers = {
           'iceServers': [
             {
@@ -129,15 +118,45 @@ class Signaling {
           ]
         },
         _encoder = const JsonEncoder(),
-        _decoder = const JsonDecoder() {
-    _createPeerInDatabase();
+        _decoder = const JsonDecoder();
+
+  Future<void> createMyConnection() async {
+    _myConnection = await createPeerConnection(_iceServers);
+    final peer = ParseObject('Peer')..set('genId', _selfId);
+    final response = await peer.save();
+    if (response.error != null) {
+      Logger().e(response.error);
+    }
+
+    final offerDescription = await _myConnection.createOffer();
+    _myConnection.setLocalDescription(offerDescription);
+
+    final offer = {"sdp": offerDescription.sdp, "type": offerDescription.type};
+    QueryBuilder<ParseObject> queryPeer =
+        QueryBuilder<ParseObject>(ParseObject('Peer'));
+    queryPeer.whereContains('genId', _selfId);
+    final ParseResponse apiResponse = await queryPeer.query();
+    if (apiResponse.success && apiResponse.results != null) {
+      final objId = (apiResponse.results!.first as ParseObject).objectId;
+      final parseInstance = ParseObject('Peer')..objectId = objId;
+      parseInstance.set('offer', offer);
+      await parseInstance.save();
+    }
   }
 
-  Future<void> _createPeerInDatabase() async {
-    final peer = ParseObject('Peer')
-      ..set('genId', _selfId)
-      ..set('username', username);
-    await peer.save();
+  Future<void> removePeerFromDB() async {
+    final QueryBuilder<ParseObject> parseQuery =
+        QueryBuilder<ParseObject>(ParseObject('Peer'));
+    parseQuery.whereContains('genId', _selfId);
+
+    final ParseResponse apiResponse = await parseQuery.query();
+
+    if (apiResponse.success &&
+        apiResponse.results != null &&
+        apiResponse.results!.isNotEmpty) {
+      final response = apiResponse.results!.first as ParseObject;
+      await response.delete();
+    }
   }
 
   String get selfId => _selfId;
@@ -158,7 +177,7 @@ class Signaling {
   }
 
   void bye() {
-    /*
+    /* TODO correct
     _send('bye', {
       'from': _selfId,
     });
@@ -177,7 +196,7 @@ class Signaling {
   Future<void> _createSession({
     required String peerId,
   }) async {
-    /*
+    /* TODO correct
     var newSession = Session(peerId: peerId);
     pc.onIceCandidate = (candidate) {
       _send('candidate', {
@@ -229,7 +248,7 @@ class Signaling {
     try {
       RTCSessionDescription s =
           await session.peerConnection!.createOffer(_dcConstraints);
-      /*
+      /* TODO correct
       await session.peerConnection!.setLocalDescription(_fixSdp(s));
       _send('offer', {
         'to': session.pid,
@@ -246,7 +265,7 @@ class Signaling {
     try {
       RTCSessionDescription s =
           await _session.peerConnection!.createAnswer(_dcConstraints);
-      /*
+      /* TODO correct 
       _send('answer', {
         'to': _session.pid,
         'from': _selfId,

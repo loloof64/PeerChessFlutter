@@ -99,6 +99,8 @@ class NewGameScreenState extends State<NewGameScreen> {
             child: SingleChildScrollView(
               child: Column(children: <Widget>[
                 SimpleChessBoard(
+                  chessBoardColors: ChessBoardColors()
+                    ..lastMoveArrowColor = Colors.blueAccent,
                   lastMoveToHighlight: null,
                   fen: _positionFen,
                   orientation: _orientation,

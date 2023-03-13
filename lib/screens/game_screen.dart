@@ -21,11 +21,13 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:flutter_window_close/flutter_window_close.dart';
 import 'package:logger/logger.dart';
 import 'package:simple_chess_board/models/board_arrow.dart';
 import 'package:simple_chess_board/simple_chess_board.dart';
 import 'package:chess_vectors_flutter/chess_vectors_flutter.dart';
 import 'package:chess/chess.dart' as chess;
+import 'package:flutter_i18n/flutter_i18n.dart';
 import '../logic/managers/game_manager.dart';
 import '../logic/managers/history_manager.dart';
 import '../logic/webrtc/session.dart';
@@ -33,7 +35,6 @@ import '../logic/history_builder.dart';
 import '../components/history.dart';
 import '../components/dialog_buttons.dart';
 import '../screens/new_game_screen.dart';
-import "package:flutter_i18n/flutter_i18n.dart";
 
 const ringingMessageKey = 'ringingMessage';
 
@@ -57,7 +58,6 @@ class _GameScreenState extends State<GameScreen> {
   Session? _session;
   bool _waitAccept = false;
   bool _communicating = false;
-  late TextEditingController _usernameController;
   late TextEditingController _peerIdController;
   late TextEditingController _ringingMessageController;
 
@@ -66,9 +66,6 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   void initState() {
-    super.initState();
-    _usernameController =
-        TextEditingController(text: "user#${randomString(8)}");
     _peerIdController = TextEditingController(text: _peerId);
     _ringingMessageController = TextEditingController();
     _gameManager = GameManager();
@@ -79,23 +76,27 @@ class _GameScreenState extends State<GameScreen> {
       isStartMoveNumber: _isStartMoveNumber,
     );
 
-    setState(() {
-      _signaling = Signaling(username: _usernameController.text);
-      _showConnectButton = true;
+    _signaling = Signaling();
+    _createLocalPeerAndSaveToDB();
+    _showConnectButton = true;
+
+    FlutterWindowClose.setWindowShouldCloseHandler(() async {
+      await _signaling.removePeerFromDB();
+      return true;
     });
 
-    _usernameController.addListener(() {
-      setState(() {
-        _signaling.changeUserNameTo(_usernameController.text);
-      });
-    });
+    super.initState();
+  }
+
+  void _createLocalPeerAndSaveToDB() async {
+    await _signaling.createMyConnection();
   }
 
   @override
   void dispose() {
-    _usernameController.dispose();
     _peerIdController.dispose();
     _ringingMessageController.dispose();
+    _signaling.removePeerFromDB();
     super.dispose();
   }
 
@@ -119,7 +120,6 @@ class _GameScreenState extends State<GameScreen> {
       _lastMoveToHighlight = BoardArrow(
         from: from,
         to: to,
-        color: Colors.blueAccent,
       );
       _gameManager.loadPosition(position);
     });
@@ -140,9 +140,9 @@ class _GameScreenState extends State<GameScreen> {
 
       setState(() {
         _lastMoveToHighlight = BoardArrow(
-            from: relatedMove.from.toString(),
-            to: relatedMove.to.toString(),
-            color: Colors.blueAccent);
+          from: relatedMove.from.toString(),
+          to: relatedMove.to.toString(),
+        );
         _historyManager.addMove(
           isWhiteTurnNow: whiteMove,
           isGameStart: gameStart,
@@ -348,7 +348,6 @@ class _GameScreenState extends State<GameScreen> {
         _lastMoveToHighlight = BoardArrow(
           from: _historyManager.currentNode!.relatedMove!.from.toString(),
           to: _historyManager.currentNode!.relatedMove!.to.toString(),
-          color: Colors.blueAccent,
         );
         _historyManager.selectCurrentNode();
       }
@@ -730,27 +729,6 @@ class _GameScreenState extends State<GameScreen> {
               Icons.swap_vert_circle,
             ),
           ),
-          Flexible(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              mainAxisSize: MainAxisSize.min,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                I18nText('game_page.username'),
-                Flexible(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                    width: 150,
-                    child: TextField(
-                      controller: _usernameController,
-                      style: const TextStyle(color: Colors.greenAccent),
-                    ),
-                  ),
-                )
-              ],
-            ),
-          ),
         ],
       ),
       body: Center(
@@ -759,6 +737,8 @@ class _GameScreenState extends State<GameScreen> {
                 children: [
                   Flexible(
                     child: SimpleChessBoard(
+                      chessBoardColors: ChessBoardColors()
+                        ..lastMoveArrowColor = Colors.blueAccent,
                       engineThinking: false,
                       whitePlayerType: PlayerType.human,
                       blackPlayerType: PlayerType.human,
@@ -793,6 +773,8 @@ class _GameScreenState extends State<GameScreen> {
                   children: [
                     Flexible(
                       child: SimpleChessBoard(
+                        chessBoardColors: ChessBoardColors()
+                          ..lastMoveArrowColor = Colors.blueAccent,
                         engineThinking: false,
                         whitePlayerType: PlayerType.human,
                         blackPlayerType: PlayerType.human,
