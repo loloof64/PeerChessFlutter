@@ -54,7 +54,7 @@ class _GameScreenState extends State<GameScreen> {
   Map<String, String> _receivedPeerData = {};
   RTCDataChannel? _dataChannel;
   bool _showConnectButton = false;
-  String _peerId = '';
+  String _remotePeerId = '';
   Session? _session;
   bool _waitAccept = false;
   bool _communicating = false;
@@ -66,7 +66,7 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   void initState() {
-    _peerIdController = TextEditingController(text: _peerId);
+    _peerIdController = TextEditingController(text: _remotePeerId);
     _ringingMessageController = TextEditingController();
     _gameManager = GameManager();
     _historyManager = HistoryManager(
@@ -519,7 +519,7 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _startSession() async {
     setState(() {
-      _peerId = _peerIdController.text;
+      _remotePeerId = _peerIdController.text;
 
       _signaling.onDataChannelMessage = (_, dc, RTCDataChannelMessage data) {
         setState(() {
@@ -592,7 +592,8 @@ class _GameScreenState extends State<GameScreen> {
         }
       };
     });
-    final otherPeerExists = await _signaling.makeCall(peerId: _peerId);
+    final otherPeerExists =
+        await _signaling.makeCall(remotePeerId: _remotePeerId);
     if (otherPeerExists) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

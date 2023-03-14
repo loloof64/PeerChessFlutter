@@ -80,6 +80,8 @@ class Signaling {
 
   final String _selfId = randomString(15);
 
+  String? _callObjectId;
+
   final Map<String, dynamic> _iceServers;
 
   final Map<String, dynamic> _dcConstraints = {
@@ -182,27 +184,41 @@ class Signaling {
   /// Returns true if the other peer exists, false otherwise.
   ///
   Future<bool> makeCall({
-    required String peerId,
+    required String remotePeerId,
   }) async {
     // make sure other peer exists
-    final QueryBuilder<ParseObject> parseQuery =
+    final QueryBuilder<ParseObject> remotePeerQuery =
         QueryBuilder<ParseObject>(ParseObject('Peer'));
-    parseQuery.whereContains('genId', peerId);
+    remotePeerQuery.whereContains('genId', remotePeerId);
 
-    final ParseResponse apiResponse = await parseQuery.query();
+    final ParseResponse remotePeerResponse = await remotePeerQuery.query();
 
-    if (!apiResponse.success ||
-        apiResponse.results == null ||
-        apiResponse.results!.isEmpty ||
-        apiResponse.error != null) {
+    if (!remotePeerResponse.success ||
+        remotePeerResponse.results == null ||
+        remotePeerResponse.results!.isEmpty ||
+        remotePeerResponse.error != null) {
       return false;
     }
+
+    final remotePeerParseId =
+        (remotePeerResponse.results!.first as ParseObject).objectId;
+
+    // get local peer objectId
+    final QueryBuilder<ParseObject> localPeerQuery =
+        QueryBuilder<ParseObject>(ParseObject('Peer'));
+    localPeerQuery.whereContains('genId', _selfId);
+
+    final ParseResponse localPeerResponse = await localPeerQuery.query();
+    final localPeerParseId =
+        (localPeerResponse.results!.first as ParseObject).objectId;
 
     // create call object
     _myConnection.onIceCandidate = (candidate) async {
       final dbCandidate = ParseObject('OfferCandidates')
-        ..set('ownerGenId', _selfId)
-        ..set('data', candidate.toMap());
+        ..set('owner', ParseObject('Peer')..objectId = localPeerParseId)
+        ..set('target', ParseObject('Peer')..objectId = remotePeerParseId)
+        ..set('offer', candidate.toMap());
+      _callObjectId = dbCandidate.objectId;
       await dbCandidate.save();
     };
 
