@@ -22,7 +22,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter_window_close/flutter_window_close.dart';
-import 'package:logger/logger.dart';
 import 'package:simple_chess_board/models/board_arrow.dart';
 import 'package:simple_chess_board/simple_chess_board.dart';
 import 'package:chess_vectors_flutter/chess_vectors_flutter.dart';
@@ -588,10 +587,25 @@ class _GameScreenState extends State<GameScreen> {
       };
       */
     });
-    await _signaling.makeCall(
+    final response = await _signaling.makeCall(
       remotePeerId: _remotePeerId,
       message: _ringingMessageController.text,
     );
+    switch (response) {
+      case MakingCallResult.remotePeerDoesNotExist:
+        if (context.mounted) Navigator.of(context).pop();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: I18nText('game.no_matching_peer'),
+            ),
+          );
+        }
+        break;
+      case MakingCallResult.alreadyAPendingCall:
+      case MakingCallResult.success:
+        break;
+    }
   }
 
   void _accept() {
