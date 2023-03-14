@@ -52,7 +52,7 @@ class _GameScreenState extends State<GameScreen> {
   late Signaling _signaling;
   Map<String, String> _receivedPeerData = {};
   RTCDataChannel? _dataChannel;
-  bool _showConnectButton = false;
+  bool _readyToConnect = false;
   String _remotePeerId = '';
   Session? _session;
   bool _waitAccept = false;
@@ -76,7 +76,7 @@ class _GameScreenState extends State<GameScreen> {
     );
 
     _signaling = Signaling();
-    _showConnectButton = true;
+    _readyToConnect = true;
 
     FlutterWindowClose.setWindowShouldCloseHandler(() async {
       await _signaling.removePeerFromDB();
@@ -463,17 +463,17 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
-  Future<bool?> _showWaitingPeerDialog(BuildContext context) {
+  Future<bool?> _showWaitingPeerDialog() {
     return showDialog<bool?>(
         context: context,
-        builder: (BuildContext context) {
+        builder: (BuildContext context2) {
           return AlertDialog(
             title: I18nText("session.dialog_waiting_peer.title"),
             content: I18nText("session.dialog_waiting_peer.message"),
             actions: [
               DialogActionButton(
                 onPressed: () {
-                  Navigator.of(context).pop(false);
+                  Navigator.of(context2).pop(false);
                   _hangUp();
                 },
                 textContent: I18nText(
@@ -605,6 +605,7 @@ class _GameScreenState extends State<GameScreen> {
       case MakingCallResult.success:
         break;
     }
+    await _showWaitingPeerDialog();
   }
 
   void _accept() {
@@ -749,14 +750,14 @@ class _GameScreenState extends State<GameScreen> {
       appBar: AppBar(
         title: I18nText('game_page.title'),
         actions: [
-          if (_showConnectButton)
+          if (_readyToConnect && !_signaling.callInProgress)
             IconButton(
               onPressed: _startConnection,
               icon: const Icon(
                 Icons.call,
               ),
             ),
-          if (_showConnectButton)
+          if (_readyToConnect)
             IconButton(
               onPressed: _displayMyOwnId,
               icon: const Icon(

@@ -157,6 +157,7 @@ class Signaling {
   }
 
   String? get selfId => _selfId;
+  bool get callInProgress => _remotePeerId != null;
 
   Function(SignalingState state)? onSignalingStateChange;
   Function(Session session, CallState state)? onCallStateChange;
