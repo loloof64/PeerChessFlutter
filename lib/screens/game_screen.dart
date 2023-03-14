@@ -132,7 +132,11 @@ class _GameScreenState extends State<GameScreen> {
     _offerCandidatesSubscription.on(LiveQueryEvent.create, (value) async {
       final realValue = value as ParseObject;
 
-      final peerMessage = realValue.get('message');
+      ///////////////////////////////
+      Logger().d(realValue);
+      ///////////////////////////////
+
+      final peerMessage = realValue.get('offerMessage');
 
       final target = realValue.get('target');
 
