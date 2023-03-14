@@ -525,7 +525,7 @@ class _GameScreenState extends State<GameScreen> {
       _signaling.onDataChannel = (_, channel) {
         _dataChannel = channel;
       };
-
+/* TODO fix or remove
       _signaling.onCallStateChange = (Session session, CallState state) async {
         switch (state) {
           case CallState.callStateNew:
@@ -586,17 +586,12 @@ class _GameScreenState extends State<GameScreen> {
             break;
         }
       };
+      */
     });
-    final otherPeerExists =
-        await _signaling.makeCall(remotePeerId: _remotePeerId);
-    if (otherPeerExists) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: I18nText('game.no_matching_peer'),
-        ),
-      );
-    }
+    await _signaling.makeCall(
+      remotePeerId: _remotePeerId,
+      message: _ringingMessageController.text,
+    );
   }
 
   void _accept() {

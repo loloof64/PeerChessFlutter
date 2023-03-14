@@ -129,37 +129,6 @@ class Signaling {
   }
 
   Future<void> removePeerFromDB() async {
-    // Remove offer
-    final QueryBuilder<ParseObject> parseQuery =
-        QueryBuilder<ParseObject>(ParseObject('OfferCandidates'));
-    // parseQuery.whereContains('ownerId', _selfId);
-
-    final ParseResponse apiResponse = await parseQuery.query();
-
-    if (apiResponse.success &&
-        apiResponse.results != null &&
-        apiResponse.results!.isNotEmpty) {
-      for (var result in apiResponse.results! as List<ParseObject>) {
-        await result.delete();
-      }
-    }
-
-    // Remove answer
-    final QueryBuilder<ParseObject> parseQuery2 =
-        QueryBuilder<ParseObject>(ParseObject('AnswerCandidates'));
-    // parseQuery.whereContains('ownerId', _selfId);
-
-    final ParseResponse apiResponse2 = await parseQuery2.query();
-
-    if (apiResponse2.success &&
-        apiResponse2.results != null &&
-        apiResponse2.results!.isNotEmpty) {
-      for (var result in apiResponse2.results! as List<ParseObject>) {
-        await result.delete();
-      }
-    }
-
-    // Remove peer
     final localPeer = ParseObject('Peer')..objectId = _selfId;
     await localPeer.delete();
   }
@@ -173,31 +142,16 @@ class Signaling {
       onDataChannelMessage;
   Function(Session session, RTCDataChannel dc)? onDataChannel;
 
-  ///
-  /// Returns true if the other peer exists, false otherwise.
-  ///
-  Future<bool> makeCall({
+  Future<void> makeCall({
     required String remotePeerId,
+    required String message,
   }) async {
-    // make sure other peer exists
-    final QueryBuilder<ParseObject> remotePeerQuery =
-        QueryBuilder<ParseObject>(ParseObject('Peer'));
-    remotePeerQuery.whereContains('objectId', remotePeerId);
-
-    final ParseResponse remotePeerResponse = await remotePeerQuery.query();
-
-    if (!remotePeerResponse.success ||
-        remotePeerResponse.results == null ||
-        remotePeerResponse.results!.isEmpty ||
-        remotePeerResponse.error != null) {
-      return false;
-    }
-
     // create call object
     _myConnection.onIceCandidate = (candidate) async {
       final dbCandidate = ParseObject('OfferCandidates')
         ..set('owner', ParseObject('Peer')..objectId = selfId)
         ..set('target', ParseObject('Peer')..objectId = remotePeerId)
+        ..set('offerMessage', message)
         ..set('offer', candidate.toMap());
       _callObjectId = dbCandidate.objectId;
       await dbCandidate.save();
@@ -205,8 +159,6 @@ class Signaling {
 
     final offerDescription = await _myConnection.createOffer();
     await _myConnection.setLocalDescription(offerDescription);
-
-    return true;
   }
 
   Future<void> _closeCall() async {
