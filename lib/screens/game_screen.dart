@@ -22,6 +22,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter_window_close/flutter_window_close.dart';
+import 'package:logger/logger.dart';
+import 'package:parse_server_sdk_flutter/parse_server_sdk.dart';
 import 'package:simple_chess_board/models/board_arrow.dart';
 import 'package:simple_chess_board/simple_chess_board.dart';
 import 'package:chess_vectors_flutter/chess_vectors_flutter.dart';
@@ -60,6 +62,11 @@ class _GameScreenState extends State<GameScreen> {
   late TextEditingController _peerIdController;
   late TextEditingController _ringingMessageController;
 
+  final _liveQuery = LiveQuery();
+  late Subscription<ParseObject> _offerCandidatesSubscription;
+  final QueryBuilder<ParseObject> _queryOfferCandidates =
+      QueryBuilder<ParseObject>(ParseObject('OfferCandidates'));
+
   final ScrollController _historyScrollController =
       ScrollController(initialScrollOffset: 0.0, keepScrollOffset: true);
 
@@ -83,6 +90,8 @@ class _GameScreenState extends State<GameScreen> {
       return true;
     });
 
+    _startLiveQuery();
+
     super.initState();
   }
 
@@ -91,7 +100,23 @@ class _GameScreenState extends State<GameScreen> {
     _peerIdController.dispose();
     _ringingMessageController.dispose();
     _signaling.removePeerFromDB();
+    _cancelLiveQuery();
     super.dispose();
+  }
+
+  void _startLiveQuery() async {
+    _offerCandidatesSubscription =
+        await _liveQuery.client.subscribe(_queryOfferCandidates);
+
+    _offerCandidatesSubscription.on(LiveQueryEvent.create, (value) {
+      ///////////////////////////
+      Logger().d(value);
+      /////////////////////////////
+    });
+  }
+
+  void _cancelLiveQuery() async {
+    _liveQuery.client.unSubscribe(_offerCandidatesSubscription);
   }
 
   bool _isStartMoveNumber(int moveNumber) {
