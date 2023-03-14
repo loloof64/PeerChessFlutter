@@ -166,6 +166,11 @@ class Signaling {
       onDataChannelMessage;
   Function(Session session, RTCDataChannel dc)? onDataChannel;
 
+  void cancelCallRequest() {
+    //TODO check if no call is in progress
+    _remotePeerId = null;
+  }
+
   Future<MakingCallResult> makeCall({
     required String remotePeerId,
     required String message,

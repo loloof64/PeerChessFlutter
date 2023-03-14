@@ -463,8 +463,9 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
-  Future<bool?> _showWaitingPeerDialog() {
+  Future<void> _showWaitingPeerDialog() {
     return showDialog<bool?>(
+        barrierDismissible: false,
         context: context,
         builder: (BuildContext context2) {
           return AlertDialog(
@@ -473,8 +474,9 @@ class _GameScreenState extends State<GameScreen> {
             actions: [
               DialogActionButton(
                 onPressed: () {
-                  Navigator.of(context2).pop(false);
-                  _hangUp();
+                  Navigator.of(context2).pop();
+                  _signaling.cancelCallRequest();
+                  setState(() {});
                 },
                 textContent: I18nText(
                   'buttons.cancel',
@@ -591,6 +593,7 @@ class _GameScreenState extends State<GameScreen> {
       remotePeerId: _remotePeerId,
       message: _ringingMessageController.text,
     );
+    setState(() {});
     switch (response) {
       case MakingCallResult.remotePeerDoesNotExist:
         if (context.mounted) {
@@ -603,9 +606,9 @@ class _GameScreenState extends State<GameScreen> {
         break;
       case MakingCallResult.alreadyAPendingCall:
       case MakingCallResult.success:
+        await _showWaitingPeerDialog();
         break;
     }
-    await _showWaitingPeerDialog();
   }
 
   void _accept() {
