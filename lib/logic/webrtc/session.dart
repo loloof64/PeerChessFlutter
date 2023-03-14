@@ -135,7 +135,7 @@ class Signaling {
     }
   }
 
-  Future<void> removePeerFromDB() async {
+  Future<void> _removeReleatedOfferCandidates() async {
     if (_remotePeerId != null) {
       QueryBuilder<ParseObject> queryBook =
           QueryBuilder<ParseObject>(ParseObject('OfferCandidates'))
@@ -151,12 +151,17 @@ class Signaling {
         }
       }
     }
+  }
+
+  Future<void> removePeerFromDB() async {
+    _removeReleatedOfferCandidates();
 
     final localPeer = ParseObject('Peer')..objectId = _selfId;
     await localPeer.delete();
   }
 
   String? get selfId => _selfId;
+  String? get remoteId => _remotePeerId;
   bool get callInProgress => _remotePeerId != null;
 
   Function(SignalingState state)? onSignalingStateChange;
@@ -212,6 +217,7 @@ class Signaling {
   Future<void> _closeCall() async {
     await _session.peerConnection?.close();
     await _session.dataChannel?.close();
+    _removeReleatedOfferCandidates();
   }
 
   void _addDataChannel(RTCDataChannel channel) {
@@ -230,5 +236,10 @@ class Signaling {
     RTCDataChannel channel =
         await session.peerConnection!.createDataChannel(label, dataChannelDict);
     _addDataChannel(channel);
+  }
+
+  Future<void> hangUp() async {
+    _closeCall();
+    _remotePeerId = null;
   }
 }

@@ -63,6 +63,11 @@ class _GameScreenState extends State<GameScreen> {
   late TextEditingController _ringingMessageController;
 
   final _liveQuery = LiveQuery();
+
+  late Subscription<ParseObject> _peerSubscription;
+  final QueryBuilder<ParseObject> _queryPeer =
+      QueryBuilder<ParseObject>(ParseObject('Peer'));
+
   late Subscription<ParseObject> _offerCandidatesSubscription;
   final QueryBuilder<ParseObject> _queryOfferCandidates =
       QueryBuilder<ParseObject>(ParseObject('OfferCandidates'));
@@ -105,12 +110,22 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _startLiveQuery() async {
+    _peerSubscription = await _liveQuery.client.subscribe(_queryPeer);
+    _peerSubscription.on(LiveQueryEvent.delete, (value) {
+      final realValue = value as ParseObject;
+      if (realValue.objectId == _signaling.remoteId) {
+        _signaling.hangUp();
+        setState(() {});
+      }
+    });
+
     _offerCandidatesSubscription =
         await _liveQuery.client.subscribe(_queryOfferCandidates);
 
     _offerCandidatesSubscription.on(LiveQueryEvent.create, (value) {
+      final realValue = value as ParseObject;
       ///////////////////////////
-      Logger().d(value);
+      Logger().d(realValue);
       /////////////////////////////
     });
   }
