@@ -636,7 +636,7 @@ class _GameScreenState extends State<GameScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(6.0),
                     child: Text(
-                      _signaling.selfId,
+                      _signaling.selfId!,
                       style: const TextStyle(
                         color: Colors.blue,
                       ),
@@ -713,7 +713,7 @@ class _GameScreenState extends State<GameScreen> {
               title: I18nText('session.dialog_my_id.title'),
               content: Row(
                 children: [
-                  Text(_signaling.selfId),
+                  Text(_signaling.selfId!),
                   IconButton(
                     onPressed: _copyIdToClipboard,
                     icon: const Icon(

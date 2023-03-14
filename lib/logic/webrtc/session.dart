@@ -78,7 +78,7 @@ class Signaling {
 
   late Session _session;
 
-  final String _selfId = randomString(15);
+  String? _selfId;
 
   String? _callObjectId;
 
@@ -118,7 +118,8 @@ class Signaling {
 
   Future<void> createMyConnection() async {
     _myConnection = await createPeerConnection(_iceServers);
-    final peer = ParseObject('Peer')..set('genId', _selfId);
+    final peer = ParseObject('Peer');
+    _selfId = peer.objectId;
     final response = await peer.save();
     if (response.error != null) {
       Logger().e(response.error);
@@ -129,7 +130,7 @@ class Signaling {
     // Remove offer
     final QueryBuilder<ParseObject> parseQuery =
         QueryBuilder<ParseObject>(ParseObject('OfferCandidates'));
-    parseQuery.whereContains('ownerGenId', _selfId);
+    // parseQuery.whereContains('ownerId', _selfId);
 
     final ParseResponse apiResponse = await parseQuery.query();
 
@@ -144,7 +145,7 @@ class Signaling {
     // Remove answer
     final QueryBuilder<ParseObject> parseQuery2 =
         QueryBuilder<ParseObject>(ParseObject('AnswerCandidates'));
-    parseQuery.whereContains('ownerGenId', _selfId);
+    // parseQuery.whereContains('ownerId', _selfId);
 
     final ParseResponse apiResponse2 = await parseQuery2.query();
 
@@ -157,21 +158,11 @@ class Signaling {
     }
 
     // Remove peer
-    final QueryBuilder<ParseObject> parseQuery3 =
-        QueryBuilder<ParseObject>(ParseObject('Peer'));
-    parseQuery.whereContains('genId', _selfId);
-
-    final ParseResponse apiResponse3 = await parseQuery3.query();
-
-    if (apiResponse3.success &&
-        apiResponse3.results != null &&
-        apiResponse3.results!.isNotEmpty) {
-      final response = apiResponse3.results!.first as ParseObject;
-      await response.delete();
-    }
+    final localPeer = ParseObject('Peer')..objectId = _selfId;
+    await localPeer.delete();
   }
 
-  String get selfId => _selfId;
+  String? get selfId => _selfId;
 
   Function(SignalingState state)? onSignalingStateChange;
   Function(Session session, CallState state)? onCallStateChange;
@@ -189,7 +180,7 @@ class Signaling {
     // make sure other peer exists
     final QueryBuilder<ParseObject> remotePeerQuery =
         QueryBuilder<ParseObject>(ParseObject('Peer'));
-    remotePeerQuery.whereContains('genId', remotePeerId);
+    remotePeerQuery.whereContains('objectId', remotePeerId);
 
     final ParseResponse remotePeerResponse = await remotePeerQuery.query();
 
@@ -200,23 +191,11 @@ class Signaling {
       return false;
     }
 
-    final remotePeerParseId =
-        (remotePeerResponse.results!.first as ParseObject).objectId;
-
-    // get local peer objectId
-    final QueryBuilder<ParseObject> localPeerQuery =
-        QueryBuilder<ParseObject>(ParseObject('Peer'));
-    localPeerQuery.whereContains('genId', _selfId);
-
-    final ParseResponse localPeerResponse = await localPeerQuery.query();
-    final localPeerParseId =
-        (localPeerResponse.results!.first as ParseObject).objectId;
-
     // create call object
     _myConnection.onIceCandidate = (candidate) async {
       final dbCandidate = ParseObject('OfferCandidates')
-        ..set('owner', ParseObject('Peer')..objectId = localPeerParseId)
-        ..set('target', ParseObject('Peer')..objectId = remotePeerParseId)
+        ..set('owner', ParseObject('Peer')..objectId = selfId)
+        ..set('target', ParseObject('Peer')..objectId = remotePeerId)
         ..set('offer', candidate.toMap());
       _callObjectId = dbCandidate.objectId;
       await dbCandidate.save();
