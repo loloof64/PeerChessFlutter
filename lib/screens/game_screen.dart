@@ -132,28 +132,13 @@ class _GameScreenState extends State<GameScreen> {
     _offerCandidatesSubscription.on(LiveQueryEvent.create, (value) async {
       final realValue = value as ParseObject;
 
-      ///////////////////////////////
-      Logger().d(realValue);
-      ///////////////////////////////
-
       final peerMessage = realValue.get('offerMessage');
 
       final target = realValue.get('target');
+      final realTarget = target as ParseObject;
 
-      QueryBuilder<ParseObject> queryPeer =
-          QueryBuilder<ParseObject>(ParseObject('Peer'))
-            ..whereEqualTo('target', target.toPointer());
-      final ParseResponse apiResponse = await queryPeer.query();
-      if (apiResponse.success && apiResponse.results != null) {
-        final targetId = (apiResponse.results!.first as ParseObject).objectId;
-
-        ///////////////////////////////////////////
-        Logger().d(targetId);
-        ///////////////////////////////////////////
-
-        if (targetId == _signaling.selfId) {
-          if (context.mounted) _showAcceptDialog(context, peerMessage);
-        }
+      if (realTarget.objectId == _signaling.selfId) {
+        if (context.mounted) _showAcceptDialog(context, peerMessage);
       }
     });
   }
