@@ -61,6 +61,7 @@ class _GameScreenState extends State<GameScreen> {
   bool _communicating = false;
   late TextEditingController _peerIdController;
   late TextEditingController _ringingMessageController;
+  BuildContext? _pendingCallContext;
 
   final _liveQuery = LiveQuery();
 
@@ -115,7 +116,13 @@ class _GameScreenState extends State<GameScreen> {
       final realValue = value as ParseObject;
       if (realValue.objectId == _signaling.remoteId) {
         _signaling.hangUp();
-        setState(() {});
+        // cancel pending call if any
+        if (_pendingCallContext != null) {
+          Navigator.of(_pendingCallContext!).pop();
+          setState(() {
+            _pendingCallContext = null;
+          });
+        }
       }
     });
 
@@ -508,6 +515,7 @@ class _GameScreenState extends State<GameScreen> {
         barrierDismissible: false,
         context: context,
         builder: (BuildContext context2) {
+          _pendingCallContext = context2;
           return AlertDialog(
             title: I18nText("session.dialog_waiting_peer.title"),
             content: I18nText("session.dialog_waiting_peer.message"),
@@ -516,7 +524,9 @@ class _GameScreenState extends State<GameScreen> {
                 onPressed: () {
                   Navigator.of(context2).pop();
                   _signaling.cancelCallRequest();
-                  setState(() {});
+                  setState(() {
+                    _pendingCallContext = null;
+                  });
                 },
                 textContent: I18nText(
                   'buttons.cancel',

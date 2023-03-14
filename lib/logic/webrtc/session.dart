@@ -215,8 +215,10 @@ class Signaling {
   }
 
   Future<void> _closeCall() async {
+    /* TODO fix
     await _session.peerConnection?.close();
     await _session.dataChannel?.close();
+    */
     _removeReleatedOfferCandidates();
   }
 
