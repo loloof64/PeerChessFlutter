@@ -202,7 +202,6 @@ class Signaling {
           ..set('target', ParseObject('Peer')..objectId = remotePeerId)
           ..set('offerMessage', message)
           ..set('offer', candidate.toMap());
-        _callObjectId = dbCandidate.objectId;
         await dbCandidate.save();
       };
 

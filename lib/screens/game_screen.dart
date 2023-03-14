@@ -57,8 +57,6 @@ class _GameScreenState extends State<GameScreen> {
   bool _readyToConnect = false;
   String _remotePeerId = '';
   Session? _session;
-  bool _waitAccept = false;
-  bool _communicating = false;
   late TextEditingController _peerIdController;
   late TextEditingController _ringingMessageController;
   BuildContext? _pendingCallContext;
@@ -138,7 +136,17 @@ class _GameScreenState extends State<GameScreen> {
       final realTarget = target as ParseObject;
 
       if (realTarget.objectId == _signaling.selfId) {
-        if (context.mounted) _showAcceptDialog(context, peerMessage);
+        if (_signaling.callInProgress) {
+          final dbCandidate = ParseObject('AnswerCandidates')
+            ..set('owner', ParseObject('Peer')..objectId = _signaling.selfId)
+            ..set('target', ParseObject('Peer')..objectId = _signaling.remoteId)
+            ..set('accepted', false);
+          await dbCandidate.save();
+        } else {
+          if (context.mounted) {
+            _showAcceptDialog(peerMessage);
+          }
+        }
       }
     });
   }
@@ -484,9 +492,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   _hangUp() {
-    if (_session != null) {
-      // TODO _signaling.bye();
-    }
+    _signaling.hangUp();
   }
 
   void _sendMove(ShortMove move) {
@@ -545,10 +551,11 @@ class _GameScreenState extends State<GameScreen> {
         });
   }
 
-  Future<bool?> _showAcceptDialog(BuildContext context, String peerMessage) {
+  Future<bool?> _showAcceptDialog(String peerMessage) {
     return showDialog<bool?>(
+        barrierDismissible: false,
         context: context,
-        builder: (context) {
+        builder: (context2) {
           return AlertDialog(
             title: I18nText('session.dialog_accept.title'),
             content: Column(
@@ -565,6 +572,30 @@ class _GameScreenState extends State<GameScreen> {
                 ),
               ],
             ),
+            actions: [
+              DialogActionButton(
+                onPressed: () {
+                  Navigator.of(context2).pop();
+                  // TODO register an acceptation
+                },
+                textContent: I18nText(
+                  'buttons.ok',
+                ),
+                backgroundColor: Colors.tealAccent,
+                textColor: Colors.white,
+              ),
+              DialogActionButton(
+                onPressed: () {
+                  Navigator.of(context2).pop();
+                  // TODO register a refusal
+                },
+                textContent: I18nText(
+                  'buttons.cancel',
+                ),
+                textColor: Colors.white,
+                backgroundColor: Colors.redAccent,
+              )
+            ],
           );
         });
   }
