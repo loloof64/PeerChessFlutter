@@ -634,25 +634,6 @@ class _GameScreenState extends State<GameScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                I18nText('session.dialog_new.message'),
-                Container(
-                  color: Colors.grey[300],
-                  child: Padding(
-                    padding: const EdgeInsets.all(6.0),
-                    child: Text(
-                      _signaling.selfId!,
-                      style: const TextStyle(
-                        color: Colors.blue,
-                      ),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  onPressed: _copyIdToClipboard,
-                  icon: const Icon(
-                    Icons.copy,
-                  ),
-                ),
                 Container(
                   height: 30.0,
                 ),
