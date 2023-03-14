@@ -77,7 +77,6 @@ class _GameScreenState extends State<GameScreen> {
     );
 
     _signaling = Signaling();
-    _createLocalPeerAndSaveToDB();
     _showConnectButton = true;
 
     FlutterWindowClose.setWindowShouldCloseHandler(() async {
@@ -86,10 +85,6 @@ class _GameScreenState extends State<GameScreen> {
     });
 
     super.initState();
-  }
-
-  void _createLocalPeerAndSaveToDB() async {
-    await _signaling.createMyConnection();
   }
 
   @override

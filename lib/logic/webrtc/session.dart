@@ -114,13 +114,15 @@ class Signaling {
               'credential': turnPassword,
             },
           ]
-        };
+        } {
+    _createMyConnection();
+  }
 
-  Future<void> createMyConnection() async {
+  Future<void> _createMyConnection() async {
     _myConnection = await createPeerConnection(_iceServers);
     final peer = ParseObject('Peer');
-    _selfId = peer.objectId;
     final response = await peer.save();
+    _selfId = peer.objectId;
     if (response.error != null) {
       Logger().e(response.error);
     }
