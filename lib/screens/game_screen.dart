@@ -593,7 +593,6 @@ class _GameScreenState extends State<GameScreen> {
     );
     switch (response) {
       case MakingCallResult.remotePeerDoesNotExist:
-        if (context.mounted) Navigator.of(context).pop();
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
