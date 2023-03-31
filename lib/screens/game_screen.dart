@@ -604,13 +604,13 @@ class _GameScreenState extends State<GameScreen> {
     setState(() {
       _remotePeerId = _peerIdController.text;
 
-      _signaling.onDataChannelMessage = (_, dc, RTCDataChannelMessage data) {
+      _signaling.onDataChannelMessage = (dc, RTCDataChannelMessage data) {
         setState(() {
           _receivedPeerData = jsonDecode(data.text);
         });
       };
 
-      _signaling.onDataChannel = (_, channel) {
+      _signaling.onDataChannel = (channel) {
         _dataChannel = channel;
       };
 /* TODO fix or remove

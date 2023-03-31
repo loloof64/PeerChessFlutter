@@ -74,8 +74,6 @@ class Signaling {
   RTCDataChannel? _dataChannel;
   late RTCPeerConnection _myConnection;
 
-  late Session _session;
-
   String? _selfId;
   String? _remotePeerId;
 
@@ -153,9 +151,8 @@ class Signaling {
   String? get remoteId => _remotePeerId;
   bool get callInProgress => _remotePeerId != null;
 
-  Function(Session session, RTCDataChannel dc, RTCDataChannelMessage data)?
-      onDataChannelMessage;
-  Function(Session session, RTCDataChannel dc)? onDataChannel;
+  Function(RTCDataChannel dc, RTCDataChannelMessage data)? onDataChannelMessage;
+  Function(RTCDataChannel dc)? onDataChannel;
 
   void cancelCallRequest() {
     if (_signallingInProgress = false) return;
@@ -166,7 +163,7 @@ class Signaling {
   Future<void> acceptAnswer() async {
     _signallingInProgress = false;
     // TODO update OfferCandidates with status set to Accepted
-    _session.peerConnection?.onDataChannel = (channel) {
+    _myConnection.onDataChannel = (channel) {
       _dataChannel = channel;
       _dataChannel!.onMessage = (data) {
         print(data);
@@ -223,26 +220,26 @@ class Signaling {
   }
 
   Future<void> _closeCall() async {
-    await _session.peerConnection?.close();
-    await _session.dataChannel?.close();
+    await _myConnection.close();
+    await _dataChannel?.close();
+    _dataChannel = null;
     _removeReleatedOfferCandidates();
   }
 
   void _addDataChannel(RTCDataChannel channel) {
     channel.onDataChannelState = (e) {};
     channel.onMessage = (RTCDataChannelMessage data) {
-      onDataChannelMessage?.call(_session, channel, data);
+      onDataChannelMessage?.call(channel, data);
     };
-    _session.dataChannel = channel;
-    onDataChannel?.call(_session, channel);
+    _dataChannel = channel;
+    onDataChannel?.call(channel);
   }
 
   Future<void> _createDataChannel({label = 'dataTransfer'}) async {
-    RTCDataChannelInit dataChannelDict = RTCDataChannelInit()
-      ..maxRetransmits = 30;
-    RTCDataChannel? channel = await _session.peerConnection
-        ?.createDataChannel(label, dataChannelDict);
-    if (channel != null) _addDataChannel(channel);
+    final dataChannelDict = RTCDataChannelInit()..maxRetransmits = 30;
+    final channel =
+        await _myConnection.createDataChannel(label, dataChannelDict);
+    _addDataChannel(channel);
   }
 
   Future<void> hangUp() async {
