@@ -126,8 +126,10 @@ class Signaling {
   }
 
   Future<void> _createMyConnection() async {
-    await mediaDevices.getUserMedia({"audio": false, "video": false});
+    final stream =
+        await mediaDevices.getUserMedia({"audio": false, "video": false});
     _myConnection = await createPeerConnection(_iceServers);
+    _myConnection.addStream(stream);
     final peer = ParseObject('Peer');
     final response = await peer.save();
     _selfId = peer.objectId;
