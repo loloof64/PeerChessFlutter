@@ -67,14 +67,6 @@ enum SignalingState {
   connectionError,
 }
 
-enum CallState {
-  callStateNew,
-  callStateRinging,
-  callStateInvite,
-  callStateConnected,
-  callStateBye,
-}
-
 const turnUsername = 'e70ea9d69e030b5e912b12b2';
 const turnPassword = 'wKYehfEx0+I4Q1G';
 
@@ -87,17 +79,11 @@ class Signaling {
   String? _selfId;
   String? _remotePeerId;
 
+  bool _signallingInProgress = false;
+
   String? _callObjectId;
 
   final Map<String, dynamic> _iceServers;
-
-  final Map<String, dynamic> _dcConstraints = {
-    'mandatory': {
-      'OfferToReceiveAudio': false,
-      'OfferToReceiveVideo': false,
-    },
-    'optional': [],
-  };
 
   Signaling()
       : _iceServers = {
@@ -167,16 +153,30 @@ class Signaling {
   String? get remoteId => _remotePeerId;
   bool get callInProgress => _remotePeerId != null;
 
-  Function(SignalingState state)? onSignalingStateChange;
-  Function(Session session, CallState state)? onCallStateChange;
-
   Function(Session session, RTCDataChannel dc, RTCDataChannelMessage data)?
       onDataChannelMessage;
   Function(Session session, RTCDataChannel dc)? onDataChannel;
 
   void cancelCallRequest() {
-    //TODO check if no call is in progress
+    if (_signallingInProgress = false) return;
+    _signallingInProgress = false;
     _remotePeerId = null;
+  }
+
+  Future<void> acceptAnswer() async {
+    _signallingInProgress = false;
+    // TODO update OfferCandidates with status set to Accepted
+    _session.peerConnection?.onDataChannel = (channel) {
+      _dataChannel = channel;
+      _dataChannel!.onMessage = (data) {
+        print(data);
+      };
+    };
+  }
+
+  Future<void> declineAnswer() async {
+    _signallingInProgress = false;
+    // TODO update OfferCandidates with status set to Rejected
   }
 
   Future<MakingCallResult> makeCall({
@@ -199,6 +199,8 @@ class Signaling {
       }
 
       _remotePeerId = remotePeerId;
+      _signallingInProgress = true;
+      await _createDataChannel();
 
       RTCSessionDescription? offerDescription;
       // create call object
@@ -221,10 +223,8 @@ class Signaling {
   }
 
   Future<void> _closeCall() async {
-    /* TODO fix
     await _session.peerConnection?.close();
     await _session.dataChannel?.close();
-    */
     _removeReleatedOfferCandidates();
   }
 
@@ -237,13 +237,12 @@ class Signaling {
     onDataChannel?.call(_session, channel);
   }
 
-  Future<void> _createDataChannel(Session session,
-      {label = 'dataTransfer'}) async {
+  Future<void> _createDataChannel({label = 'dataTransfer'}) async {
     RTCDataChannelInit dataChannelDict = RTCDataChannelInit()
       ..maxRetransmits = 30;
-    RTCDataChannel channel =
-        await session.peerConnection!.createDataChannel(label, dataChannelDict);
-    _addDataChannel(channel);
+    RTCDataChannel? channel = await _session.peerConnection
+        ?.createDataChannel(label, dataChannelDict);
+    if (channel != null) _addDataChannel(channel);
   }
 
   Future<void> hangUp() async {
