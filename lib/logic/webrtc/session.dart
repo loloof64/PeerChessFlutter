@@ -126,6 +126,7 @@ class Signaling {
   }
 
   Future<void> _createMyConnection() async {
+    await mediaDevices.getUserMedia({"audio": false, "video": false});
     _myConnection = await createPeerConnection(_iceServers);
     final peer = ParseObject('Peer');
     final response = await peer.save();
@@ -181,6 +182,7 @@ class Signaling {
     required String message,
   }) async {
     final noRemotePeerSetYet = _remotePeerId == null;
+
     if (noRemotePeerSetYet) {
       // checking that target peer exists
       QueryBuilder<ParseObject> queryRemotePeer =
@@ -199,21 +201,13 @@ class Signaling {
       RTCSessionDescription? offerDescription;
       // create call object
       _myConnection.onIceCandidate = (event) async {
-        /////////////////////////////////////
-        Logger().d(event.candidate);
-        /////////////////////////////////////
-        if (event.candidate != null) {
-          final dbCandidate = ParseObject('OfferCandidates')
-            ..set('owner', ParseObject('Peer')..objectId = selfId)
-            ..set('target', ParseObject('Peer')..objectId = remotePeerId)
-            ..set('offerMessage', message)
-            ..set('offer', event.candidate!)
-            ..set('description', offerDescription?.toMap());
-          final success = await dbCandidate.save();
-          ////////////////////////////////////////
-          Logger().d(success);
-          /////////////////////////////////////////
-        }
+        final dbCandidate = ParseObject('OfferCandidates')
+          ..set('owner', ParseObject('Peer')..objectId = selfId)
+          ..set('target', ParseObject('Peer')..objectId = remotePeerId)
+          ..set('offerMessage', message)
+          ..set('offer', event.candidate!)
+          ..set('description', offerDescription?.toMap());
+        await dbCandidate.save();
       };
 
       offerDescription = await _myConnection.createOffer();
