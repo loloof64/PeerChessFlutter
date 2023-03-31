@@ -22,7 +22,7 @@ import 'dart:math';
 import 'package:collection_ext/ranges.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:logger/logger.dart';
-import 'package:parse_server_sdk_flutter/parse_server_sdk.dart';
+import 'package:parse_server_sdk/parse_server_sdk.dart';
 
 enum MakingCallResult {
   success,
@@ -180,11 +180,8 @@ class Signaling {
     required String remotePeerId,
     required String message,
   }) async {
-    ////////////////////////////
-    Logger().d("Launching make call.");
-    /////////////////////////////
-
-    if (_remotePeerId == null) {
+    final noRemotePeerSetYet = _remotePeerId == null;
+    if (noRemotePeerSetYet) {
       // checking that target peer exists
       QueryBuilder<ParseObject> queryRemotePeer =
           QueryBuilder<ParseObject>(ParseObject('Peer'))
@@ -202,10 +199,9 @@ class Signaling {
       RTCSessionDescription? offerDescription;
       // create call object
       _myConnection.onIceCandidate = (event) async {
-        /////////////////////////////
-        Logger().d("Setting ice candidate ${event.candidate}.");
-        Logger().d(offerDescription);
-        //////////////////////////////
+        /////////////////////////////////////
+        Logger().d(event.candidate);
+        /////////////////////////////////////
         if (event.candidate != null) {
           final dbCandidate = ParseObject('OfferCandidates')
             ..set('owner', ParseObject('Peer')..objectId = selfId)
@@ -213,7 +209,10 @@ class Signaling {
             ..set('offerMessage', message)
             ..set('offer', event.candidate!)
             ..set('description', offerDescription?.toMap());
-          await dbCandidate.save();
+          final success = await dbCandidate.save();
+          ////////////////////////////////////////
+          Logger().d(success);
+          /////////////////////////////////////////
         }
       };
 

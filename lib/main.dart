@@ -21,7 +21,7 @@ import 'package:flutter_i18n/flutter_i18n.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_i18n/loaders/decoders/yaml_decode_strategy.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:parse_server_sdk_flutter/parse_server_sdk.dart';
+import 'package:parse_server_sdk/parse_server_sdk.dart';
 import 'package:logger/logger.dart';
 import 'screens/game_screen.dart';
 import 'screens/new_game_screen.dart';
