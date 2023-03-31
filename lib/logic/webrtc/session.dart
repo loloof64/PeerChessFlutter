@@ -22,7 +22,7 @@ import 'dart:math';
 import 'package:collection_ext/ranges.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:logger/logger.dart';
-import 'package:parse_server_sdk/parse_server_sdk.dart';
+import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
 
 enum MakingCallResult {
   success,

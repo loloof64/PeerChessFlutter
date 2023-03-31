@@ -45,7 +45,7 @@ dependencies:
   editable_chess_board: ^0.1.6
   flutter_webrtc: ^0.9.22
   collection_ext: ^1.0.0
-  parse_server_sdk: ^4.0.2
+  parse_server_sdk_flutter: ^4.0.0
   window_manager: ^0.3.1
   flutter_window_close: ^0.2.2
 
