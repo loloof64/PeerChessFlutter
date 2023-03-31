@@ -180,6 +180,10 @@ class Signaling {
     required String remotePeerId,
     required String message,
   }) async {
+    ////////////////////////////
+    Logger().d("Launching make call.");
+    /////////////////////////////
+
     if (_remotePeerId == null) {
       // checking that target peer exists
       QueryBuilder<ParseObject> queryRemotePeer =
@@ -195,17 +199,25 @@ class Signaling {
 
       _remotePeerId = remotePeerId;
 
+      RTCSessionDescription? offerDescription;
       // create call object
-      _myConnection.onIceCandidate = (candidate) async {
-        final dbCandidate = ParseObject('OfferCandidates')
-          ..set('owner', ParseObject('Peer')..objectId = selfId)
-          ..set('target', ParseObject('Peer')..objectId = remotePeerId)
-          ..set('offerMessage', message)
-          ..set('offer', candidate.toMap());
-        await dbCandidate.save();
+      _myConnection.onIceCandidate = (event) async {
+        /////////////////////////////
+        Logger().d("Setting ice candidate ${event.candidate}.");
+        Logger().d(offerDescription);
+        //////////////////////////////
+        if (event.candidate != null) {
+          final dbCandidate = ParseObject('OfferCandidates')
+            ..set('owner', ParseObject('Peer')..objectId = selfId)
+            ..set('target', ParseObject('Peer')..objectId = remotePeerId)
+            ..set('offerMessage', message)
+            ..set('offer', event.candidate!)
+            ..set('description', offerDescription?.toMap());
+          await dbCandidate.save();
+        }
       };
 
-      final offerDescription = await _myConnection.createOffer();
+      offerDescription = await _myConnection.createOffer();
       await _myConnection.setLocalDescription(offerDescription);
 
       return MakingCallResult.success;
