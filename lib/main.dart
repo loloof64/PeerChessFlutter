@@ -20,8 +20,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_i18n/flutter_i18n.dart';
 import 'package:flutter_i18n/loaders/decoders/json_decode_strategy.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
+import 'package:peer_chess/logic/parse_connectivity_provider.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:parse_server_sdk/parse_server_sdk.dart';
 import 'package:logger/logger.dart';
 import 'screens/game_screen.dart';
 import 'screens/new_game_screen.dart';
@@ -41,6 +42,7 @@ void main() async {
   await Parse().initialize(
       'miDs69HfuESoNcAmft4555vsH4mCpPf7L1HNUZaE', parseServerUrl,
       clientKey: 'ewc4mqE5ukU2DIgWGtU5m7A7bsiYGMjTnutfH9iX',
+      connectivityProvider: CustomParseConnectivityProvider(),
       liveQueryUrl: 'https://peerchessconnector.b4a.io');
 
   runApp(const MyApp());
