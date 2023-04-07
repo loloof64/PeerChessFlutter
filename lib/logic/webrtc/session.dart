@@ -17,12 +17,15 @@
 */
 // Using code from https://github.com/flutter-webrtc/flutter-webrtc-demo/blob/master/lib/src/call_sample/random_string.dart
 
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:collection_ext/ranges.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:logger/logger.dart';
 import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 
 enum MakingCallResult {
   success,
@@ -67,9 +70,6 @@ enum SignalingState {
   connectionError,
 }
 
-const turnUsername = 'e70ea9d69e030b5e912b12b2';
-const turnPassword = 'wKYehfEx0+I4Q1G';
-
 class Signaling {
   RTCDataChannel? _dataChannel;
   late RTCPeerConnection _myConnection;
@@ -81,32 +81,25 @@ class Signaling {
 
   String? _callObjectId;
 
-  final Map<String, dynamic> _iceServers;
+  late Map<String, dynamic> _iceServers;
 
-  Signaling()
-      : _iceServers = {
-          'iceServers': [
-            {
-              'urls': "stun:openrelay.metered.ca:80",
-            },
-            {
-              'urls': "turn:openrelay.metered.ca:80",
-              'username': turnUsername,
-              'credential': turnPassword,
-            },
-            {
-              'urls': "turn:openrelay.metered.ca:443",
-              'username': turnUsername,
-              'credential': turnPassword,
-            },
-            {
-              'urls': "turn:openrelay.metered.ca:443?transport=tcp",
-              'username': turnUsername,
-              'credential': turnPassword,
-            },
-          ]
-        } {
-    _createMyConnection();
+  Signaling() {
+    _initializeIceServers().then((value) => _createMyConnection());
+  }
+
+  Future<void> _initializeIceServers() async {
+    final String credentialsText =
+        await rootBundle.loadString('assets/credentials/turn_credentials.json');
+    final credentials = await json.decode(credentialsText);
+
+    final apiKey = credentials['apiKey'] as String;
+    final response = await http.get(Uri.parse(
+        "https://peer-chess.metered.live/api/v1/turn/credentials?apiKey=$apiKey"));
+
+    // Saving the response in the iceServers array
+    final serversText = response.body;
+    final serversJson = await json.decode(serversText);
+    _iceServers = {'iceServers': serversJson};
   }
 
   Future<void> _createMyConnection() async {
