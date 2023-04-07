@@ -18,8 +18,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_i18n/flutter_i18n.dart';
+import 'package:flutter_i18n/loaders/decoders/json_decode_strategy.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_i18n/loaders/decoders/yaml_decode_strategy.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:parse_server_sdk/parse_server_sdk.dart';
 import 'package:logger/logger.dart';
@@ -63,7 +63,7 @@ class MyApp extends StatelessWidget {
             basePath: 'assets/i18n',
             useCountryCode: false,
             fallbackFile: 'en',
-            decodeStrategies: [YamlDecodeStrategy()],
+            decodeStrategies: [JsonDecodeStrategy()],
           ),
           missingTranslationHandler: (key, locale) {
             Logger().w(

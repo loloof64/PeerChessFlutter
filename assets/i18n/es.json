@@ -1,0 +1,74 @@
+{
+    "game_page": {
+        "title": "Página del juego",
+        "userid": "Su identificación"
+    },
+    "buttons": {
+        "ok": "De acuerdo",
+        "cancel": "Anular"
+    },
+    "game": {
+        "promotion_dialog_title": "Selecciona la pieza de promoción",
+        "stop_game_title": "¿Detener el juego?",
+        "stop_game_msg": "¿Quieres detener el juego actual?",
+        "stopped": "Juego terminado.",
+        "restart_game_title": "¿Nuevo juego?",
+        "no_matching_peer": "No hay compañero con esta identificación."
+    },
+    "game_termination": {
+        "black_checkmate_white": "Los Negros ha ganado por jaque mate.",
+        "white_checkmate_black": "Los Blancos ha ganado por jaque mate.",
+        "stalemate": "Empate por estancamiento.",
+        "repetitions": "Empate por tres repeticiones.",
+        "insufficient_material": "Empate por material insuficiente.",
+        "fifty_moves": "Empate por la regla de los 50 movimientos."
+    },
+    "new_game": {
+        "title": "Nuevo juego",
+        "edit_position": "Editar la posición",
+        "position_editor": {
+            "title": "Editar la posición",
+            "label_player_turn": "Turno del jugador",
+            "label_white_player": "Los Blancos",
+            "label_black_player": "Los Negros",
+            "label_available_castles": "Castillos disponibles",
+            "label_white_OO": "Blancos O-O",
+            "label_white_OOO": "Blancos O-O-O",
+            "label_black_OO": "Negros O-O",
+            "label_black_OOO": "Negros O-O-O",
+            "label_en_passant": "Plaza en passant",
+            "label_draw_half_moves_count": "Golpes cuenta para nullidad",
+            "label_move_number": "Número de golpe",
+            "label_submit_field": "Validar campo de texto",
+            "label_current_position": "Posición actual",
+            "label_copy_fen": "Copiar posición",
+            "label_paste_fen": "Pegar posición",
+            "label_reset_position": "Restablecer posición",
+            "label_standard_position": "Estándar posición",
+            "label_clear_position": "Effacer posición",
+            "illegal_position_error": "Ilícita posición !",
+            "label_player_side": "Su lado"
+        }
+    },
+    "session": {
+        "dialog_new": {
+            "title": "Nueva sesión",
+            "message": "Envíe la siguiente identificación a su compañero:",
+            "message_2": "Ingrese su identificación de compañero aquí:",
+            "peerIdPlaceholder": "Su identificación de compañero",
+            "ringingMessagePlaceholder": "Su mensaje"
+        }
+    },
+    "dialog_waiting_peer": {
+        "title": "Esperando a tu compañero",
+        "message": "Esperando ..."
+    },
+    "dialog_accept": {
+        "title": "¿Conectar con un compañero?",
+        "message": "¿Quieres conectarte a compañero?"
+    },
+    "dialog_my_id": {
+        "title": "Your id",
+        "blocked_incoming_request": "Bloqueó una solicitud entrante."
+    }
+}
