@@ -40,10 +40,12 @@ void main() async {
   );
 
   await Parse().initialize(
-      'miDs69HfuESoNcAmft4555vsH4mCpPf7L1HNUZaE', parseServerUrl,
-      clientKey: 'ewc4mqE5ukU2DIgWGtU5m7A7bsiYGMjTnutfH9iX',
-      connectivityProvider: CustomParseConnectivityProvider(),
-      liveQueryUrl: 'https://peerchessconnector.b4a.io');
+    'miDs69HfuESoNcAmft4555vsH4mCpPf7L1HNUZaE',
+    parseServerUrl,
+    clientKey: 'ewc4mqE5ukU2DIgWGtU5m7A7bsiYGMjTnutfH9iX',
+    connectivityProvider: CustomParseConnectivityProvider(),
+    liveQueryUrl: 'https://peerchessconnector.b4a.io',
+  );
 
   runApp(const MyApp());
 }
