@@ -58,7 +58,8 @@ class _GameScreenState extends State<GameScreen> {
   late TextEditingController _ringingMessageController;
   late TextEditingController _denyRequestMessageController;
   BuildContext? _pendingCallContext;
-  bool _pendingRequest = false;
+  bool _sessionActive = false;
+  String? _remoteId;
 
   final _liveQuery = LiveQuery();
 
@@ -109,83 +110,11 @@ class _GameScreenState extends State<GameScreen> {
     super.dispose();
   }
 
-  Future<void> _handleIncomingRequestAccepted() async {
-    // todo accept request
-    setState(() {
-      _pendingRequest = false;
-    });
-  }
-
-  Future<void> _completeDenyingRequestProcess(String message) async {
-    // get room object
-    QueryBuilder<ParseObject> queryRoom =
-        QueryBuilder<ParseObject>(ParseObject('Room'));
-    final ParseResponse apiResponse = await queryRoom.query();
-    if (!apiResponse.success || apiResponse.results == null) {
-      Logger().e('The room does not exist in database.');
-      setState(() {
-        _pendingRequest = false;
-      });
-    }
-
-    final roomInstance = apiResponse.results?.first as ParseObject;
-    roomInstance.set('accepted', false);
-    roomInstance.set('answerMessage', message);
-    roomInstance.set('joiner', null);
-    roomInstance.set('requestMessage', null);
-    final dbAnswer = await roomInstance.save();
-
-    if (!dbAnswer.success) {
-      Logger().e(dbAnswer.error);
-    }
-
-    setState(() {
-      _pendingRequest = false;
-    });
-  }
-
-  Future<void> _handleIncomingRequestDenied() async {
-    if (mounted) {
-      setState(() {
-        _denyRequestMessageController.text = '';
-      });
-      showDialog(
-          barrierDismissible: false,
-          context: context,
-          builder: (ctx2) {
-            return AlertDialog(
-              title: I18nText('game.choose_deny_message_title'),
-              content: TextField(
-                controller: _denyRequestMessageController,
-                maxLines: 6,
-              ),
-              actions: [
-                DialogActionButton(
-                  onPressed: () {
-                    Navigator.of(ctx2).pop();
-                    _completeDenyingRequestProcess(
-                        _denyRequestMessageController.text);
-                  },
-                  textContent: I18nText(
-                    'buttons.ok',
-                  ),
-                  backgroundColor: Colors.tealAccent,
-                  textColor: Colors.white,
-                ),
-              ],
-            );
-          });
-    } else {
-      _completeDenyingRequestProcess('');
-    }
-  }
-
   void _startLiveQuery() async {
     _peerSubscription = await _liveQuery.client.subscribe(_queryPeer);
     _peerSubscription.on(LiveQueryEvent.delete, (value) {
       final realValue = value as ParseObject;
-      final isTheInstanceWeNeedToDelete =
-          realValue.objectId == _signaling.remoteId;
+      final isTheInstanceWeNeedToDelete = realValue.objectId == _remoteId;
       if (isTheInstanceWeNeedToDelete) {
         _signaling.hangUp();
         // cancel pending call if any
@@ -211,90 +140,10 @@ class _GameScreenState extends State<GameScreen> {
           final thereIsAJoiner = realValue.get<ParseObject>('joiner') != null;
           if (thereIsAJoiner) {
             setState(() {
-              _pendingRequest = true;
+              _remoteId = realValue.get<ParseObject>('joiner')?.objectId;
+              _sessionActive = true;
             });
-            final message = realValue.get<String>('requestMessage');
-            await showDialog(
-                barrierDismissible: false,
-                context: context,
-                builder: (ctx2) {
-                  return AlertDialog(
-                    title: I18nText('game.incoming_request_title'),
-                    content: Text(message ?? ''),
-                    actions: [
-                      DialogActionButton(
-                        onPressed: () {
-                          Navigator.of(ctx2).pop();
-                          _handleIncomingRequestAccepted();
-                        },
-                        textContent: I18nText(
-                          'buttons.ok',
-                        ),
-                        backgroundColor: Colors.tealAccent,
-                        textColor: Colors.white,
-                      ),
-                      DialogActionButton(
-                        onPressed: () {
-                          Navigator.of(ctx2).pop();
-                          _handleIncomingRequestDenied();
-                        },
-                        textContent: I18nText(
-                          'buttons.deny',
-                        ),
-                        textColor: Colors.white,
-                        backgroundColor: Colors.redAccent,
-                      )
-                    ],
-                  );
-                });
-          } // thereIsAJoiner
-          else {
-            final thereIsAPendingRequest = _pendingRequest;
-            if (thereIsAPendingRequest) {
-              // clearing accept/deny request dialog
-              Navigator.of(context).pop();
-
-              setState(() {
-                _pendingRequest = false;
-              });
-
-              // notifying us
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: I18nText('game.aborted_request_by_peer')),
-              );
-            }
-          }
-        } // weAreTheOwner
-        else if (weAreTheJoiner) {
-          final accepted = realValue.get<bool>('accepted');
-          final answerMessage = realValue.get<String>('answerMessage') ?? '';
-          if (accepted == false) {
-            // Cancelling waiting answer dialog
-            Navigator.of(context).pop();
-
-            // Showing dialog
-            if (!mounted) return;
-            await showDialog(
-                barrierDismissible: false,
-                context: context,
-                builder: (ctx2) {
-                  return AlertDialog(
-                    title: I18nText('game.denied_connection_title'),
-                    content: Text(answerMessage),
-                    actions: [
-                      DialogActionButton(
-                        onPressed: () {
-                          Navigator.of(ctx2).pop();
-                        },
-                        textContent: I18nText(
-                          'buttons.ok',
-                        ),
-                        backgroundColor: Colors.tealAccent,
-                        textColor: Colors.white,
-                      ),
-                    ],
-                  );
-                });
+            // TODO create WebRTC session
           }
         }
       }
@@ -758,7 +607,7 @@ class _GameScreenState extends State<GameScreen> {
           return AlertDialog(
             title: I18nText("game.join_room"),
             content: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 I18nText('game.enterRoomId'),
                 Row(
@@ -786,14 +635,6 @@ class _GameScreenState extends State<GameScreen> {
                     ),
                   ],
                 ),
-                TextField(
-                  controller: _ringingMessageController,
-                  maxLines: 6,
-                  decoration: InputDecoration(
-                    hintText: FlutterI18n.translate(
-                        context, "game.joininingMessageHint"),
-                  ),
-                )
               ],
             ),
             actions: [
@@ -832,30 +673,34 @@ class _GameScreenState extends State<GameScreen> {
       appBar: AppBar(
         title: I18nText('game_page.title'),
         actions: [
-          IconButton(
-            onPressed: _createRoom,
-            icon: const Icon(
-              Icons.room,
+          if (!_sessionActive)
+            IconButton(
+              onPressed: _createRoom,
+              icon: const Icon(
+                Icons.room,
+              ),
             ),
-          ),
-          IconButton(
-            onPressed: _joinRoom,
-            icon: const Icon(
-              Icons.door_sliding,
+          if (!_sessionActive)
+            IconButton(
+              onPressed: _joinRoom,
+              icon: const Icon(
+                Icons.door_sliding,
+              ),
             ),
-          ),
-          IconButton(
-            onPressed: _purposeStopGame,
-            icon: const Icon(
-              Icons.stop_circle,
+          if (_sessionActive)
+            IconButton(
+              onPressed: _purposeStopGame,
+              icon: const Icon(
+                Icons.stop_circle,
+              ),
             ),
-          ),
-          IconButton(
-            onPressed: _toggleBoardOrientation,
-            icon: const Icon(
-              Icons.swap_vert_circle,
+          if (_sessionActive)
+            IconButton(
+              onPressed: _toggleBoardOrientation,
+              icon: const Icon(
+                Icons.swap_vert_circle,
+              ),
             ),
-          ),
         ],
       ),
       body: Center(

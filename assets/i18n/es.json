@@ -5,8 +5,7 @@
     },
     "buttons": {
         "ok": "De acuerdo",
-        "cancel": "Anular",
-        "deny": "Denegar"
+        "cancel": "Anular"
     },
     "clipboard": {
         "content_copied": "Texto copiado en portapapeles."
@@ -20,19 +19,13 @@
         "room_creation_msg": "Por favor, comparte esta identificación de sala con su oponente,",
         "room_creation_msg2": "para que se una a la sala de juegos:",
         "join_room": "Vener a una sala",
-        "waiting_response": "Respuesta en espera del anfitrión (o de la anfitriona) de la sala.",
         "enterRoomId": "Por favor, introduzca la identificación de la sala:",
         "roomIdHint": "la identificación de la sala",
-        "joininingMessageHint": "Tu mensaje para el dueño de la sala",
         "no_matching_room": "No hay sala con esta identificación.",
         "already_created_room": "No puedes crear dos salas a la vez.",
         "failed_creating_room": "No se pudo crear la sala.",
         "busy_room": "La sala ya está ocupada o ya hay una solicitud de ingreso en curso.",
-        "already_a_pending_request": "No puedes hacer dos solicitas a la vez.",
-        "incoming_request_title": "Solicitud entrante",
-        "aborted_request_by_peer": "El usuario (la usario) ha cancelado su solicitud.",
-        "choose_deny_message_title": "Puedes escribir un mensaje de denegación",
-        "denied_connection_title": "Conexión denegada"
+        "already_a_pending_request": "No puedes hacer dos solicitas a la vez."
     },
     "game_termination": {
         "black_checkmate_white": "Los Negros ha ganado por jaque mate.",

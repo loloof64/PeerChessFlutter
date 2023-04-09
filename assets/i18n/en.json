@@ -5,8 +5,7 @@
     },
     "buttons": {
         "ok": "OK",
-        "cancel": "Cancel",
-        "deny": "Deny"
+        "cancel": "Cancel"
     },
     "clipboard": {
         "content_copied": "Text copied into clipboard."
@@ -20,19 +19,13 @@
         "room_creation_msg": "Please, share this room id with your opponent,",
         "room_creation_msg2": "for him to join the game room :",
         "join_room": "Join a room",
-        "waiting_response": "Waiting response from room's host.",
         "enterRoomId": "Please, enter the room id :",
         "roomIdHint": "The room id",
-        "joininingMessageHint": "Your message for the room owner",
         "no_matching_room": "There's no room with this id.",
         "already_created_room": "You can't create two rooms at twice.",
         "failed_creating_room": "Failed to create room.",
         "busy_room": "The room is already busy or a joining request is already in progress.",
-        "already_a_pending_request": "You can't make two requests at once.",
-        "incoming_request_title": "Incoming request",
-        "aborted_request_by_peer": "User has cancelled his request.",
-        "choose_deny_message_title": "You can write deny message",
-        "denied_connection_title": "Denied connection"
+        "already_a_pending_request": "You can't make two requests at once."
     },
     "game_termination": {
         "black_checkmate_white": "Black has won by checkmate.",

@@ -5,8 +5,7 @@
     },
     "buttons": {
         "ok": "D'accord",
-        "cancel": "Annuler",
-        "deny": "Refuser"
+        "cancel": "Annuler"
     },
     "clipboard": {
         "content_copied": "Texte copié dans le presse-papier."
@@ -20,19 +19,13 @@
         "room_creation_msg": "Veuillez communiquer cet identifiant de salon à votre adversaire,",
         "room_creation_msg2": "afin qu'il puisse vous rejoindre :",
         "join_room": "Rejoindre un salon",
-        "waiting_response": "En attente de réponse du hôte de la salle.",
         "enterRoomId": "Veuillez entrer l'identifiant du salon :",
         "roomIdHint": "l'identifiant du salon",
-        "joininingMessageHint": "Votre message pour le propriétaire du salon",
         "no_matching_room": "Aucune salle ne correspond cet identifiant.",
         "already_created_room": "Vous ne pouvez pas créér deux salons simultanément.",
         "failed_creating_room": "Erreur lors de la de création de la salle.",
         "busy_room": "La salle est occupée ou une requête de jeu est déjà en cours pour ladite salle.",
-        "already_a_pending_request": "Impossible de passer deux requêtes à la fois.",
-        "incoming_request_title": "Requête entrante",
-        "aborted_request_by_peer": "L'utilisateur a annulé sa requête.",
-        "choose_deny_message_title": "Vous pouvez écrire un message de refus",
-        "denied_connection_title": "Connexion refusée"
+        "already_a_pending_request": "Impossible de passer deux requêtes à la fois."
     },
     "game_termination": {
         "black_checkmate_white": "Les Noirs gagnent par échec et mat.",

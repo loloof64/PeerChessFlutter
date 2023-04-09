@@ -75,10 +75,7 @@ class Signaling {
   String? _selfId;
   String? _roomId;
 
-  bool _signallingInProgress = false;
   String? get roomId => _roomId;
-  // TODO adapt
-  String? get remoteId => null;
 
   late Map<String, dynamic> _iceServers;
 
@@ -185,29 +182,6 @@ class Signaling {
 
   Function(RTCDataChannel dc, RTCDataChannelMessage data)? onDataChannelMessage;
   Function(RTCDataChannel dc)? onDataChannel;
-
-  void cancelCallRequest() {
-    if (_signallingInProgress == false) return;
-    _signallingInProgress = false;
-  }
-
-  Future<void> acceptAnswer() async {
-    if (_signallingInProgress == false) return;
-    _signallingInProgress = false;
-    // TODO update OfferCandidates with status set to Accepted
-    _myConnection.onDataChannel = (channel) {
-      _dataChannel = channel;
-      _dataChannel!.onMessage = (data) {
-        print(data);
-      };
-    };
-  }
-
-  Future<void> declineAnswer() async {
-    if (_signallingInProgress == false) return;
-    _signallingInProgress = false;
-    // TODO update OfferCandidates with status set to Rejected
-  }
 
   Future<void> _closeCall() async {
     await _myConnection.close();
