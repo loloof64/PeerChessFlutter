@@ -141,11 +141,25 @@ class _GameScreenState extends State<GameScreen> {
           if (thereIsAJoiner) {
             // removing room id dialog
             Navigator.of(context).pop();
+
+            // register connected flag in DB
+            realValue.set('connected', true);
+            await realValue.save();
+
+            // update state
             setState(() {
               _remoteId = realValue.get<ParseObject>('joiner')?.objectId;
               _sessionActive = true;
             });
             // TODO create WebRTC session
+          } else if (weAreTheJoiner) {
+            final connected = realValue.get<bool>('connected');
+            if (connected == true) {
+              setState(() {
+                _remoteId = realValue.get<ParseObject>('owner')?.objectId;
+                _sessionActive = true;
+              });
+            }
           }
         }
       }
@@ -582,6 +596,7 @@ class _GameScreenState extends State<GameScreen> {
     });
 
     showDialog(
+        barrierDismissible: false,
         context: context,
         builder: (ctx2) {
           return AlertDialog(
