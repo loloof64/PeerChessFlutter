@@ -54,9 +54,9 @@ class _GameScreenState extends State<GameScreen> {
   late Signaling _signaling;
   Map<String, String> _receivedPeerData = {};
   RTCDataChannel? _dataChannel;
-  bool _readyToConnect = false;
   late TextEditingController _roomIdController;
   late TextEditingController _ringingMessageController;
+  late TextEditingController _denyRequestMessageController;
   BuildContext? _pendingCallContext;
   bool _pendingRequest = false;
 
@@ -77,6 +77,7 @@ class _GameScreenState extends State<GameScreen> {
   void initState() {
     _roomIdController = TextEditingController();
     _ringingMessageController = TextEditingController();
+    _denyRequestMessageController = TextEditingController();
     _gameManager = GameManager();
     _historyManager = HistoryManager(
       onUpdateChildrenWidgets: _updateHistoryChildrenWidgets,
@@ -86,7 +87,6 @@ class _GameScreenState extends State<GameScreen> {
     );
 
     _signaling = Signaling();
-    _readyToConnect = true;
 
     FlutterWindowClose.setWindowShouldCloseHandler(() async {
       await _signaling.removePeerFromDB();
@@ -103,6 +103,7 @@ class _GameScreenState extends State<GameScreen> {
   void dispose() {
     _roomIdController.dispose();
     _ringingMessageController.dispose();
+    _denyRequestMessageController.dispose();
     _signaling.removePeerFromDB();
     _cancelLiveQuery();
     super.dispose();
@@ -115,11 +116,65 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
-  Future<void> _handleIncomingRequestRefused() async {
-    // todo refuse request
+  Future<void> _completeDenyingRequestProcess(String message) async {
+    // get room object
+    QueryBuilder<ParseObject> queryRoom =
+        QueryBuilder<ParseObject>(ParseObject('Room'));
+    final ParseResponse apiResponse = await queryRoom.query();
+    if (!apiResponse.success || apiResponse.results == null) {
+      Logger().e('The room does not exist in database.');
+      setState(() {
+        _pendingRequest = false;
+      });
+    }
+
+    final roomInstance = apiResponse.results?.first as ParseObject;
+    roomInstance.set('accepted', false);
+    roomInstance.set('answerMessage', message);
+    final dbAnswer = await roomInstance.save();
+
+    if (!dbAnswer.success) {
+      Logger().e(dbAnswer.error);
+    }
+
     setState(() {
       _pendingRequest = false;
     });
+  }
+
+  Future<void> _handleIncomingRequestDenied() async {
+    if (mounted) {
+      setState(() {
+        _denyRequestMessageController.text = '';
+      });
+      showDialog(
+          barrierDismissible: false,
+          context: context,
+          builder: (ctx2) {
+            return AlertDialog(
+              title: I18nText('game.choose_deny_message_title'),
+              content: TextField(
+                controller: _denyRequestMessageController,
+              ),
+              actions: [
+                DialogActionButton(
+                  onPressed: () {
+                    Navigator.of(ctx2).pop();
+                    _completeDenyingRequestProcess(
+                        _denyRequestMessageController.text);
+                  },
+                  textContent: I18nText(
+                    'buttons.ok',
+                  ),
+                  backgroundColor: Colors.tealAccent,
+                  textColor: Colors.white,
+                ),
+              ],
+            );
+          });
+    } else {
+      _completeDenyingRequestProcess('');
+    }
   }
 
   void _startLiveQuery() async {
@@ -146,61 +201,97 @@ class _GameScreenState extends State<GameScreen> {
       final isTheRoomWeBelongIn = realValue.objectId == _signaling.roomId;
       final weAreTheOwner =
           realValue.get<ParseObject>('owner')?.objectId == _signaling.selfId;
-      if (isTheRoomWeBelongIn && weAreTheOwner) {
-        final thereIsAJoiner = realValue.get<ParseObject>('joiner') != null;
-        if (thereIsAJoiner) {
-          setState(() {
-            _pendingRequest = true;
-          });
-          final message = realValue.get<String>('message');
-          await showDialog(
-              barrierDismissible: false,
-              context: context,
-              builder: (ctx2) {
-                return AlertDialog(
-                  title: I18nText('game.incoming_request_title'),
-                  content: Text(message ?? ''),
-                  actions: [
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.of(ctx2).pop();
-                        _handleIncomingRequestAccepted();
-                      },
-                      textContent: I18nText(
-                        'buttons.ok',
+      final weAreTheJoiner =
+          realValue.get<ParseObject>('joiner')?.objectId == _signaling.selfId;
+      if (isTheRoomWeBelongIn) {
+        if (weAreTheOwner) {
+          final thereIsAJoiner = realValue.get<ParseObject>('joiner') != null;
+          if (thereIsAJoiner) {
+            setState(() {
+              _pendingRequest = true;
+            });
+            final message = realValue.get<String>('requestMessage');
+            await showDialog(
+                barrierDismissible: false,
+                context: context,
+                builder: (ctx2) {
+                  return AlertDialog(
+                    title: I18nText('game.incoming_request_title'),
+                    content: Text(message ?? ''),
+                    actions: [
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.of(ctx2).pop();
+                          _handleIncomingRequestAccepted();
+                        },
+                        textContent: I18nText(
+                          'buttons.ok',
+                        ),
+                        backgroundColor: Colors.tealAccent,
+                        textColor: Colors.white,
                       ),
-                      backgroundColor: Colors.tealAccent,
-                      textColor: Colors.white,
-                    ),
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.of(ctx2).pop();
-                        _handleIncomingRequestRefused();
-                      },
-                      textContent: I18nText(
-                        'buttons.deny',
-                      ),
-                      textColor: Colors.white,
-                      backgroundColor: Colors.redAccent,
-                    )
-                  ],
-                );
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.of(ctx2).pop();
+                          _handleIncomingRequestDenied();
+                        },
+                        textContent: I18nText(
+                          'buttons.deny',
+                        ),
+                        textColor: Colors.white,
+                        backgroundColor: Colors.redAccent,
+                      )
+                    ],
+                  );
+                });
+          } // thereIsAJoiner
+          else {
+            final thereIsAPendingRequest = _pendingRequest;
+            if (thereIsAPendingRequest) {
+              // clearing accept/deny request dialog
+              Navigator.of(context).pop();
+
+              setState(() {
+                _pendingRequest = false;
               });
-        } // thereIsAJoiner
-        else {
-          final thereIsAPendingRequest = _pendingRequest;
-          if (thereIsAPendingRequest) {
-            // clearing accept/deny request dialog
+
+              // notifying us
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: I18nText('game.aborted_request_by_peer')),
+              );
+            }
+          }
+        } // weAreTheOwner
+        else if (weAreTheJoiner) {
+          final accepted = realValue.get<bool>('accepted');
+          final answerMessage = realValue.get<String>('answerMessage') ?? '';
+          if (accepted == false) {
+            // Cancelling waiting answer dialog
             Navigator.of(context).pop();
 
-            setState(() {
-              _pendingRequest = false;
-            });
-
-            // notifying us
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: I18nText('game.aborted_request_by_peer')),
-            );
+            // Showing dialog
+            if (!mounted) return;
+            await showDialog(
+                barrierDismissible: false,
+                context: context,
+                builder: (ctx2) {
+                  return AlertDialog(
+                    title: I18nText('game.denied_connection_title'),
+                    content: Text(answerMessage),
+                    actions: [
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.of(ctx2).pop();
+                        },
+                        textContent: I18nText(
+                          'buttons.ok',
+                        ),
+                        backgroundColor: Colors.tealAccent,
+                        textColor: Colors.white,
+                      ),
+                    ],
+                  );
+                });
           }
         }
       }

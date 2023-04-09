@@ -30,7 +30,9 @@
         "busy_room": "La salle est occupée ou une requête de jeu est déjà en cours pour ladite salle.",
         "already_a_pending_request": "Impossible de passer deux requêtes à la fois.",
         "incoming_request_title": "Requête entrante",
-        "aborted_request_by_peer": "L'utilisateur a annulé sa requête."
+        "aborted_request_by_peer": "L'utilisateur a annulé sa requête.",
+        "choose_deny_message_title": "Vous pouvez écrire un message de refus",
+        "denied_connection_title": "Connexion refusée"
     },
     "game_termination": {
         "black_checkmate_white": "Les Noirs gagnent par échec et mat.",

@@ -159,7 +159,7 @@ class Signaling {
     // Registers the joiner of the room in the DB
     roomInstance.set(
         'joiner', (ParseObject('Peer')..objectId = selfId).toPointer());
-    roomInstance.set('message', message);
+    roomInstance.set('requestMessage', message);
     final saveResponse = await roomInstance.save();
 
     if (saveResponse.error != null) {
@@ -172,7 +172,7 @@ class Signaling {
   Future<void> removeSelfFromRoomJoiner() async {
     final roomInstance = ParseObject('Room')..objectId = _roomId;
     roomInstance.set('joiner', null);
-    roomInstance.set('message', null);
+    roomInstance.set('requestMessage', null);
     await roomInstance.save();
   }
 

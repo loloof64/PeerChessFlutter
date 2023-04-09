@@ -30,7 +30,9 @@
         "busy_room": "The room is already busy or a joining request is already in progress.",
         "already_a_pending_request": "You can't make two requests at once.",
         "incoming_request_title": "Incoming request",
-        "aborted_request_by_peer": "User has cancelled his request."
+        "aborted_request_by_peer": "User has cancelled his request.",
+        "choose_deny_message_title": "You can write deny message",
+        "denied_connection_title": "Denied connection"
     },
     "game_termination": {
         "black_checkmate_white": "Black has won by checkmate.",
