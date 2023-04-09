@@ -139,6 +139,8 @@ class _GameScreenState extends State<GameScreen> {
         if (weAreTheOwner) {
           final thereIsAJoiner = realValue.get<ParseObject>('joiner') != null;
           if (thereIsAJoiner) {
+            // removing room id dialog
+            Navigator.of(context).pop();
             setState(() {
               _remoteId = realValue.get<ParseObject>('joiner')?.objectId;
               _sessionActive = true;
@@ -446,6 +448,7 @@ class _GameScreenState extends State<GameScreen> {
     if (!mounted) return;
 
     showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (BuildContext innerCtx) {
         return AlertDialog(
