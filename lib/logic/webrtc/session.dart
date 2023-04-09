@@ -76,6 +76,7 @@ class Signaling {
 
   String? _selfId;
   String? _remotePeerId;
+  String? _roomId;
 
   bool _signallingInProgress = false;
 
@@ -113,6 +114,25 @@ class Signaling {
     if (response.error != null) {
       Logger().e(response.error);
     }
+  }
+
+  Future<void> deleteRoom() async {
+    if (_roomId == null) return;
+    final roomInstance = ParseObject('Room')..objectId = _roomId!;
+    await roomInstance.delete();
+  }
+
+  Future<String?> createRoom() async {
+    if (_roomId != null) return _roomId;
+    final room = ParseObject('Room');
+    room.set('owner', ParseObject('Peer')..objectId = _selfId);
+    final response = await room.save();
+    if (response.error != null) {
+      Logger().e(response.error);
+    }
+    final roomId = room.objectId;
+    _roomId = roomId;
+    return _roomId;
   }
 
   Future<void> _removeReleatedOfferCandidates() async {

@@ -55,7 +55,6 @@ class _GameScreenState extends State<GameScreen> {
   Map<String, String> _receivedPeerData = {};
   RTCDataChannel? _dataChannel;
   bool _readyToConnect = false;
-  String? _roomId;
   Session? _session;
   late TextEditingController _roomIdController;
   late TextEditingController _ringingMessageController;
@@ -91,7 +90,7 @@ class _GameScreenState extends State<GameScreen> {
 
     FlutterWindowClose.setWindowShouldCloseHandler(() async {
       await _signaling.removePeerFromDB();
-      await _deleteRoom();
+      await _signaling.deleteRoom();
       return true;
     });
 
@@ -423,25 +422,10 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  Future<void> _deleteRoom() async {
-    if (_roomId == null) return;
-    final roomInstance = ParseObject('Room')..objectId = _roomId!;
-    await roomInstance.delete();
-  }
-
   Future<void> _createRoom() async {
-    final room = ParseObject('Room');
-    final response = await room.save();
-    if (response.error != null) {
-      Logger().e(response.error);
-    }
-    final roomId = room.objectId;
-    if (!mounted) return;
-    if (roomId == null) return;
+    final roomId = await _signaling.createRoom();
 
-    setState(() {
-      _roomId = roomId;
-    });
+    if (!mounted) return;
 
     showDialog(
       context: context,
@@ -484,7 +468,7 @@ class _GameScreenState extends State<GameScreen> {
             DialogActionButton(
               onPressed: () async {
                 Navigator.of(context).pop();
-                await _deleteRoom();
+                await _signaling.deleteRoom();
               },
               textContent: I18nText(
                 'buttons.cancel',
@@ -728,7 +712,7 @@ class _GameScreenState extends State<GameScreen> {
           IconButton(
             onPressed: _createRoom,
             icon: const Icon(
-              Icons.add_rounded,
+              Icons.room,
             ),
           ),
           IconButton(
