@@ -118,6 +118,7 @@ class Signaling {
     if (_roomId == null) return;
     final roomInstance = ParseObject('Room')..objectId = _roomId!;
     await roomInstance.delete();
+    _roomId = null;
   }
 
   Future<CreatingRoomState> createRoom() async {
