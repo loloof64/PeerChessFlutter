@@ -155,6 +155,7 @@ class _GameScreenState extends State<GameScreen> {
               title: I18nText('game.choose_deny_message_title'),
               content: TextField(
                 controller: _denyRequestMessageController,
+                maxLines: 6,
               ),
               actions: [
                 DialogActionButton(
