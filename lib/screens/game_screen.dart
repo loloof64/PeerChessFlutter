@@ -643,6 +643,11 @@ class _GameScreenState extends State<GameScreen> {
   Future<void> _joinRoom() async {
     if (!mounted) return;
 
+    setState(() {
+      _roomIdController.text = "";
+      _ringingMessageController.text = "";
+    });
+
     showDialog(
         context: context,
         builder: (ctx2) {
