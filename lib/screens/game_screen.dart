@@ -468,7 +468,7 @@ class _GameScreenState extends State<GameScreen> {
         return AlertDialog(
           title: I18nText('game.room_creation_title'),
           content:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Column(mainAxisAlignment: MainAxisAlignment.center, children: [
             I18nText('game.room_creation_msg'),
             I18nText('game.room_creation_msg2'),
             Row(
@@ -737,7 +737,6 @@ class _GameScreenState extends State<GameScreen> {
               )
             : Expanded(
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Flexible(
                       child: SimpleChessBoard(
