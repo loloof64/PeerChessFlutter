@@ -597,7 +597,8 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _handleRoomJoiningRequest() async {
     final requestedRoomId = _roomIdController.text;
-    final success = await _signaling.joinRoom(requestedRoomId);
+    final message = _ringingMessageController.text;
+    final success = await _signaling.joinRoom(requestedRoomId, message);
     if (success == JoiningRoomState.noRoomWithThisId) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
