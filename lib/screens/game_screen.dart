@@ -65,10 +65,6 @@ class _GameScreenState extends State<GameScreen> {
   final QueryBuilder<ParseObject> _queryPeer =
       QueryBuilder<ParseObject>(ParseObject('Peer'));
 
-  late Subscription<ParseObject> _offerCandidatesSubscription;
-  final QueryBuilder<ParseObject> _queryOfferCandidates =
-      QueryBuilder<ParseObject>(ParseObject('OfferCandidates'));
-
   final ScrollController _historyScrollController =
       ScrollController(initialScrollOffset: 0.0, keepScrollOffset: true);
 
@@ -122,36 +118,10 @@ class _GameScreenState extends State<GameScreen> {
         }
       }
     });
-
-    _offerCandidatesSubscription =
-        await _liveQuery.client.subscribe(_queryOfferCandidates);
-
-    _offerCandidatesSubscription.on(LiveQueryEvent.create, (value) async {
-      final realValue = value as ParseObject;
-
-      final peerMessage = realValue.get('offerMessage');
-
-      final target = realValue.get('target');
-      final realTarget = target as ParseObject;
-
-      if (realTarget.objectId == _signaling.selfId) {
-        if (_signaling.callInProgress) {
-          final dbCandidate = ParseObject('AnswerCandidates')
-            ..set('owner', ParseObject('Peer')..objectId = _signaling.selfId)
-            ..set('target', ParseObject('Peer')..objectId = _signaling.remoteId)
-            ..set('accepted', false);
-          await dbCandidate.save();
-        } else {
-          if (context.mounted) {
-            _showAcceptDialog(peerMessage);
-          }
-        }
-      }
-    });
   }
 
   void _cancelLiveQuery() async {
-    _liveQuery.client.unSubscribe(_offerCandidatesSubscription);
+    _liveQuery.client.unSubscribe(_peerSubscription);
   }
 
   bool _isStartMoveNumber(int moveNumber) {
