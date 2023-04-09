@@ -595,43 +595,6 @@ class _GameScreenState extends State<GameScreen> {
         });
   }
 
-  Future<void> _startSession() async {
-    setState(() {
-      // TODO fix _remotePeerId = _roomIdController.text;
-
-      _signaling.onDataChannelMessage = (dc, RTCDataChannelMessage data) {
-        setState(() {
-          _receivedPeerData = jsonDecode(data.text);
-        });
-      };
-
-      _signaling.onDataChannel = (channel) {
-        _dataChannel = channel;
-      };
-    });
-    /*final response = await _signaling.makeCall(
-      remotePeerId: _remotePeerId,
-      message: _ringingMessageController.text,
-    );
-    setState(() {});
-    switch (response) {
-      case MakingCallResult.remotePeerDoesNotExist:
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: I18nText('game.no_matching_peer'),
-            ),
-          );
-        }
-        break;
-      case MakingCallResult.alreadyAPendingCall:
-      case MakingCallResult.success:
-        await _showWaitingPeerDialog();
-        break;
-    }
-    */
-  }
-
   Future<void> _handleRoomJoiningRequest() async {
     final requestedRoomId = _roomIdController.text;
     final success = await _signaling.joinRoom(requestedRoomId);
@@ -651,6 +614,66 @@ class _GameScreenState extends State<GameScreen> {
         ),
       );
     }
+
+    if (!mounted) return;
+    showDialog(
+        barrierDismissible: false,
+        context: context,
+        builder: (ctx2) {
+          return AlertDialog(
+            content: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                I18nText('game.waiting_response'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: TextField(
+                        controller: _roomIdController,
+                        decoration: InputDecoration(
+                          hintText:
+                              FlutterI18n.translate(context, "game.roomIdHint"),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () async {
+                        final data =
+                            await Clipboard.getData(Clipboard.kTextPlain);
+                        if (data == null || data.text == null) return;
+                        _roomIdController.text = data.text!;
+                      },
+                      icon: const Icon(
+                        Icons.paste,
+                      ),
+                    ),
+                  ],
+                ),
+                TextField(
+                  controller: _ringingMessageController,
+                  maxLines: 6,
+                  decoration: InputDecoration(
+                    hintText: FlutterI18n.translate(
+                        context, "game.joininingMessageHint"),
+                  ),
+                )
+              ],
+            ),
+            actions: [
+              DialogActionButton(
+                onPressed: () {
+                  Navigator.of(ctx2).pop();
+                },
+                textContent: I18nText(
+                  'buttons.cancel',
+                ),
+                textColor: Colors.white,
+                backgroundColor: Colors.redAccent,
+              )
+            ],
+          );
+        });
   }
 
   Future<void> _joinRoom() async {

@@ -19,6 +19,7 @@
         "room_creation_msg": "Please, share this room id with your opponent,",
         "room_creation_msg2": "for him to join the game room :",
         "join_room": "Join a room",
+        "waiting_response": "Waiting response from room's host.",
         "enterRoomId": "Please, enter the room id :",
         "roomIdHint": "The room id",
         "joininingMessageHint": "Your message for the room owner",

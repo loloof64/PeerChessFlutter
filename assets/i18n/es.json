@@ -19,6 +19,7 @@
         "room_creation_msg": "Por favor, comparte esta identificación de sala con su oponente,",
         "room_creation_msg2": "para que se una a la sala de juegos:",
         "join_room": "Vener a una sala",
+        "waiting_response": "Respuesta en espera del anfitrión (o de la anfitriona) de la sala.",
         "enterRoomId": "Por favor, introduzca la identificación de la sala:",
         "roomIdHint": "la identificación de la sala",
         "joininingMessageHint": "Tu mensaje para el dueño de la sala",

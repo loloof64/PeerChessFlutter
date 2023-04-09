@@ -19,6 +19,7 @@
         "room_creation_msg": "Veuillez communiquer cet identifiant de salon à votre adversaire,",
         "room_creation_msg2": "afin qu'il puisse vous rejoindre :",
         "join_room": "Rejoindre un salon",
+        "waiting_response": "En attente de réponse du hôte de la salle.",
         "enterRoomId": "Veuillez entrer l'identifiant du salon :",
         "roomIdHint": "l'identifiant du salon",
         "joininingMessageHint": "Votre message pour le propriétaire du salon",
