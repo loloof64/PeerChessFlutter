@@ -55,7 +55,7 @@ class _GameScreenState extends State<GameScreen> {
   Map<String, String> _receivedPeerData = {};
   RTCDataChannel? _dataChannel;
   bool _readyToConnect = false;
-  String _remotePeerId = '';
+  String? _roomId;
   Session? _session;
   late TextEditingController _roomIdController;
   late TextEditingController _ringingMessageController;
@@ -76,7 +76,7 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   void initState() {
-    _roomIdController = TextEditingController(text: _remotePeerId);
+    _roomIdController = TextEditingController();
     _ringingMessageController = TextEditingController();
     _gameManager = GameManager();
     _historyManager = HistoryManager(
@@ -91,6 +91,7 @@ class _GameScreenState extends State<GameScreen> {
 
     FlutterWindowClose.setWindowShouldCloseHandler(() async {
       await _signaling.removePeerFromDB();
+      await _deleteRoom();
       return true;
     });
 
@@ -422,8 +423,9 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  Future<void> _deleteRoom(String id) async {
-    final roomInstance = ParseObject('Room')..objectId = id;
+  Future<void> _deleteRoom() async {
+    if (_roomId == null) return;
+    final roomInstance = ParseObject('Room')..objectId = _roomId!;
     await roomInstance.delete();
   }
 
@@ -436,6 +438,10 @@ class _GameScreenState extends State<GameScreen> {
     final roomId = room.objectId;
     if (!mounted) return;
     if (roomId == null) return;
+
+    setState(() {
+      _roomId = roomId;
+    });
 
     showDialog(
       context: context,
@@ -478,7 +484,7 @@ class _GameScreenState extends State<GameScreen> {
             DialogActionButton(
               onPressed: () async {
                 Navigator.of(context).pop();
-                _deleteRoom(roomId);
+                await _deleteRoom();
               },
               textContent: I18nText(
                 'buttons.cancel',
@@ -538,7 +544,7 @@ class _GameScreenState extends State<GameScreen> {
     _dataChannel?.send(RTCDataChannelMessage(moveAsJson));
   }
 
-  Future<void> _showWaitingPeerDialog() {
+  /*Future<void> _showWaitingPeerDialog() {
     return showDialog<bool?>(
         barrierDismissible: false,
         context: context,
@@ -565,7 +571,7 @@ class _GameScreenState extends State<GameScreen> {
             ],
           );
         });
-  }
+  }*/
 
   Future<bool?> _showAcceptDialog(String peerMessage) {
     return showDialog<bool?>(
@@ -692,7 +698,7 @@ class _GameScreenState extends State<GameScreen> {
       };
       */
     });
-    final response = await _signaling.makeCall(
+    /*final response = await _signaling.makeCall(
       remotePeerId: _remotePeerId,
       message: _ringingMessageController.text,
     );
@@ -712,6 +718,7 @@ class _GameScreenState extends State<GameScreen> {
         await _showWaitingPeerDialog();
         break;
     }
+    */
   }
 
   void _accept() {
