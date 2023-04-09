@@ -422,33 +422,64 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  void _purposeRestartGame() {
-    final isEmptyPosition = _gameManager.position == emptyPosition;
-    if (isEmptyPosition) {
-      _goToNewGameOptionsPage();
-      return;
+  Future<void> _deleteRoom(String id) async {
+    final roomInstance = ParseObject('Room')..objectId = id;
+    await roomInstance.delete();
+  }
+
+  Future<void> _createRoom() async {
+    final room = ParseObject('Room');
+    final response = await room.save();
+    if (response.error != null) {
+      Logger().e(response.error);
     }
+    final roomId = room.objectId;
+    if (!mounted) return;
+    if (roomId == null) return;
 
     showDialog(
       context: context,
       builder: (BuildContext innerCtx) {
         return AlertDialog(
-          title: I18nText('game.restart_game_title'),
-          content: I18nText('game.restart_game_msg'),
+          title: I18nText('game.room_creation_title'),
+          content:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            I18nText('game.room_creation_msg'),
+            I18nText('game.room_creation_msg2'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  roomId.toString(),
+                  style: const TextStyle(
+                    backgroundColor: Colors.blueGrey,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () async {
+                    await Clipboard.setData(
+                      ClipboardData(text: roomId),
+                    );
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: I18nText("clipboard.content_copied"),
+                      ),
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.paste,
+                  ),
+                ),
+              ],
+            ),
+          ]),
           actions: [
             DialogActionButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.of(context).pop();
-                _goToNewGameOptionsPage();
+                _deleteRoom(roomId);
               },
-              textContent: I18nText(
-                'buttons.ok',
-              ),
-              backgroundColor: Colors.tealAccent,
-              textColor: Colors.white,
-            ),
-            DialogActionButton(
-              onPressed: () => Navigator.of(context).pop(),
               textContent: I18nText(
                 'buttons.cancel',
               ),
@@ -797,7 +828,7 @@ class _GameScreenState extends State<GameScreen> {
               ),
             ),
           IconButton(
-            onPressed: _purposeRestartGame,
+            onPressed: _createRoom,
             icon: const Icon(
               Icons.add_rounded,
             ),

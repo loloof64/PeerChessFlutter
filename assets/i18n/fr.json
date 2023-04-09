@@ -7,13 +7,17 @@
         "ok": "D'accord",
         "cancel": "Annuler"
     },
+    "clipboard": {
+        "content_copied": "Texte copié dans le presse-papier."
+    },
     "game": {
         "promotion_dialog_title": "Choisissez la pièce de promotion",
         "stop_game_title": "Terminer la partie?",
         "stop_game_msg": "Souhaitez-vous interrompre la partie en cours ?",
         "stopped": "Partie interrompue.",
-        "restart_game_title": "Nouvelle partie ?",
-        "restart_game_msg": "Voulez-vous arrêter la partie en cours et en démarrer une nouvelle ?",
+        "room_creation_title": "Nouveau salon créé",
+        "room_creation_msg": "Veuillez communiquer cet identifiant de salon à votre adversaire,",
+        "room_creation_msg2": "afin qu'il puisse vous rejoindre :",
         "no_matching_peer": "Personne ne possède cet identifiant.",
         "already_a_pending_call": "Impossible de passer deux appels à la fois."
     },

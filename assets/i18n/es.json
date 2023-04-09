@@ -7,12 +7,17 @@
         "ok": "De acuerdo",
         "cancel": "Anular"
     },
+    "clipboard": {
+        "content_copied": "Texto copiado en portapapeles."
+    },
     "game": {
         "promotion_dialog_title": "Selecciona la pieza de promoción",
         "stop_game_title": "¿Detener el juego?",
         "stop_game_msg": "¿Quieres detener el juego actual?",
         "stopped": "Juego terminado.",
-        "restart_game_title": "¿Nuevo juego?",
+        "room_creation_title": "Nueva sala creada",
+        "room_creation_msg": "Por favor, comparte esta identificación de sala con su oponente,",
+        "room_creation_msg2": "para que se una a la sala de juegos:",
         "no_matching_peer": "No hay compañero con esta identificación.",
         "already_a_pending_call": "No puedes hacer dos llamadas a la vez."
     },

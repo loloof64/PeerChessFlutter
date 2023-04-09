@@ -7,13 +7,17 @@
         "ok": "OK",
         "cancel": "Cancel"
     },
+    "clipboard": {
+        "content_copied": "Text copied into clipboard."
+    },
     "game": {
         "promotion_dialog_title": "Select the promotion piece",
         "stop_game_title": "Stop game ?",
         "stop_game_msg": "Do you want to stop current game ?",
         "stopped": "Game stopped.",
-        "restart_game_title": "New game ?",
-        "restart_game_msg": "Do you want to finish current game and start a new one ?",
+        "room_creation_title": "New room created",
+        "room_creation_msg": "Please, share this room id with your opponent,",
+        "room_creation_msg2": "for him to join the game room :",
         "no_matching_peer": "There's no peer with this id.",
         "already_a_pending_call": "You can't make two calls at once."
     },
