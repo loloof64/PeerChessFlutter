@@ -31,7 +31,7 @@ import 'package:chess/chess.dart' as chess;
 import 'package:flutter_i18n/flutter_i18n.dart';
 import '../logic/managers/game_manager.dart';
 import '../logic/managers/history_manager.dart';
-import '../logic/webrtc/session.dart';
+import '../logic/webrtc/signalling.dart';
 import '../logic/history_builder.dart';
 import '../components/history.dart';
 import '../components/dialog_buttons.dart';
@@ -55,7 +55,6 @@ class _GameScreenState extends State<GameScreen> {
   Map<String, String> _receivedPeerData = {};
   RTCDataChannel? _dataChannel;
   bool _readyToConnect = false;
-  Session? _session;
   late TextEditingController _roomIdController;
   late TextEditingController _ringingMessageController;
   BuildContext? _pendingCallContext;
@@ -423,7 +422,26 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Future<void> _createRoom() async {
-    final roomId = await _signaling.createRoom();
+    final success = await _signaling.createRoom();
+    if (success == CreatingRoomState.already_created_a_room) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: I18nText("game.already_created_room"),
+        ),
+      );
+      return;
+    }
+
+    if (success == CreatingRoomState.error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: I18nText("game.failed_creating_room"),
+        ),
+      );
+      return;
+    }
 
     if (!mounted) return;
 
@@ -440,7 +458,7 @@ class _GameScreenState extends State<GameScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  roomId.toString(),
+                  _signaling.roomId!,
                   style: const TextStyle(
                     backgroundColor: Colors.blueGrey,
                   ),
@@ -448,7 +466,7 @@ class _GameScreenState extends State<GameScreen> {
                 IconButton(
                   onPressed: () async {
                     await Clipboard.setData(
-                      ClipboardData(text: roomId),
+                      ClipboardData(text: _signaling.roomId),
                     );
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -612,18 +630,6 @@ class _GameScreenState extends State<GameScreen> {
         break;
     }
     */
-  }
-
-  void _accept() {
-    if (_session != null) {
-      // TODO _signaling.accept();
-    }
-  }
-
-  _reject() {
-    if (_session != null) {
-      //TODO _signaling.reject();
-    }
   }
 
   Future<void> _handleRoomJoiningRequest() async {

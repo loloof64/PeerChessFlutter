@@ -33,14 +33,6 @@ enum MakingCallResult {
   alreadyAPendingCall,
 }
 
-class Session {
-  Session({required this.peerId});
-  String peerId;
-  RTCPeerConnection? peerConnection;
-  RTCDataChannel? dataChannel;
-  RTCIceCandidate? remoteCandidates;
-}
-
 final asciiDigits = 48.upTo(57);
 final asciiLowercase = 97.upTo(122);
 final asciiUppercase = 65.upTo(90);
@@ -64,10 +56,10 @@ String randomString(int length) {
   }));
 }
 
-enum SignalingState {
-  connectionOpen,
-  connectionClosed,
-  connectionError,
+enum CreatingRoomState {
+  success,
+  already_created_a_room,
+  error,
 }
 
 enum JoiningRoomState {
@@ -85,8 +77,7 @@ class Signaling {
   String? _roomId;
 
   bool _signallingInProgress = false;
-
-  String? _callObjectId;
+  String? get roomId => _roomId;
 
   late Map<String, dynamic> _iceServers;
 
@@ -128,17 +119,18 @@ class Signaling {
     await roomInstance.delete();
   }
 
-  Future<String?> createRoom() async {
-    if (_roomId != null) return _roomId;
+  Future<CreatingRoomState> createRoom() async {
+    if (_roomId != null) return CreatingRoomState.already_created_a_room;
     final room = ParseObject('Room');
     room.set('owner', ParseObject('Peer')..objectId = _selfId);
     final response = await room.save();
     if (response.error != null) {
       Logger().e(response.error);
+      return CreatingRoomState.error;
     }
     final roomId = room.objectId;
     _roomId = roomId;
-    return _roomId;
+    return CreatingRoomState.success;
   }
 
   Future<JoiningRoomState> joinRoom(String requestedRoomId) async {
