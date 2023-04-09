@@ -135,12 +135,12 @@ class _GameScreenState extends State<GameScreen> {
           realValue.get<ParseObject>('owner')?.objectId == _signaling.selfId;
       final weAreTheJoiner =
           realValue.get<ParseObject>('joiner')?.objectId == _signaling.selfId;
+      final thereIsAJoiner = realValue.get<ParseObject>('joiner') != null;
       if (isTheRoomWeBelongIn) {
-        if (weAreTheOwner) {
-          final thereIsAJoiner = realValue.get<ParseObject>('joiner') != null;
-          if (thereIsAJoiner) {
+        if (thereIsAJoiner) {
+          if (weAreTheOwner) {
             // removing room id dialog
-            Navigator.of(context).pop();
+            if (Navigator.of(context).canPop()) Navigator.of(context).pop();
 
             // register connected flag in DB
             realValue.set('connected', true);
@@ -737,6 +737,7 @@ class _GameScreenState extends State<GameScreen> {
               )
             : Expanded(
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Flexible(
                       child: SimpleChessBoard(
