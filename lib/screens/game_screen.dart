@@ -825,7 +825,7 @@ class _GameScreenState extends State<GameScreen> {
             IconButton(
               onPressed: _startConnection,
               icon: const Icon(
-                Icons.call,
+                Icons.door_sliding,
               ),
             ),
           if (_readyToConnect)
