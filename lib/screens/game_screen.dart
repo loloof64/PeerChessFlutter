@@ -832,7 +832,7 @@ class _GameScreenState extends State<GameScreen> {
             IconButton(
               onPressed: _displayMyOwnId,
               icon: const Icon(
-                Icons.question_mark_rounded,
+                Icons.numbers,
               ),
             ),
           IconButton(
