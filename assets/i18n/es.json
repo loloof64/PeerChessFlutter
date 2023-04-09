@@ -18,6 +18,10 @@
         "room_creation_title": "Nueva sala creada",
         "room_creation_msg": "Por favor, comparte esta identificación de sala con su oponente,",
         "room_creation_msg2": "para que se una a la sala de juegos:",
+        "join_room": "Vener a una sala",
+        "enterRoomId": "Por favor, introduzca la identificación de la sala:",
+        "roomIdHint": "la identificación de la sala",
+        "joininingMessageHint": "Tu mensaje para el dueño de la sala",
         "no_matching_peer": "No hay compañero con esta identificación.",
         "already_a_pending_call": "No puedes hacer dos llamadas a la vez."
     },
@@ -55,22 +59,5 @@
             "illegal_position_error": "Ilícita posición !",
             "label_player_side": "Su lado"
         }
-    },
-    "session": {
-        "dialog_new": {
-            "title": "Nueva sesión",
-            "message": "Envíe la siguiente identificación a su compañero:",
-            "message_2": "Ingrese su identificación de compañero aquí:",
-            "peerIdPlaceholder": "Su identificación de compañero",
-            "ringingMessagePlaceholder": "Su mensaje"
-        }
-    },
-    "dialog_waiting_peer": {
-        "title": "Esperando a tu compañero",
-        "message": "Esperando ..."
-    },
-    "dialog_accept": {
-        "title": "¿Conectar con un compañero?",
-        "message": "¿Quieres conectarte a compañero?"
     }
 }

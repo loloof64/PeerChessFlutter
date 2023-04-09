@@ -18,6 +18,10 @@
         "room_creation_title": "Nouveau salon créé",
         "room_creation_msg": "Veuillez communiquer cet identifiant de salon à votre adversaire,",
         "room_creation_msg2": "afin qu'il puisse vous rejoindre :",
+        "join_room": "Rejoindre un salon",
+        "enterRoomId": "Veuillez entrer l'identifiant du salon :",
+        "roomIdHint": "l'identifiant du salon",
+        "joininingMessageHint": "Votre message pour le propriétaire du salon",
         "no_matching_peer": "Personne ne possède cet identifiant.",
         "already_a_pending_call": "Impossible de passer deux appels à la fois."
     },
@@ -54,23 +58,6 @@
             "label_clear_position": "Effacer la position",
             "illegal_position_error": "Position illégale !",
             "label_player_side": "Votre côté"
-        }
-    },
-    "session": {
-        "dialog_new": {
-            "title": "Nouvelle session",
-            "message": "Veuillez envoyer cet identifiant à votre contact: ",
-            "message_2": "Veuillez entrer l'identifiant de votre contact ici: ",
-            "peerIdPlaceholder": "Identifiant de votre contact",
-            "ringingMessagePlaceholder": "Votre message"
-        },
-        "dialog_waiting_peer": {
-            "title": "En attente de votre contact",
-            "message": "En attente ..."
-        },
-        "dialog_accept": {
-            "title": "Connexion avec le contact ?",
-            "message": "Souhaitez-vous vous connecter à ce contact ?"
         }
     }
 }

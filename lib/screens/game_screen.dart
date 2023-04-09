@@ -57,7 +57,7 @@ class _GameScreenState extends State<GameScreen> {
   bool _readyToConnect = false;
   String _remotePeerId = '';
   Session? _session;
-  late TextEditingController _peerIdController;
+  late TextEditingController _roomIdController;
   late TextEditingController _ringingMessageController;
   BuildContext? _pendingCallContext;
 
@@ -76,7 +76,7 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   void initState() {
-    _peerIdController = TextEditingController(text: _remotePeerId);
+    _roomIdController = TextEditingController(text: _remotePeerId);
     _ringingMessageController = TextEditingController();
     _gameManager = GameManager();
     _historyManager = HistoryManager(
@@ -101,7 +101,7 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   void dispose() {
-    _peerIdController.dispose();
+    _roomIdController.dispose();
     _ringingMessageController.dispose();
     _signaling.removePeerFromDB();
     _cancelLiveQuery();
@@ -538,21 +538,6 @@ class _GameScreenState extends State<GameScreen> {
     _dataChannel?.send(RTCDataChannelMessage(moveAsJson));
   }
 
-  Future<void> _copyIdToClipboard() async {
-    await Clipboard.setData(
-      ClipboardData(text: _signaling.selfId),
-    );
-  }
-
-  Future<void> _copyTextFromClipboard() async {
-    final text = await Clipboard.getData('text/plain');
-    if (text != null && text.text != null) {
-      setState(() {
-        _peerIdController.text = text.text!;
-      });
-    }
-  }
-
   Future<void> _showWaitingPeerDialog() {
     return showDialog<bool?>(
         barrierDismissible: false,
@@ -633,7 +618,7 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _startSession() async {
     setState(() {
-      _remotePeerId = _peerIdController.text;
+      // TODO fix _remotePeerId = _roomIdController.text;
 
       _signaling.onDataChannelMessage = (dc, RTCDataChannelMessage data) {
         setState(() {
@@ -741,56 +726,58 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
-  Future<void> _startConnection() async {
-    setState(() {
-      _peerIdController.text = '';
-      _ringingMessageController.text = '';
-    });
-    return showDialog(
+  Future<void> _joinRoom() async {
+    if (!mounted) return;
+
+    showDialog(
         context: context,
-        builder: (BuildContext context2) {
+        builder: (ctx2) {
           return AlertDialog(
-            title: I18nText('session.dialog_new.title'),
+            title: I18nText("game.join_room"),
             content: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                Container(
-                  height: 30.0,
-                ),
-                I18nText('session.dialog_new.message_2'),
-                IconButton(
-                  onPressed: _copyTextFromClipboard,
-                  icon: const Icon(
-                    Icons.paste,
-                  ),
-                ),
-                TextField(
-                  controller: _peerIdController,
-                  decoration: InputDecoration(
-                    label: I18nText(
-                      'session.dialog_new.peerIdPlaceholder',
+                I18nText('game.enterRoomId'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: TextField(
+                        controller: _roomIdController,
+                        decoration: InputDecoration(
+                          hintText:
+                              FlutterI18n.translate(context, "game.roomIdHint"),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                Container(
-                  height: 30.0,
+                    IconButton(
+                      onPressed: () async {
+                        final data =
+                            await Clipboard.getData(Clipboard.kTextPlain);
+                        if (data == null || data.text == null) return;
+                        _roomIdController.text = data.text!;
+                      },
+                      icon: const Icon(
+                        Icons.paste,
+                      ),
+                    ),
+                  ],
                 ),
                 TextField(
                   controller: _ringingMessageController,
-                  maxLines: 5,
+                  maxLines: 6,
                   decoration: InputDecoration(
-                      label: I18nText(
-                    'session.dialog_new.ringingMessagePlaceholder',
-                  )),
+                    hintText: FlutterI18n.translate(
+                        context, "game.joininingMessageHint"),
+                  ),
                 )
               ],
             ),
             actions: [
               DialogActionButton(
                 onPressed: () {
-                  Navigator.of(context).pop();
-                  _startSession();
+                  Navigator.of(ctx2).pop();
+                  // TODO join a room
                 },
                 textContent: I18nText(
                   'buttons.ok',
@@ -799,12 +786,14 @@ class _GameScreenState extends State<GameScreen> {
                 textColor: Colors.white,
               ),
               DialogActionButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () {
+                  Navigator.of(ctx2).pop();
+                },
                 textContent: I18nText(
                   'buttons.cancel',
                 ),
-                backgroundColor: Colors.redAccent,
                 textColor: Colors.white,
+                backgroundColor: Colors.redAccent,
               )
             ],
           );
@@ -820,17 +809,16 @@ class _GameScreenState extends State<GameScreen> {
       appBar: AppBar(
         title: I18nText('game_page.title'),
         actions: [
-          if (_readyToConnect && !_signaling.callInProgress)
-            IconButton(
-              onPressed: _startConnection,
-              icon: const Icon(
-                Icons.door_sliding,
-              ),
-            ),
           IconButton(
             onPressed: _createRoom,
             icon: const Icon(
               Icons.add_rounded,
+            ),
+          ),
+          IconButton(
+            onPressed: _joinRoom,
+            icon: const Icon(
+              Icons.door_sliding,
             ),
           ),
           IconButton(

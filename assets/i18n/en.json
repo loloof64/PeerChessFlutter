@@ -18,6 +18,10 @@
         "room_creation_title": "New room created",
         "room_creation_msg": "Please, share this room id with your opponent,",
         "room_creation_msg2": "for him to join the game room :",
+        "join_room": "Join a room",
+        "enterRoomId": "Please, enter the room id :",
+        "roomIdHint": "The room id",
+        "joininingMessageHint": "Your message for the room owner",
         "no_matching_peer": "There's no peer with this id.",
         "already_a_pending_call": "You can't make two calls at once."
     },
@@ -54,23 +58,6 @@
             "label_clear_position": "Clear position",
             "illegal_position_error": "Illegal position !",
             "label_player_side": "Your side"
-        }
-    },
-    "session": {
-        "dialog_new": {
-            "title": "New session",
-            "message": "Send the following id to your peer: ",
-            "message_2": "Enter your peer id here: ",
-            "peerIdPlaceholder": "Peer ID",
-            "ringingMessagePlaceholder": "Your message"
-        },
-        "dialog_waiting_peer": {
-            "title": "Waiting for your peer",
-            "message": "Waiting ..."
-        },
-        "dialog_accept": {
-            "title": "Connect to peer ?",
-            "message": "Do you want to connect to peer ?"
         }
     }
 }
