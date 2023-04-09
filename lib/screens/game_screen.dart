@@ -605,6 +605,7 @@ class _GameScreenState extends State<GameScreen> {
           content: I18nText("game.no_matching_room"),
         ),
       );
+      return;
     }
     if (success == JoiningRoomState.alreadySomeonePairingWithHost) {
       if (!mounted) return;
@@ -613,6 +614,7 @@ class _GameScreenState extends State<GameScreen> {
           content: I18nText("game.busy_room"),
         ),
       );
+      return;
     }
 
     if (!mounted) return;
@@ -621,45 +623,7 @@ class _GameScreenState extends State<GameScreen> {
         context: context,
         builder: (ctx2) {
           return AlertDialog(
-            content: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                I18nText('game.waiting_response'),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Flexible(
-                      child: TextField(
-                        controller: _roomIdController,
-                        decoration: InputDecoration(
-                          hintText:
-                              FlutterI18n.translate(context, "game.roomIdHint"),
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () async {
-                        final data =
-                            await Clipboard.getData(Clipboard.kTextPlain);
-                        if (data == null || data.text == null) return;
-                        _roomIdController.text = data.text!;
-                      },
-                      icon: const Icon(
-                        Icons.paste,
-                      ),
-                    ),
-                  ],
-                ),
-                TextField(
-                  controller: _ringingMessageController,
-                  maxLines: 6,
-                  decoration: InputDecoration(
-                    hintText: FlutterI18n.translate(
-                        context, "game.joininingMessageHint"),
-                  ),
-                )
-              ],
-            ),
+            content: I18nText('game.waiting_response'),
             actions: [
               DialogActionButton(
                 onPressed: () {
