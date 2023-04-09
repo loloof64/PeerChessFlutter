@@ -131,6 +131,8 @@ class _GameScreenState extends State<GameScreen> {
     final roomInstance = apiResponse.results?.first as ParseObject;
     roomInstance.set('accepted', false);
     roomInstance.set('answerMessage', message);
+    roomInstance.set('joiner', null);
+    roomInstance.set('requestMessage', null);
     final dbAnswer = await roomInstance.save();
 
     if (!dbAnswer.success) {
