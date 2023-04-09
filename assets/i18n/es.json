@@ -5,7 +5,8 @@
     },
     "buttons": {
         "ok": "De acuerdo",
-        "cancel": "Anular"
+        "cancel": "Anular",
+        "deny": "Denegar"
     },
     "clipboard": {
         "content_copied": "Texto copiado en portapapeles."

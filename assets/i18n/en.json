@@ -5,7 +5,8 @@
     },
     "buttons": {
         "ok": "OK",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "deny": "Deny"
     },
     "clipboard": {
         "content_copied": "Text copied into clipboard."

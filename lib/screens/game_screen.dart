@@ -178,7 +178,7 @@ class _GameScreenState extends State<GameScreen> {
                         _handleIncomingRequestRefused();
                       },
                       textContent: I18nText(
-                        'buttons.cancel',
+                        'buttons.deny',
                       ),
                       textColor: Colors.white,
                       backgroundColor: Colors.redAccent,
