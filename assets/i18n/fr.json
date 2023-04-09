@@ -22,8 +22,9 @@
         "enterRoomId": "Veuillez entrer l'identifiant du salon :",
         "roomIdHint": "l'identifiant du salon",
         "joininingMessageHint": "Votre message pour le propriétaire du salon",
-        "no_matching_peer": "Personne ne possède cet identifiant.",
-        "already_a_pending_call": "Impossible de passer deux appels à la fois."
+        "no_matching_room": "Aucune salle ne correspond cet identifiant.",
+        "busy_room": "La salle est occupée ou une requête de jeu est déjà en cours pour ladite salle.",
+        "already_a_pending_request": "Impossible de passer deux requêtes à la fois."
     },
     "game_termination": {
         "black_checkmate_white": "Les Noirs gagnent par échec et mat.",

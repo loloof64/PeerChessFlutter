@@ -70,6 +70,12 @@ enum SignalingState {
   connectionError,
 }
 
+enum JoiningRoomState {
+  success,
+  noRoomWithThisId,
+  alreadySomeonePairingWithHost,
+}
+
 class Signaling {
   RTCDataChannel? _dataChannel;
   late RTCPeerConnection _myConnection;
@@ -133,6 +139,31 @@ class Signaling {
     final roomId = room.objectId;
     _roomId = roomId;
     return _roomId;
+  }
+
+  Future<JoiningRoomState> joinRoom(String requestedRoomId) async {
+    // Checks that the room exists
+    QueryBuilder<ParseObject> queryRoom =
+        QueryBuilder<ParseObject>(ParseObject('Room'))
+          ..whereEqualTo('objectId', requestedRoomId);
+    final ParseResponse apiResponse = await queryRoom.query();
+    final roomExists = apiResponse.success && apiResponse.results != null;
+
+    if (!roomExists) {
+      return JoiningRoomState.noRoomWithThisId;
+    }
+
+    // Checks that nobody is playing with the room's host
+    final roomInstance = apiResponse.results?.first as ParseObject;
+    if (roomInstance.get('joiner') != null) {
+      return JoiningRoomState.alreadySomeonePairingWithHost;
+    }
+
+    // Registers the joiner of the room in the DB
+    roomInstance.set(
+        'joiner', (ParseObject('Peer')..objectId = selfId).toPointer());
+
+    return JoiningRoomState.success;
   }
 
   Future<void> _removeReleatedOfferCandidates() async {

@@ -626,6 +626,27 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
+  Future<void> _handleRoomJoiningRequest() async {
+    final requestedRoomId = _roomIdController.text;
+    final success = await _signaling.joinRoom(requestedRoomId);
+    if (success == JoiningRoomState.noRoomWithThisId) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: I18nText("game.no_matching_room"),
+        ),
+      );
+    }
+    if (success == JoiningRoomState.alreadySomeonePairingWithHost) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: I18nText("game.busy_room"),
+        ),
+      );
+    }
+  }
+
   Future<void> _joinRoom() async {
     if (!mounted) return;
 
@@ -675,9 +696,9 @@ class _GameScreenState extends State<GameScreen> {
             ),
             actions: [
               DialogActionButton(
-                onPressed: () {
+                onPressed: () async {
                   Navigator.of(ctx2).pop();
-                  // TODO join a room
+                  await _handleRoomJoiningRequest();
                 },
                 textContent: I18nText(
                   'buttons.ok',

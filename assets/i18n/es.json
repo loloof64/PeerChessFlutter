@@ -22,8 +22,9 @@
         "enterRoomId": "Por favor, introduzca la identificación de la sala:",
         "roomIdHint": "la identificación de la sala",
         "joininingMessageHint": "Tu mensaje para el dueño de la sala",
-        "no_matching_peer": "No hay compañero con esta identificación.",
-        "already_a_pending_call": "No puedes hacer dos llamadas a la vez."
+        "no_matching_room": "No hay sala con esta identificación.",
+        "busy_room": "La sala ya está ocupada o ya hay una solicitud de ingreso en curso.",
+        "already_a_pending_request": "No puedes hacer dos solicitas a la vez."
     },
     "game_termination": {
         "black_checkmate_white": "Los Negros ha ganado por jaque mate.",
