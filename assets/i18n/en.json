@@ -14,7 +14,8 @@
         "stopped": "Game stopped.",
         "restart_game_title": "New game ?",
         "restart_game_msg": "Do you want to finish current game and start a new one ?",
-        "no_matching_peer": "There's no peer with this id."
+        "no_matching_peer": "There's no peer with this id.",
+        "already_a_pending_call": "You can't make two calls at once."
     },
     "game_termination": {
         "black_checkmate_white": "Black has won by checkmate.",

@@ -13,7 +13,8 @@
         "stop_game_msg": "¿Quieres detener el juego actual?",
         "stopped": "Juego terminado.",
         "restart_game_title": "¿Nuevo juego?",
-        "no_matching_peer": "No hay compañero con esta identificación."
+        "no_matching_peer": "No hay compañero con esta identificación.",
+        "already_a_pending_call": "No puedes hacer dos llamadas a la vez."
     },
     "game_termination": {
         "black_checkmate_white": "Los Negros ha ganado por jaque mate.",

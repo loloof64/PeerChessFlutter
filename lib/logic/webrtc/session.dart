@@ -148,12 +148,13 @@ class Signaling {
   Function(RTCDataChannel dc)? onDataChannel;
 
   void cancelCallRequest() {
-    if (_signallingInProgress = false) return;
+    if (_signallingInProgress == false) return;
     _signallingInProgress = false;
     _remotePeerId = null;
   }
 
   Future<void> acceptAnswer() async {
+    if (_signallingInProgress == false) return;
     _signallingInProgress = false;
     // TODO update OfferCandidates with status set to Accepted
     _myConnection.onDataChannel = (channel) {
@@ -165,6 +166,7 @@ class Signaling {
   }
 
   Future<void> declineAnswer() async {
+    if (_signallingInProgress == false) return;
     _signallingInProgress = false;
     // TODO update OfferCandidates with status set to Rejected
   }
@@ -173,43 +175,85 @@ class Signaling {
     required String remotePeerId,
     required String message,
   }) async {
-    final noRemotePeerSetYet = _remotePeerId == null;
+    final remotePeerAlreadySet = _remotePeerId != null;
+    if (remotePeerAlreadySet) {
+      return MakingCallResult.alreadyAPendingCall;
+    }
 
-    if (noRemotePeerSetYet) {
-      // checking that target peer exists
-      QueryBuilder<ParseObject> queryRemotePeer =
-          QueryBuilder<ParseObject>(ParseObject('Peer'))
-            ..whereEqualTo('objectId', remotePeerId);
-      final ParseResponse apiResponse = await queryRemotePeer.query();
+    // checking that target peer exists
 
-      if (!apiResponse.success ||
-          apiResponse.results == null ||
-          apiResponse.results!.isEmpty) {
-        return MakingCallResult.remotePeerDoesNotExist;
-      }
+    QueryBuilder<ParseObject> queryRemotePeer =
+        QueryBuilder<ParseObject>(ParseObject('Peer'))
+          ..whereEqualTo('objectId', remotePeerId);
+    final ParseResponse remoterPeerApiResponse = await queryRemotePeer.query();
 
-      _remotePeerId = remotePeerId;
-      _signallingInProgress = true;
-      await _createDataChannel();
+    if (!remoterPeerApiResponse.success ||
+        remoterPeerApiResponse.results == null ||
+        remoterPeerApiResponse.results!.isEmpty) {
+      return MakingCallResult.remotePeerDoesNotExist;
+    }
 
-      RTCSessionDescription? offerDescription;
-      // create call object
-      _myConnection.onIceCandidate = (event) async {
+    _remotePeerId = remotePeerId;
+    _signallingInProgress = true;
+    await _createDataChannel();
+
+    RTCSessionDescription? offerDescription;
+
+    _myConnection.onIceCandidate = (event) async {
+      // first checks if an existing call already exists between
+      // those two peers
+      QueryBuilder<ParseObject> queryOfferCandidates =
+          QueryBuilder<ParseObject>(ParseObject('OfferCandidates'))
+            ..whereRelatedTo('owner', 'Peer', selfId!)
+            ..whereRelatedTo('target', 'Peer', remotePeerId);
+
+      final ParseResponse offerCandidatesApiResponse =
+          await queryOfferCandidates.query();
+
+      final offerInstanceAlreadyExists = offerCandidatesApiResponse.success &&
+          offerCandidatesApiResponse.results != null &&
+          offerCandidatesApiResponse.results!.isNotEmpty;
+
+      ////////////////////////////////////////////////
+      Logger().d(offerCandidatesApiResponse.count);
+      ////////////////////////////////////////////////
+
+      if (offerInstanceAlreadyExists) {
+        // reuse existing object
+
+        //////////////////////////////
+        Logger().d("reusing offer object in DB");
+        //////////////////////////////
+
+        final offerInstance =
+            offerCandidatesApiResponse.results!.first as ParseObject;
+        offerInstance.set('offerMessage', message);
+        offerInstance.set('offer', event.toMap());
+        offerInstance.set('description', offerDescription?.toMap());
+
+        await offerInstance.save();
+      } else {
+        // create call object
+
+        ///////////////////////////////////////////////
+        Logger().d("creating new offer object in DB");
+        ////////////////////////////////////////////////
+
         final dbCandidate = ParseObject('OfferCandidates')
           ..set('owner', ParseObject('Peer')..objectId = selfId)
           ..set('target', ParseObject('Peer')..objectId = remotePeerId)
           ..set('offerMessage', message)
-          ..set('offer', event.candidate!)
+          ..set('offer', event.toMap())
           ..set('description', offerDescription?.toMap());
         await dbCandidate.save();
-      };
+      }
+    };
 
-      offerDescription = await _myConnection.createOffer();
-      await _myConnection.setLocalDescription(offerDescription);
+    offerDescription = await _myConnection.createOffer();
 
-      return MakingCallResult.success;
-    }
-    return MakingCallResult.alreadyAPendingCall;
+    await _myConnection.setLocalDescription(offerDescription);
+
+    return MakingCallResult.success;
   }
 
   Future<void> _closeCall() async {

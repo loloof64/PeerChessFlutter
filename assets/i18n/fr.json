@@ -14,7 +14,8 @@
         "stopped": "Partie interrompue.",
         "restart_game_title": "Nouvelle partie ?",
         "restart_game_msg": "Voulez-vous arrêter la partie en cours et en démarrer une nouvelle ?",
-        "no_matching_peer": "Personne ne possède cet identifiant."
+        "no_matching_peer": "Personne ne possède cet identifiant.",
+        "already_a_pending_call": "Impossible de passer deux appels à la fois."
     },
     "game_termination": {
         "black_checkmate_white": "Les Noirs gagnent par échec et mat.",
