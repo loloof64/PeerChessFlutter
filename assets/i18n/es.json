@@ -28,7 +28,8 @@
         "failed_creating_room": "No se pudo crear la sala.",
         "busy_room": "La sala ya está ocupada o ya hay una solicitud de ingreso en curso.",
         "already_a_pending_request": "No puedes hacer dos solicitas a la vez.",
-        "incoming_request_title": "Solicitud entrante"
+        "incoming_request_title": "Solicitud entrante",
+        "aborted_request_by_peer": "El usuario (la usario) ha cancelado su solicitud."
     },
     "game_termination": {
         "black_checkmate_white": "Los Negros ha ganado por jaque mate.",

@@ -58,6 +58,7 @@ class _GameScreenState extends State<GameScreen> {
   late TextEditingController _roomIdController;
   late TextEditingController _ringingMessageController;
   BuildContext? _pendingCallContext;
+  bool _pendingRequest = false;
 
   final _liveQuery = LiveQuery();
 
@@ -109,10 +110,16 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _handleIncomingRequestAccepted() async {
     // todo accept request
+    setState(() {
+      _pendingRequest = false;
+    });
   }
 
   Future<void> _handleIncomingRequestRefused() async {
     // todo refuse request
+    setState(() {
+      _pendingRequest = false;
+    });
   }
 
   void _startLiveQuery() async {
@@ -142,6 +149,9 @@ class _GameScreenState extends State<GameScreen> {
       if (isTheRoomWeBelongIn && weAreTheOwner) {
         final thereIsAJoiner = realValue.get<ParseObject>('joiner') != null;
         if (thereIsAJoiner) {
+          setState(() {
+            _pendingRequest = true;
+          });
           final message = realValue.get<String>('message');
           await showDialog(
               barrierDismissible: false,
@@ -176,6 +186,22 @@ class _GameScreenState extends State<GameScreen> {
                   ],
                 );
               });
+        } // thereIsAJoiner
+        else {
+          final thereIsAPendingRequest = _pendingRequest;
+          if (thereIsAPendingRequest) {
+            // clearing accept/deny request dialog
+            Navigator.of(context).pop();
+
+            setState(() {
+              _pendingRequest = false;
+            });
+
+            // notifying us
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: I18nText('game.aborted_request_by_peer')),
+            );
+          }
         }
       }
     });
@@ -575,55 +601,6 @@ class _GameScreenState extends State<GameScreen> {
     };
     final moveAsJson = jsonEncode(moveData);
     _dataChannel?.send(RTCDataChannelMessage(moveAsJson));
-  }
-
-  Future<bool?> _showAcceptDialog(String peerMessage) {
-    return showDialog<bool?>(
-        barrierDismissible: false,
-        context: context,
-        builder: (context2) {
-          return AlertDialog(
-            title: I18nText('session.dialog_accept.title'),
-            content: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                I18nText('session.dialog_accept.message'),
-                Text(
-                  peerMessage,
-                  style: TextStyle(
-                    backgroundColor: Colors.grey[300],
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              DialogActionButton(
-                onPressed: () {
-                  Navigator.of(context2).pop();
-                  // TODO register an acceptation
-                },
-                textContent: I18nText(
-                  'buttons.ok',
-                ),
-                backgroundColor: Colors.tealAccent,
-                textColor: Colors.white,
-              ),
-              DialogActionButton(
-                onPressed: () {
-                  Navigator.of(context2).pop();
-                  // TODO register a refusal
-                },
-                textContent: I18nText(
-                  'buttons.cancel',
-                ),
-                textColor: Colors.white,
-                backgroundColor: Colors.redAccent,
-              )
-            ],
-          );
-        });
   }
 
   Future<void> _handleRoomJoiningRequest() async {
