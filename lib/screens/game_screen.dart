@@ -626,8 +626,9 @@ class _GameScreenState extends State<GameScreen> {
             content: I18nText('game.waiting_response'),
             actions: [
               DialogActionButton(
-                onPressed: () {
+                onPressed: () async {
                   Navigator.of(ctx2).pop();
+                  await _signaling.removeSelfFromRoomJoiner();
                 },
                 textContent: I18nText(
                   'buttons.cancel',

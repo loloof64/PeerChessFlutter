@@ -151,6 +151,8 @@ class Signaling {
       return JoiningRoomState.alreadySomeonePairingWithHost;
     }
 
+    _roomId = requestedRoomId;
+
     // Registers the joiner of the room in the DB
     roomInstance.set(
         'joiner', (ParseObject('Peer')..objectId = selfId).toPointer());
@@ -161,6 +163,12 @@ class Signaling {
     }
 
     return JoiningRoomState.success;
+  }
+
+  Future<void> removeSelfFromRoomJoiner() async {
+    final roomInstance = ParseObject('Room')..objectId = _roomId;
+    roomInstance.set('joiner', null);
+    await roomInstance.save();
   }
 
   Future<void> _removeReleatedOfferCandidates() async {
