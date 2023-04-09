@@ -568,29 +568,6 @@ class _GameScreenState extends State<GameScreen> {
       );
       return;
     }
-
-    if (!mounted) return;
-    showDialog(
-        barrierDismissible: false,
-        context: context,
-        builder: (ctx2) {
-          return AlertDialog(
-            content: I18nText('game.waiting_response'),
-            actions: [
-              DialogActionButton(
-                onPressed: () async {
-                  Navigator.of(ctx2).pop();
-                  await _signaling.removeSelfFromRoomJoiner();
-                },
-                textContent: I18nText(
-                  'buttons.cancel',
-                ),
-                textColor: Colors.white,
-                backgroundColor: Colors.redAccent,
-              )
-            ],
-          );
-        });
   }
 
   Future<void> _joinRoom() async {
