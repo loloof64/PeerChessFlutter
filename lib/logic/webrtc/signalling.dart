@@ -154,6 +154,11 @@ class Signaling {
     // Registers the joiner of the room in the DB
     roomInstance.set(
         'joiner', (ParseObject('Peer')..objectId = selfId).toPointer());
+    final saveResponse = await roomInstance.save();
+
+    if (saveResponse.error != null) {
+      Logger().e(saveResponse.error);
+    }
 
     return JoiningRoomState.success;
   }
