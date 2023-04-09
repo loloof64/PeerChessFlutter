@@ -544,35 +544,6 @@ class _GameScreenState extends State<GameScreen> {
     _dataChannel?.send(RTCDataChannelMessage(moveAsJson));
   }
 
-  /*Future<void> _showWaitingPeerDialog() {
-    return showDialog<bool?>(
-        barrierDismissible: false,
-        context: context,
-        builder: (BuildContext context2) {
-          _pendingCallContext = context2;
-          return AlertDialog(
-            title: I18nText("session.dialog_waiting_peer.title"),
-            content: I18nText("session.dialog_waiting_peer.message"),
-            actions: [
-              DialogActionButton(
-                onPressed: () {
-                  Navigator.of(context2).pop();
-                  _signaling.cancelCallRequest();
-                  setState(() {
-                    _pendingCallContext = null;
-                  });
-                },
-                textContent: I18nText(
-                  'buttons.cancel',
-                ),
-                textColor: Colors.white,
-                backgroundColor: Colors.redAccent,
-              )
-            ],
-          );
-        });
-  }*/
-
   Future<bool?> _showAcceptDialog(String peerMessage) {
     return showDialog<bool?>(
         barrierDismissible: false,
@@ -635,68 +606,6 @@ class _GameScreenState extends State<GameScreen> {
       _signaling.onDataChannel = (channel) {
         _dataChannel = channel;
       };
-/* TODO fix or remove
-      _signaling.onCallStateChange = (Session session, CallState state) async {
-        switch (state) {
-          case CallState.callStateNew:
-            setState(() {
-              _session = session;
-            });
-            break;
-          case CallState.callStateInvite:
-            setState(() {
-              _waitAccept = true;
-              _showWaitingPeerDialog(context);
-            });
-            break;
-          case CallState.callStateConnected:
-            if (_communicating) {
-              Logger().d("Blocked an incoming connection.");
-              return;
-            }
-            if (_waitAccept) {
-              _waitAccept = false;
-              Navigator.of(context).pop(false);
-            }
-            setState(() {
-              _communicating = true;
-            });
-            break;
-          case CallState.callStateBye:
-            if (_waitAccept) {
-              Logger().e('peer reject');
-              _waitAccept = false;
-              Navigator.of(context).pop(false);
-            }
-            setState(() {
-              _communicating = false;
-              _session = null;
-            });
-            break;
-          case CallState.callStateRinging:
-            if (_communicating) {
-              Logger().d("Blocked an incoming request.");
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: I18nText('session.blocked_incoming_request'),
-                ),
-              );
-              return;
-            }
-            final peerMessage = _receivedPeerData[ringingMessageKey] ?? '';
-            bool? accept = await _showAcceptDialog(context, peerMessage);
-            if (accept!) {
-              _accept();
-              setState(() {
-                _communicating = true;
-              });
-            } else {
-              _reject();
-            }
-            break;
-        }
-      };
-      */
     });
     /*final response = await _signaling.makeCall(
       remotePeerId: _remotePeerId,
