@@ -780,38 +780,6 @@ class _GameScreenState extends State<GameScreen> {
         });
   }
 
-  Future<void> _displayMyOwnId() async {
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-              title: I18nText('session.dialog_my_id.title'),
-              content: Row(
-                children: [
-                  Text(_signaling.selfId!),
-                  IconButton(
-                    onPressed: _copyIdToClipboard,
-                    icon: const Icon(
-                      Icons.paste,
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                DialogActionButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  textContent: I18nText(
-                    'buttons.ok',
-                  ),
-                  backgroundColor: Colors.tealAccent,
-                  textColor: Colors.white,
-                ),
-              ]);
-        });
-  }
-
   @override
   Widget build(BuildContext context) {
     final isLandscape =
@@ -826,13 +794,6 @@ class _GameScreenState extends State<GameScreen> {
               onPressed: _startConnection,
               icon: const Icon(
                 Icons.door_sliding,
-              ),
-            ),
-          if (_readyToConnect)
-            IconButton(
-              onPressed: _displayMyOwnId,
-              icon: const Icon(
-                Icons.numbers,
               ),
             ),
           IconButton(

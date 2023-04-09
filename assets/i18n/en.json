@@ -67,10 +67,6 @@
         "dialog_accept": {
             "title": "Connect to peer ?",
             "message": "Do you want to connect to peer ?"
-        },
-        "dialog_my_id": {
-            "title": "Your id",
-            "blocked_incoming_request": "Blocked an incoming request."
         }
     }
 }

@@ -67,9 +67,5 @@
     "dialog_accept": {
         "title": "¿Conectar con un compañero?",
         "message": "¿Quieres conectarte a compañero?"
-    },
-    "dialog_my_id": {
-        "title": "Your id",
-        "blocked_incoming_request": "Bloqueó una solicitud entrante."
     }
 }

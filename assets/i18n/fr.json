@@ -67,10 +67,6 @@
         "dialog_accept": {
             "title": "Connexion avec le contact ?",
             "message": "Souhaitez-vous vous connecter à ce contact ?"
-        },
-        "dialog_my_id": {
-            "title": "Votre identifiant",
-            "blocked_incoming_request": "Une requête de connexion a été bloquée."
         }
     }
 }
