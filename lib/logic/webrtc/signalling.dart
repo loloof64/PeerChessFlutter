@@ -58,7 +58,7 @@ String randomString(int length) {
 
 enum CreatingRoomState {
   success,
-  already_created_a_room,
+  alreadyCreatedARoom,
   error,
 }
 
@@ -73,11 +73,12 @@ class Signaling {
   late RTCPeerConnection _myConnection;
 
   String? _selfId;
-  String? _remotePeerId;
   String? _roomId;
 
   bool _signallingInProgress = false;
   String? get roomId => _roomId;
+  // TODO adapt
+  String? get remoteId => null;
 
   late Map<String, dynamic> _iceServers;
 
@@ -120,7 +121,7 @@ class Signaling {
   }
 
   Future<CreatingRoomState> createRoom() async {
-    if (_roomId != null) return CreatingRoomState.already_created_a_room;
+    if (_roomId != null) return CreatingRoomState.alreadyCreatedARoom;
     final room = ParseObject('Room');
     room.set('owner', ParseObject('Peer')..objectId = _selfId);
     final response = await room.save();
@@ -174,34 +175,12 @@ class Signaling {
     await roomInstance.save();
   }
 
-  Future<void> _removeReleatedOfferCandidates() async {
-    if (_remotePeerId != null) {
-      QueryBuilder<ParseObject> queryBook =
-          QueryBuilder<ParseObject>(ParseObject('OfferCandidates'))
-            ..whereEqualTo(
-                'owner', (ParseObject('Peer')..objectId = selfId).toPointer())
-            ..whereEqualTo('target',
-                (ParseObject('Peer')..objectId = _remotePeerId).toPointer());
-      final ParseResponse apiResponse = await queryBook.query();
-
-      if (apiResponse.success && apiResponse.results != null) {
-        for (var result in apiResponse.results! as List<ParseObject>) {
-          await result.delete();
-        }
-      }
-    }
-  }
-
   Future<void> removePeerFromDB() async {
-    _removeReleatedOfferCandidates();
-
     final localPeer = ParseObject('Peer')..objectId = _selfId;
     await localPeer.delete();
   }
 
   String? get selfId => _selfId;
-  String? get remoteId => _remotePeerId;
-  bool get callInProgress => _remotePeerId != null;
 
   Function(RTCDataChannel dc, RTCDataChannelMessage data)? onDataChannelMessage;
   Function(RTCDataChannel dc)? onDataChannel;
@@ -209,7 +188,6 @@ class Signaling {
   void cancelCallRequest() {
     if (_signallingInProgress == false) return;
     _signallingInProgress = false;
-    _remotePeerId = null;
   }
 
   Future<void> acceptAnswer() async {
@@ -234,7 +212,6 @@ class Signaling {
     await _myConnection.close();
     await _dataChannel?.close();
     _dataChannel = null;
-    _removeReleatedOfferCandidates();
   }
 
   void _addDataChannel(RTCDataChannel channel) {
@@ -255,6 +232,5 @@ class Signaling {
 
   Future<void> hangUp() async {
     _closeCall();
-    _remotePeerId = null;
   }
 }

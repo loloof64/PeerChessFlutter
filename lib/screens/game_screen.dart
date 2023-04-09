@@ -65,6 +65,10 @@ class _GameScreenState extends State<GameScreen> {
   final QueryBuilder<ParseObject> _queryPeer =
       QueryBuilder<ParseObject>(ParseObject('Peer'));
 
+  late Subscription<ParseObject> _roomSubscription;
+  final QueryBuilder<ParseObject> _queryRoom =
+      QueryBuilder<ParseObject>(ParseObject('Room'));
+
   final ScrollController _historyScrollController =
       ScrollController(initialScrollOffset: 0.0, keepScrollOffset: true);
 
@@ -103,11 +107,21 @@ class _GameScreenState extends State<GameScreen> {
     super.dispose();
   }
 
+  Future<void> _handleIncomingRequestAccepted() async {
+    // todo accept request
+  }
+
+  Future<void> _handleIncomingRequestRefused() async {
+    // todo refuse request
+  }
+
   void _startLiveQuery() async {
     _peerSubscription = await _liveQuery.client.subscribe(_queryPeer);
     _peerSubscription.on(LiveQueryEvent.delete, (value) {
       final realValue = value as ParseObject;
-      if (realValue.objectId == _signaling.remoteId) {
+      final isTheInstanceWeNeedToDelete =
+          realValue.objectId == _signaling.remoteId;
+      if (isTheInstanceWeNeedToDelete) {
         _signaling.hangUp();
         // cancel pending call if any
         if (_pendingCallContext != null) {
@@ -115,6 +129,53 @@ class _GameScreenState extends State<GameScreen> {
           setState(() {
             _pendingCallContext = null;
           });
+        }
+      }
+    });
+
+    _roomSubscription = await _liveQuery.client.subscribe(_queryRoom);
+    _roomSubscription.on(LiveQueryEvent.update, (value) async {
+      final realValue = value as ParseObject;
+      final isTheRoomWeBelongIn = realValue.objectId == _signaling.roomId;
+      final weAreTheOwner =
+          realValue.get<ParseObject>('owner')?.objectId == _signaling.selfId;
+      if (isTheRoomWeBelongIn && weAreTheOwner) {
+        final thereIsAJoiner = realValue.get<ParseObject>('joiner') != null;
+        if (thereIsAJoiner) {
+          final message = realValue.get<String>('message');
+          await showDialog(
+              barrierDismissible: false,
+              context: context,
+              builder: (ctx2) {
+                return AlertDialog(
+                  title: I18nText('game.incoming_request_title'),
+                  content: Text(message ?? ''),
+                  actions: [
+                    DialogActionButton(
+                      onPressed: () {
+                        Navigator.of(ctx2).pop();
+                        _handleIncomingRequestAccepted();
+                      },
+                      textContent: I18nText(
+                        'buttons.ok',
+                      ),
+                      backgroundColor: Colors.tealAccent,
+                      textColor: Colors.white,
+                    ),
+                    DialogActionButton(
+                      onPressed: () {
+                        Navigator.of(ctx2).pop();
+                        _handleIncomingRequestRefused();
+                      },
+                      textContent: I18nText(
+                        'buttons.cancel',
+                      ),
+                      textColor: Colors.white,
+                      backgroundColor: Colors.redAccent,
+                    )
+                  ],
+                );
+              });
         }
       }
     });
@@ -393,7 +454,7 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _createRoom() async {
     final success = await _signaling.createRoom();
-    if (success == CreatingRoomState.already_created_a_room) {
+    if (success == CreatingRoomState.alreadyCreatedARoom) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

@@ -27,7 +27,8 @@
         "already_created_room": "Vous ne pouvez pas créér deux salons simultanément.",
         "failed_creating_room": "Erreur lors de la de création de la salle.",
         "busy_room": "La salle est occupée ou une requête de jeu est déjà en cours pour ladite salle.",
-        "already_a_pending_request": "Impossible de passer deux requêtes à la fois."
+        "already_a_pending_request": "Impossible de passer deux requêtes à la fois.",
+        "incoming_request_title": "Requête entrante"
     },
     "game_termination": {
         "black_checkmate_white": "Les Noirs gagnent par échec et mat.",

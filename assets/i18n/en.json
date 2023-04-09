@@ -27,7 +27,8 @@
         "already_created_room": "You can't create two rooms at twice.",
         "failed_creating_room": "Failed to create room.",
         "busy_room": "The room is already busy or a joining request is already in progress.",
-        "already_a_pending_request": "You can't make two requests at once."
+        "already_a_pending_request": "You can't make two requests at once.",
+        "incoming_request_title": "Incoming request"
     },
     "game_termination": {
         "black_checkmate_white": "Black has won by checkmate.",
