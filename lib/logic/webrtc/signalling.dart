@@ -119,7 +119,11 @@ class Signaling {
   }
 
   Future<CreatingRoomState> createRoom() async {
-    if (_roomId != null) return CreatingRoomState.alreadyCreatedARoom;
+    // Checking that this peer is not already in a room
+    final peerAlreadyInARoom = _roomId != null;
+    if (peerAlreadyInARoom) return CreatingRoomState.alreadyCreatedARoom;
+
+    // Save Room into DB and join this peer to it
     final room = ParseObject('Room');
     room.set('owner', ParseObject('Peer')..objectId = _selfId);
     final response = await room.save();
@@ -127,8 +131,29 @@ class Signaling {
       Logger().e(response.error);
       return CreatingRoomState.error;
     }
+
+    // Marks this peer as busy
     final roomId = room.objectId;
     _roomId = roomId;
+
+    // Sets ICE candidates handler
+    _myConnection.onIceCandidate = (candidate) async {
+      // Create OfferCandidate instance
+      final offer = ParseObject('OfferCandidate')
+        ..set('data', candidate.toMap())
+        ..set('owner', ParseObject('Peer')..objectId = _selfId);
+
+      // Save into DB
+      final saveSuccess = await offer.save();
+      if (saveSuccess.error != null) {
+        Logger().d(saveSuccess.error);
+      }
+    };
+
+    // Creates WebRTC offer
+    final offer = await _myConnection.createOffer();
+    await _myConnection.setLocalDescription(offer);
+
     return CreatingRoomState.success;
   }
 
