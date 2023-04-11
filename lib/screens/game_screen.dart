@@ -163,16 +163,18 @@ class _GameScreenState extends State<GameScreen> {
             // Set remote description with answer from guest if needed
             final weNeedToSetRemoteDescription =
                 _signaling.remoteDescriptionNeeded;
-            final guestAnswerData = answer.get<Map<String, dynamic>>('data');
-            if (guestAnswerData == null) {
-              Logger().e('No data in guest answer !');
-              return;
+            if (weNeedToSetRemoteDescription) {
+              final guestAnswerData = answer.get<Map<String, dynamic>>('data');
+              if (guestAnswerData == null) {
+                Logger().e('No data in guest answer !');
+                return;
+              }
+              final sdp = guestAnswerData['sdp'];
+              final type = guestAnswerData['type'];
+              final remoteSessionDescription = RTCSessionDescription(sdp, type);
+              await _signaling
+                  .setRemoteDescriptionFromAnswer(remoteSessionDescription);
             }
-            final sdp = guestAnswerData['sdp'];
-            final type = guestAnswerData['type'];
-            final remoteSessionDescription = RTCSessionDescription(sdp, type);
-            await _signaling
-                .setRemoteDescriptionFromAnswer(remoteSessionDescription);
 
             // register connected flag in DB
             realValue.set('connected', true);
