@@ -80,7 +80,9 @@ class Signaling {
 
   bool get remoteDescriptionNeeded =>
       _myConnection.connectionState !=
-      RTCPeerConnectionState.RTCPeerConnectionStateConnected;
+          RTCPeerConnectionState.RTCPeerConnectionStateConnected &&
+      _myConnection.connectionState !=
+          RTCPeerConnectionState.RTCPeerConnectionStateConnecting;
 
   late Map<String, dynamic> _iceServers;
 
