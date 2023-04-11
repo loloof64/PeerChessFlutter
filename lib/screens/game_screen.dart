@@ -145,7 +145,16 @@ class _GameScreenState extends State<GameScreen> {
             // get matching answer
             final guest = realValue.get<ParseObject>('joiner');
             final guestId = guest!.objectId;
-            final answer = ParseObject('Answer')..objectId = guestId;
+            QueryBuilder<ParseObject> answerQuery =
+                QueryBuilder<ParseObject>(ParseObject('Answer'))
+                  ..whereEqualTo('objectId', guestId);
+            final answerResponse = await answerQuery.query();
+            if (answerResponse.error != null ||
+                answerResponse.results == null ||
+                answerResponse.results!.isEmpty) {
+              Logger().e('No answer belonging to the room joiner !');
+            }
+            final answer = answerResponse.results!.first as ParseObject;
 
             // Set remote description with answer from guest
             final guestAnswerData = answer.get<Map<String, dynamic>>('data');
