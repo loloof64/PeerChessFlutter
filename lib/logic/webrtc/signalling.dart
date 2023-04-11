@@ -119,6 +119,11 @@ class Signaling {
     _roomId = null;
   }
 
+  Future<void> setRemoteDescriptionFromAnswer(
+      RTCSessionDescription description) async {
+    await _myConnection.setRemoteDescription(description);
+  }
+
   Future<CreatingRoomState> createRoom() async {
     // Checking that this peer is not already in a room
     final peerAlreadyInARoom = _roomId != null;
