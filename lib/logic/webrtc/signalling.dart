@@ -224,14 +224,13 @@ class Signaling {
     final offerFromHost = queryOfferResponse.results!.first as ParseObject;
 
     // Set remote description with offer from host
-    final hostOfferData = offerFromHost.get('data') as String?;
+    final hostOfferData = offerFromHost.get<Map<String, dynamic>>('data');
     if (hostOfferData == null) {
       Logger().e('No data in host offer !');
       return JoiningRoomState.error;
     }
-    final hostOfferDataJson = jsonDecode(hostOfferData) as Map<String, dynamic>;
-    final sdp = hostOfferDataJson['sdp'];
-    final type = hostOfferDataJson['type'];
+    final sdp = hostOfferData['sdp'];
+    final type = hostOfferData['type'];
     final remoteSessionDescription = RTCSessionDescription(sdp, type);
     _myConnection.setRemoteDescription(remoteSessionDescription);
 
