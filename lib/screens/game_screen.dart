@@ -148,9 +148,9 @@ class _GameScreenState extends State<GameScreen> {
             // get matching answer
             final guest = realValue.get<ParseObject>('joiner');
             final guestId = guest!.objectId;
-            QueryBuilder<ParseObject> answerQuery =
-                QueryBuilder<ParseObject>(ParseObject('Answer'))
-                  ..whereEqualTo('objectId', guestId);
+            QueryBuilder<ParseObject> answerQuery = QueryBuilder<ParseObject>(
+                ParseObject('Answer'))
+              ..whereEqualTo('owner', ParseObject('Peer')..objectId = guestId);
             final answerResponse = await answerQuery.query();
             if (answerResponse.error != null ||
                 answerResponse.results == null ||
