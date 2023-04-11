@@ -142,6 +142,9 @@ class _GameScreenState extends State<GameScreen> {
             // removing room id dialog
             if (Navigator.of(context).canPop()) Navigator.of(context).pop();
 
+            // Waits a bit to let the guest answer update in the db
+            await Future.delayed(const Duration(milliseconds: 600));
+
             // get matching answer
             final guest = realValue.get<ParseObject>('joiner');
             final guestId = guest!.objectId;
@@ -153,6 +156,7 @@ class _GameScreenState extends State<GameScreen> {
                 answerResponse.results == null ||
                 answerResponse.results!.isEmpty) {
               Logger().e('No answer belonging to the room joiner !');
+              return;
             }
             final answer = answerResponse.results!.first as ParseObject;
 
