@@ -78,6 +78,10 @@ class Signaling {
 
   String? get roomId => _roomId;
 
+  bool get remoteDescriptionNeeded =>
+      _myConnection.connectionState !=
+      RTCPeerConnectionState.RTCPeerConnectionStateConnected;
+
   late Map<String, dynamic> _iceServers;
 
   Signaling() {

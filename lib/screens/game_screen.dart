@@ -160,7 +160,9 @@ class _GameScreenState extends State<GameScreen> {
             }
             final answer = answerResponse.results!.first as ParseObject;
 
-            // Set remote description with answer from guest
+            // Set remote description with answer from guest if needed
+            final weNeedToSetRemoteDescription =
+                _signaling.remoteDescriptionNeeded;
             final guestAnswerData = answer.get<Map<String, dynamic>>('data');
             if (guestAnswerData == null) {
               Logger().e('No data in guest answer !');
