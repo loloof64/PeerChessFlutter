@@ -188,6 +188,24 @@ class Signaling {
       Logger().e(saveResponse.error);
     }
 
+    // Sets ICE candidates handler
+    _myConnection.onIceCandidate = (candidate) async {
+      // Create OfferCandidate instance
+      final offer = ParseObject('AnswerCandidate')
+        ..set('data', candidate.toMap())
+        ..set('owner', ParseObject('Peer')..objectId = _selfId);
+
+      // Save into DB
+      final saveSuccess = await offer.save();
+      if (saveSuccess.error != null) {
+        Logger().d(saveSuccess.error);
+      }
+    };
+
+    // Creates WebRTC offer
+    final answer = await _myConnection.createAnswer();
+    await _myConnection.setLocalDescription(answer);
+
     return JoiningRoomState.success;
   }
 
