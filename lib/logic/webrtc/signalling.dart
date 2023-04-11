@@ -66,6 +66,7 @@ enum JoiningRoomState {
   success,
   noRoomWithThisId,
   alreadySomeonePairingWithHost,
+  error,
 }
 
 class Signaling {
@@ -154,6 +155,19 @@ class Signaling {
     final offer = await _myConnection.createOffer();
     await _myConnection.setLocalDescription(offer);
 
+    // Save offer in db
+    final offerDbInstance = ParseObject('Offer')
+      ..set('data', {
+        "type": offer.type,
+        "sdp": offer.sdp,
+      })
+      ..set('owner', ParseObject('Peer')..objectId = _selfId);
+    final saveSuccess = await offerDbInstance.save();
+    if (saveSuccess.error != null) {
+      Logger().d(saveSuccess.error);
+      return CreatingRoomState.error;
+    }
+
     return CreatingRoomState.success;
   }
 
@@ -186,7 +200,40 @@ class Signaling {
 
     if (saveResponse.error != null) {
       Logger().e(saveResponse.error);
+      return JoiningRoomState.error;
     }
+
+    // Gets the host
+    final host = roomInstance.get<ParseObject>('owner');
+    if (host == null) {
+      Logger().e('No host for the given room !');
+      return JoiningRoomState.error;
+    }
+
+    // Search the offer from the host
+    QueryBuilder<ParseObject> queryOffer = QueryBuilder<ParseObject>(
+        ParseObject('Offer'))
+      ..whereEqualTo('owner', ParseObject('Peer')..objectId = host.objectId);
+    final ParseResponse queryOfferResponse = await queryOffer.query();
+
+    if (queryOfferResponse.error != null ||
+        queryOfferResponse.results == null ||
+        queryOfferResponse.results!.isEmpty) {
+      Logger().e('No offer register for the host !');
+    }
+    final offerFromHost = queryOfferResponse.results!.first as ParseObject;
+
+    // Set remote description with offer from host
+    final hostOfferData = offerFromHost.get('data') as String?;
+    if (hostOfferData == null) {
+      Logger().e('No data in host offer !');
+      return JoiningRoomState.error;
+    }
+    final hostOfferDataJson = jsonDecode(hostOfferData) as Map<String, dynamic>;
+    final sdp = hostOfferDataJson['sdp'];
+    final type = hostOfferDataJson['type'];
+    final remoteSessionDescription = RTCSessionDescription(sdp, type);
+    _myConnection.setRemoteDescription(remoteSessionDescription);
 
     // Sets ICE candidates handler
     _myConnection.onIceCandidate = (candidate) async {

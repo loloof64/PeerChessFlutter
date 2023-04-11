@@ -45,9 +45,6 @@ void main() async {
     clientKey: 'ewc4mqE5ukU2DIgWGtU5m7A7bsiYGMjTnutfH9iX',
     connectivityProvider: CustomParseConnectivityProvider(),
     liveQueryUrl: 'https://peerchessconnector.b4a.io',
-    //////////////////////////////
-    debug: true,
-    //////////////////////////////
   );
 
   runApp(const MyApp());
