@@ -197,17 +197,6 @@ class Signaling {
 
     _roomId = requestedRoomId;
 
-    // Registers the joiner of the room in the DB
-    roomInstance.set(
-        'joiner', (ParseObject('Peer')..objectId = selfId).toPointer());
-    roomInstance.set('requestMessage', message);
-    final saveResponse = await roomInstance.save();
-
-    if (saveResponse.error != null) {
-      Logger().e(saveResponse.error);
-      return JoiningRoomState.error;
-    }
-
     // Gets the host
     final host = roomInstance.get<ParseObject>('owner');
     if (host == null) {
@@ -238,6 +227,19 @@ class Signaling {
     final type = hostOfferData['type'];
     final remoteSessionDescription = RTCSessionDescription(sdp, type);
     _myConnection.setRemoteDescription(remoteSessionDescription);
+
+    // Registers the joiner of the room in the DB
+    // Important !!!
+    /// Must be done after the answer has been saved in DB
+    roomInstance.set(
+        'joiner', (ParseObject('Peer')..objectId = selfId).toPointer());
+    roomInstance.set('requestMessage', message);
+    final saveResponse = await roomInstance.save();
+
+    if (saveResponse.error != null) {
+      Logger().e(saveResponse.error);
+      return JoiningRoomState.error;
+    }
 
     // Sets ICE candidates handler
     _myConnection.onIceCandidate = (candidate) async {
