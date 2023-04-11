@@ -252,6 +252,19 @@ class Signaling {
     final answer = await _myConnection.createAnswer();
     await _myConnection.setLocalDescription(answer);
 
+    // Save answer in db
+    final answerDbInstance = ParseObject('Answer')
+      ..set('data', {
+        "type": answer.type,
+        "sdp": answer.sdp,
+      })
+      ..set('owner', ParseObject('Peer')..objectId = _selfId);
+    final saveSuccess = await answerDbInstance.save();
+    if (saveSuccess.error != null) {
+      Logger().d(saveSuccess.error);
+      return JoiningRoomState.error;
+    }
+
     return JoiningRoomState.success;
   }
 
