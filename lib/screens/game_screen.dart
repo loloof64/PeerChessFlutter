@@ -142,16 +142,9 @@ class _GameScreenState extends State<GameScreen> {
             // removing room id dialog
             if (Navigator.of(context).canPop()) Navigator.of(context).pop();
 
-            // get matching room
-            final room = ParseObject('Room')..objectId = _signaling.roomId;
-
             // get matching answer
-            final guest = room.get<ParseObject>('joiner');
-            if (guest == null) {
-              Logger().e('No guest set in the room !');
-              return;
-            }
-            final guestId = guest.objectId;
+            final guest = realValue.get<ParseObject>('joiner');
+            final guestId = guest!.objectId;
             final answer = ParseObject('Answer')..objectId = guestId;
 
             // Set remote description with answer from guest
