@@ -55,8 +55,6 @@ class _GameScreenState extends State<GameScreen> {
   Map<String, String> _receivedPeerData = {};
   RTCDataChannel? _dataChannel;
   late TextEditingController _roomIdController;
-  late TextEditingController _ringingMessageController;
-  late TextEditingController _denyRequestMessageController;
   BuildContext? _pendingCallContext;
   bool _sessionActive = false;
   String? _remoteId;
@@ -77,8 +75,6 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     _roomIdController = TextEditingController();
-    _ringingMessageController = TextEditingController();
-    _denyRequestMessageController = TextEditingController();
     _gameManager = GameManager();
     _historyManager = HistoryManager(
       onUpdateChildrenWidgets: _updateHistoryChildrenWidgets,
@@ -103,8 +99,6 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void dispose() {
     _roomIdController.dispose();
-    _ringingMessageController.dispose();
-    _denyRequestMessageController.dispose();
     _signaling.removePeerFromDB();
     _cancelLiveQuery();
     super.dispose();
@@ -599,8 +593,7 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _handleRoomJoiningRequest() async {
     final requestedRoomId = _roomIdController.text;
-    final message = _ringingMessageController.text;
-    final success = await _signaling.joinRoom(requestedRoomId, message);
+    final success = await _signaling.joinRoom(requestedRoomId);
     if (success == JoiningRoomState.noRoomWithThisId) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -626,7 +619,6 @@ class _GameScreenState extends State<GameScreen> {
 
     setState(() {
       _roomIdController.text = "";
-      _ringingMessageController.text = "";
     });
 
     showDialog(

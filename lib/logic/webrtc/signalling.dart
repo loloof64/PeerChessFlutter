@@ -182,8 +182,7 @@ class Signaling {
     return CreatingRoomState.success;
   }
 
-  Future<JoiningRoomState> joinRoom(
-      String requestedRoomId, String message) async {
+  Future<JoiningRoomState> joinRoom(String requestedRoomId) async {
     // Checks that the room exists
     QueryBuilder<ParseObject> queryRoom =
         QueryBuilder<ParseObject>(ParseObject('Room'))
@@ -239,7 +238,6 @@ class Signaling {
     /// Must be done after the answer has been saved in DB
     roomInstance.set(
         'joiner', (ParseObject('Peer')..objectId = selfId).toPointer());
-    roomInstance.set('requestMessage', message);
     final saveResponse = await roomInstance.save();
 
     if (saveResponse.error != null) {
