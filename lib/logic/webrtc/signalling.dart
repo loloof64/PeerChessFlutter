@@ -282,7 +282,6 @@ class Signaling {
   Future<void> removeSelfFromRoomJoiner() async {
     final roomInstance = ParseObject('Room')..objectId = _roomId;
     roomInstance.set('joiner', null);
-    roomInstance.set('requestMessage', null);
     await roomInstance.save();
   }
 
