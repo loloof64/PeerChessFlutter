@@ -16,7 +16,10 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_i18n/flutter_i18n.dart';
 import 'package:flutter_i18n/loaders/decoders/json_decode_strategy.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -39,12 +42,16 @@ void main() async {
     const Size(600, 400),
   );
 
+  final back4appCredentialsText = await rootBundle
+      .loadString('assets/credentials/back4app_credentials.json');
+  final back4appCredentials =
+      await jsonDecode(back4appCredentialsText) as Map<String, dynamic>;
   await Parse().initialize(
-    'miDs69HfuESoNcAmft4555vsH4mCpPf7L1HNUZaE',
+    back4appCredentials['appId']!,
     parseServerUrl,
-    clientKey: 'ewc4mqE5ukU2DIgWGtU5m7A7bsiYGMjTnutfH9iX',
+    clientKey: back4appCredentials['clientKey'],
     connectivityProvider: CustomParseConnectivityProvider(),
-    liveQueryUrl: 'https://peerchessconnector.b4a.io',
+    liveQueryUrl: back4appCredentials['liveQueryUrl'],
   );
 
   runApp(const MyApp());
