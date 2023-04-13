@@ -130,6 +130,10 @@ class Signaling {
     await _myConnection.setRemoteDescription(description);
   }
 
+  Future<void> addIceCandidate(RTCIceCandidate candidate) async {
+    await _myConnection.addCandidate(candidate);
+  }
+
   Future<CreatingRoomState> createRoom() async {
     // Checking that this peer is not already in a room
     final peerAlreadyInARoom = _roomId != null;
@@ -243,6 +247,24 @@ class Signaling {
     if (saveResponse.error != null) {
       Logger().e(saveResponse.error);
       return JoiningRoomState.error;
+    }
+
+    // Sets the ICE candidates from the offer
+    QueryBuilder queryIceCandidates = QueryBuilder<ParseObject>(
+        ParseObject('OfferCandidate'))
+      ..whereEqualTo('owner', ParseObject('Peer')..objectId = host.objectId);
+    final queryIceCandidatesAnswer = await queryIceCandidates.query();
+    if (queryIceCandidatesAnswer.error != null ||
+        queryIceCandidatesAnswer.results == null ||
+        queryIceCandidatesAnswer.results!.isEmpty) {
+      Logger().e('No related offer !');
+      return JoiningRoomState.error;
+    }
+
+    for (var candidate in queryIceCandidatesAnswer.results!) {
+      final candidateInstance = candidate as ParseObject;
+      _myConnection.addCandidate(RTCIceCandidate(candidateInstance['candidate'],
+          candidateInstance['sdpMid'], candidateInstance['sdpMLineIndex']));
     }
 
     // Sets ICE candidates handler

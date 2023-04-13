@@ -69,6 +69,10 @@ class _GameScreenState extends State<GameScreen> {
   final QueryBuilder<ParseObject> _queryRoom =
       QueryBuilder<ParseObject>(ParseObject('Room'));
 
+  late Subscription<ParseObject> _answerCandidateSubscription;
+  final QueryBuilder<ParseObject> _queryAnswerCandidate =
+      QueryBuilder<ParseObject>(ParseObject('AnswerCandidate'));
+
   final ScrollController _historyScrollController =
       ScrollController(initialScrollOffset: 0.0, keepScrollOffset: true);
 
@@ -191,6 +195,61 @@ class _GameScreenState extends State<GameScreen> {
           }
         }
       }
+    });
+
+    _answerCandidateSubscription =
+        await _liveQuery.client.subscribe(_queryAnswerCandidate);
+    _answerCandidateSubscription.on(LiveQueryEvent.create, (value) async {
+      final realValue = value as ParseObject;
+      final ownerId = realValue.get<String>('owner');
+      final joinerId = realValue.get<String>('joiner');
+
+      if (ownerId == null) {
+        Logger().e('No owner registered for this offer !');
+        return;
+      }
+      if (joinerId == null) {
+        Logger().e('No joiner registered for this offer !');
+        return;
+      }
+
+      // find matching room
+      QueryBuilder<ParseObject> queryRoom =
+          QueryBuilder<ParseObject>(ParseObject('Room'))
+            ..whereEqualTo('joiner', ParseObject('Peer')..objectId = joinerId)
+            ..whereEqualTo('owner', ParseObject('Peer')..objectId = ownerId);
+      final queryRoomAnswer = await queryRoom.query();
+
+      // checks that the room is the one we're in (if we are in a room)
+      if (queryRoomAnswer.error != null ||
+          queryRoomAnswer.results == null ||
+          queryRoomAnswer.results!.isEmpty) {
+        Logger().d('No matching room !');
+        return;
+      }
+
+      // Sets the answer ICE candidates to our peer connection if we're
+      // the owner of the matching room.
+      final matchingRoom = queryRoomAnswer.results?.first as ParseObject;
+      final roomJoiner = matchingRoom.get<ParseObject>('owner');
+
+      if (roomJoiner == null) {
+        Logger().e('No owner for the matching room !');
+        return;
+      }
+
+      final weAreRoomOwner = roomJoiner.objectId == _signaling.selfId;
+      if (!weAreRoomOwner) {
+        return;
+      }
+
+      final candidate = realValue.get<Map<String, dynamic>>('data');
+      if (candidate == null) return;
+
+      final candidateInstance = RTCIceCandidate(candidate['candidate'],
+          candidate['sdpMid'], candidate['sdpMLineIndex']);
+
+      await _signaling.addIceCandidate(candidateInstance);
     });
   }
 
