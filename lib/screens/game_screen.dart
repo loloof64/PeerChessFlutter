@@ -201,24 +201,19 @@ class _GameScreenState extends State<GameScreen> {
         await _liveQuery.client.subscribe(_queryAnswerCandidate);
     _answerCandidateSubscription.on(LiveQueryEvent.create, (value) async {
       final realValue = value as ParseObject;
-      final owner = realValue.get<ParseObject>('owner');
-      final joiner = realValue.get<ParseObject>('joiner');
+      // It's really the key 'owner' here !
+      final joiner = realValue.get<ParseObject>('owner');
 
-      if (owner == null) {
-        Logger().e('No owner registered for this offer !');
-        return;
-      }
       if (joiner == null) {
         Logger().e('No joiner registered for this offer !');
         return;
       }
 
       // find matching room
-      QueryBuilder<ParseObject> queryRoom = QueryBuilder<ParseObject>(
-          ParseObject('Room'))
-        ..whereEqualTo(
-            'joiner', ParseObject('Peer')..objectId = joiner.objectId)
-        ..whereEqualTo('owner', ParseObject('Peer')..objectId = owner.objectId);
+      QueryBuilder<ParseObject> queryRoom =
+          QueryBuilder<ParseObject>(ParseObject('Room'))
+            ..whereEqualTo(
+                'joiner', ParseObject('Peer')..objectId = joiner.objectId);
       final queryRoomAnswer = await queryRoom.query();
 
       // checks that the room is the one we're in (if we are in a room)
