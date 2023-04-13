@@ -263,8 +263,9 @@ class Signaling {
 
     for (var candidate in queryIceCandidatesAnswer.results!) {
       final candidateInstance = candidate as ParseObject;
-      _myConnection.addCandidate(RTCIceCandidate(candidateInstance['candidate'],
-          candidateInstance['sdpMid'], candidateInstance['sdpMLineIndex']));
+      final candidateData = candidateInstance['data'] as Map<String, dynamic>;
+      _myConnection.addCandidate(RTCIceCandidate(candidateData['candidate'],
+          candidateData['sdpMid'], candidateData['sdpMLineIndex']));
     }
 
     // Sets ICE candidates handler
