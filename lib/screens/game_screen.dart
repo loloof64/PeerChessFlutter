@@ -23,7 +23,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter_window_close/flutter_window_close.dart';
 import 'package:logger/logger.dart';
-import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
 import 'package:simple_chess_board/models/board_arrow.dart';
 import 'package:simple_chess_board/simple_chess_board.dart';
 import 'package:chess_vectors_flutter/chess_vectors_flutter.dart';
@@ -59,20 +58,6 @@ class _GameScreenState extends State<GameScreen> {
   bool _sessionActive = false;
   String? _remoteId;
 
-  final _liveQuery = LiveQuery();
-
-  late Subscription<ParseObject> _peerSubscription;
-  final QueryBuilder<ParseObject> _queryPeer =
-      QueryBuilder<ParseObject>(ParseObject('Peer'));
-
-  late Subscription<ParseObject> _roomSubscription;
-  final QueryBuilder<ParseObject> _queryRoom =
-      QueryBuilder<ParseObject>(ParseObject('Room'));
-
-  late Subscription<ParseObject> _answerCandidateSubscription;
-  final QueryBuilder<ParseObject> _queryAnswerCandidate =
-      QueryBuilder<ParseObject>(ParseObject('AnswerCandidate'));
-
   final ScrollController _historyScrollController =
       ScrollController(initialScrollOffset: 0.0, keepScrollOffset: true);
 
@@ -95,8 +80,6 @@ class _GameScreenState extends State<GameScreen> {
       return true;
     });
 
-    _startLiveQuery();
-
     super.initState();
   }
 
@@ -104,153 +87,7 @@ class _GameScreenState extends State<GameScreen> {
   void dispose() {
     _roomIdController.dispose();
     _signaling.removePeerFromDB();
-    _cancelLiveQuery();
     super.dispose();
-  }
-
-  void _startLiveQuery() async {
-    _peerSubscription = await _liveQuery.client.subscribe(_queryPeer);
-    _peerSubscription.on(LiveQueryEvent.delete, (value) {
-      final realValue = value as ParseObject;
-      final isTheInstanceWeNeedToDelete = realValue.objectId == _remoteId;
-      if (isTheInstanceWeNeedToDelete) {
-        _signaling.hangUp();
-        // cancel pending call if any
-        if (_pendingCallContext != null) {
-          Navigator.of(_pendingCallContext!).pop();
-          setState(() {
-            _pendingCallContext = null;
-          });
-        }
-      }
-    });
-
-    _roomSubscription = await _liveQuery.client.subscribe(_queryRoom);
-    _roomSubscription.on(LiveQueryEvent.update, (value) async {
-      final realValue = value as ParseObject;
-      final isTheRoomWeBelongIn = realValue.objectId == _signaling.roomId;
-      final weAreTheOwner =
-          realValue.get<ParseObject>('owner')?.objectId == _signaling.selfId;
-      final weAreTheJoiner =
-          realValue.get<ParseObject>('joiner')?.objectId == _signaling.selfId;
-      final thereIsAJoiner = realValue.get<ParseObject>('joiner') != null;
-      if (isTheRoomWeBelongIn) {
-        if (thereIsAJoiner) {
-          if (weAreTheOwner) {
-            // removing room id dialog
-            if (Navigator.of(context).canPop()) Navigator.of(context).pop();
-
-            // Waits a bit to let the guest answer update in the db
-            await Future.delayed(const Duration(milliseconds: 600));
-
-            // get matching answer
-            final guest = realValue.get<ParseObject>('joiner');
-            final guestId = guest!.objectId;
-            QueryBuilder<ParseObject> answerQuery = QueryBuilder<ParseObject>(
-                ParseObject('Answer'))
-              ..whereEqualTo('owner', ParseObject('Peer')..objectId = guestId);
-            final answerResponse = await answerQuery.query();
-            if (answerResponse.error != null ||
-                answerResponse.results == null ||
-                answerResponse.results!.isEmpty) {
-              Logger().e('No answer belonging to the room joiner !');
-              return;
-            }
-            final answer = answerResponse.results!.first as ParseObject;
-
-            // Set remote description with answer from guest if needed
-            final weNeedToSetRemoteDescription =
-                _signaling.remoteDescriptionNeeded;
-            if (weNeedToSetRemoteDescription) {
-              final guestAnswerData = answer.get<Map<String, dynamic>>('data');
-              if (guestAnswerData == null) {
-                Logger().e('No data in guest answer !');
-                return;
-              }
-              final sdp = guestAnswerData['sdp'];
-              final type = guestAnswerData['type'];
-              final remoteSessionDescription = RTCSessionDescription(sdp, type);
-              await _signaling
-                  .setRemoteDescriptionFromAnswer(remoteSessionDescription);
-            }
-
-            // register connected flag in DB
-            realValue.set('connected', true);
-            await realValue.save();
-
-            // update state
-            setState(() {
-              _remoteId = realValue.get<ParseObject>('joiner')?.objectId;
-              _sessionActive = true;
-            });
-            // TODO create WebRTC session
-          } else if (weAreTheJoiner) {
-            final connected = realValue.get<bool>('connected');
-            if (connected == true) {
-              setState(() {
-                _remoteId = realValue.get<ParseObject>('owner')?.objectId;
-                _sessionActive = true;
-              });
-            }
-          }
-        }
-      }
-    });
-
-    _answerCandidateSubscription =
-        await _liveQuery.client.subscribe(_queryAnswerCandidate);
-    _answerCandidateSubscription.on(LiveQueryEvent.create, (value) async {
-      final realValue = value as ParseObject;
-      // It's really the key 'owner' here !
-      final joiner = realValue.get<ParseObject>('owner');
-
-      if (joiner == null) {
-        Logger().e('No joiner registered for this offer !');
-        return;
-      }
-
-      // find matching room
-      QueryBuilder<ParseObject> queryRoom =
-          QueryBuilder<ParseObject>(ParseObject('Room'))
-            ..whereEqualTo(
-                'joiner', ParseObject('Peer')..objectId = joiner.objectId);
-      final queryRoomAnswer = await queryRoom.query();
-
-      // checks that the room is the one we're in (if we are in a room)
-      if (queryRoomAnswer.error != null ||
-          queryRoomAnswer.results == null ||
-          queryRoomAnswer.results!.isEmpty) {
-        Logger().d('No matching room !');
-        return;
-      }
-
-      // Sets the answer ICE candidates to our peer connection if we're
-      // the owner of the matching room.
-      final matchingRoom = queryRoomAnswer.results?.first as ParseObject;
-      final roomJoiner = matchingRoom.get<ParseObject>('owner');
-
-      if (roomJoiner == null) {
-        Logger().e('No owner for the matching room !');
-        return;
-      }
-
-      final weAreRoomOwner = roomJoiner.objectId == _signaling.selfId;
-      if (!weAreRoomOwner) {
-        return;
-      }
-
-      final candidate = realValue.get<Map<String, dynamic>>('data');
-      if (candidate == null) return;
-
-      final candidateInstance = RTCIceCandidate(candidate['candidate'],
-          candidate['sdpMid'], candidate['sdpMLineIndex']);
-
-      await _signaling.addIceCandidate(candidateInstance);
-    });
-  }
-
-  void _cancelLiveQuery() async {
-    _liveQuery.client.unSubscribe(_peerSubscription);
   }
 
   bool _isStartMoveNumber(int moveNumber) {
@@ -521,29 +358,11 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Future<void> _createRoom() async {
-    final success = await _signaling.createRoom();
-    if (success == CreatingRoomState.alreadyCreatedARoom) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: I18nText("game.already_created_room"),
-        ),
-      );
-      return;
-    }
-
-    if (success == CreatingRoomState.error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: I18nText("game.failed_creating_room"),
-        ),
-      );
-      return;
-    }
-
+    // todo handle errors
+    await _signaling.createRoom();
     if (!mounted) return;
 
+    /*
     showDialog(
       barrierDismissible: false,
       context: context,
@@ -597,7 +416,7 @@ class _GameScreenState extends State<GameScreen> {
           ],
         );
       },
-    );
+    );*/
   }
 
   void _purposeStopGame() {
@@ -648,25 +467,8 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _handleRoomJoiningRequest() async {
     final requestedRoomId = _roomIdController.text;
-    final success = await _signaling.joinRoom(requestedRoomId);
-    if (success == JoiningRoomState.noRoomWithThisId) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: I18nText("game.no_matching_room"),
-        ),
-      );
-      return;
-    }
-    if (success == JoiningRoomState.alreadySomeonePairingWithHost) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: I18nText("game.busy_room"),
-        ),
-      );
-      return;
-    }
+    // todo handle errors
+    await _signaling.joinRoom(requestedRoomId);
   }
 
   Future<void> _joinRoom() async {

@@ -18,12 +18,9 @@
 // Using code from https://github.com/flutter-webrtc/flutter-webrtc-demo/blob/master/lib/src/call_sample/random_string.dart
 
 import 'dart:convert';
-import 'dart:math';
 
-import 'package:collection_ext/ranges.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:logger/logger.dart';
-import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
@@ -31,29 +28,6 @@ enum MakingCallResult {
   success,
   remotePeerDoesNotExist,
   alreadyAPendingCall,
-}
-
-final asciiDigits = 48.upTo(57);
-final asciiLowercase = 97.upTo(122);
-final asciiUppercase = 65.upTo(90);
-
-/// Generates a random integer where [from] <= [to].
-int randomBetween(int from, int to) {
-  if (from > to) throw Exception('$from cannot be > $to');
-  var rand = Random();
-  return ((to - from) * rand.nextDouble()).toInt() + from;
-}
-
-String randomString(int length) {
-  return String.fromCharCodes(List.generate(length, (index) {
-    var result = 0;
-    while (!asciiDigits.contains(result) &&
-        !asciiLowercase.contains(result) &&
-        !asciiUppercase.contains(result)) {
-      result = randomBetween(48, 122);
-    }
-    return result;
-  }));
 }
 
 enum CreatingRoomState {
@@ -92,7 +66,7 @@ class Signaling {
 
   Future<void> _initializeIceServers() async {
     final String credentialsText =
-        await rootBundle.loadString('assets/credentials/turn_credentials.json');
+        await rootBundle.loadString('assets/secrets/turn_credentials.json');
     final credentials = await json.decode(credentialsText);
 
     final apiKey = credentials['apiKey'] as String;
@@ -110,18 +84,13 @@ class Signaling {
         await mediaDevices.getUserMedia({"audio": false, "video": false});
     _myConnection = await createPeerConnection(_iceServers);
     _myConnection.addStream(stream);
-    final peer = ParseObject('Peer');
-    final response = await peer.save();
-    _selfId = peer.objectId;
-    if (response.error != null) {
-      Logger().e(response.error);
-    }
+
+    // todo add peer in db
   }
 
   Future<void> deleteRoom() async {
     if (_roomId == null) return;
-    final roomInstance = ParseObject('Room')..objectId = _roomId!;
-    await roomInstance.delete();
+    // todo remove room in db
     _roomId = null;
   }
 
@@ -134,183 +103,49 @@ class Signaling {
     await _myConnection.addCandidate(candidate);
   }
 
-  Future<CreatingRoomState> createRoom() async {
+  Future<void> createRoom() async {
     // Checking that this peer is not already in a room
     final peerAlreadyInARoom = _roomId != null;
-    if (peerAlreadyInARoom) return CreatingRoomState.alreadyCreatedARoom;
 
-    // Save Room into DB and join this peer to it
-    final room = ParseObject('Room');
-    room.set('owner', ParseObject('Peer')..objectId = _selfId);
-    final response = await room.save();
-    if (response.error != null) {
-      Logger().e(response.error);
-      return CreatingRoomState.error;
-    }
+    // todo Save Room into DB and join this peer to it
 
-    // Marks this peer as busy
-    final roomId = room.objectId;
-    _roomId = roomId;
+    // todo Update room id
 
-    // Sets ICE candidates handler
-    _myConnection.onIceCandidate = (candidate) async {
-      // Create OfferCandidate instance
-      final offer = ParseObject('OfferCandidate')
-        ..set('data', candidate.toMap())
-        ..set('owner', ParseObject('Peer')..objectId = _selfId);
+    // todo Set ICE candidates handler
 
-      // Save into DB
-      final saveSuccess = await offer.save();
-      if (saveSuccess.error != null) {
-        Logger().d(saveSuccess.error);
-      }
-    };
+    // todo Create WebRTC offer
 
-    // Creates WebRTC offer
-    final offer = await _myConnection.createOffer();
-    await _myConnection.setLocalDescription(offer);
+    // todo Save offer in db
 
-    // Save offer in db
-    final offerDbInstance = ParseObject('Offer')
-      ..set('data', {
-        "type": offer.type,
-        "sdp": offer.sdp,
-      })
-      ..set('owner', ParseObject('Peer')..objectId = _selfId);
-    final saveSuccess = await offerDbInstance.save();
-    if (saveSuccess.error != null) {
-      Logger().d(saveSuccess.error);
-      return CreatingRoomState.error;
-    }
-
-    return CreatingRoomState.success;
+    return;
   }
 
-  Future<JoiningRoomState> joinRoom(String requestedRoomId) async {
-    // Checks that the room exists
-    QueryBuilder<ParseObject> queryRoom =
-        QueryBuilder<ParseObject>(ParseObject('Room'))
-          ..whereEqualTo('objectId', requestedRoomId);
-    final ParseResponse apiResponse = await queryRoom.query();
-    final roomExists = apiResponse.success && apiResponse.results != null;
+  Future<void> joinRoom(String requestedRoomId) async {
+    // todo Check that the room exists
 
-    if (!roomExists) {
-      return JoiningRoomState.noRoomWithThisId;
-    }
+    // todo Check that nobody is playing with the room's host
 
-    // Checks that nobody is playing with the room's host
-    final roomInstance = apiResponse.results?.first as ParseObject;
-    if (roomInstance.get('joiner') != null) {
-      return JoiningRoomState.alreadySomeonePairingWithHost;
-    }
+    // todo Set remote description with offer from host
 
-    _roomId = requestedRoomId;
+    // todo Register the joiner of the room in the DB
 
-    // Gets the host
-    final host = roomInstance.get<ParseObject>('owner');
-    if (host == null) {
-      Logger().e('No host for the given room !');
-      return JoiningRoomState.error;
-    }
+    // todo Set the ICE candidates from the offer
 
-    // Search the offer from the host
-    QueryBuilder<ParseObject> queryOffer = QueryBuilder<ParseObject>(
-        ParseObject('Offer'))
-      ..whereEqualTo('owner', ParseObject('Peer')..objectId = host.objectId);
-    final ParseResponse queryOfferResponse = await queryOffer.query();
+    // todo Set ICE candidates handler
 
-    if (queryOfferResponse.error != null ||
-        queryOfferResponse.results == null ||
-        queryOfferResponse.results!.isEmpty) {
-      Logger().e('No offer register for the host !');
-    }
-    final offerFromHost = queryOfferResponse.results!.first as ParseObject;
+    // todo Create WebRTC offer
 
-    // Set remote description with offer from host
-    final hostOfferData = offerFromHost.get<Map<String, dynamic>>('data');
-    if (hostOfferData == null) {
-      Logger().e('No data in host offer !');
-      return JoiningRoomState.error;
-    }
-    final sdp = hostOfferData['sdp'];
-    final type = hostOfferData['type'];
-    final remoteSessionDescription = RTCSessionDescription(sdp, type);
-    _myConnection.setRemoteDescription(remoteSessionDescription);
+    // todo Save answer in db
 
-    // Registers the joiner of the room in the DB
-    // Important !!!
-    /// Must be done after the answer has been saved in DB
-    roomInstance.set(
-        'joiner', (ParseObject('Peer')..objectId = selfId).toPointer());
-    final saveResponse = await roomInstance.save();
-
-    if (saveResponse.error != null) {
-      Logger().e(saveResponse.error);
-      return JoiningRoomState.error;
-    }
-
-    // Sets the ICE candidates from the offer
-    QueryBuilder queryIceCandidates = QueryBuilder<ParseObject>(
-        ParseObject('OfferCandidate'))
-      ..whereEqualTo('owner', ParseObject('Peer')..objectId = host.objectId);
-    final queryIceCandidatesAnswer = await queryIceCandidates.query();
-    if (queryIceCandidatesAnswer.error != null ||
-        queryIceCandidatesAnswer.results == null ||
-        queryIceCandidatesAnswer.results!.isEmpty) {
-      Logger().e('No related offer !');
-      return JoiningRoomState.error;
-    }
-
-    for (var candidate in queryIceCandidatesAnswer.results!) {
-      final candidateInstance = candidate as ParseObject;
-      final candidateData = candidateInstance['data'] as Map<String, dynamic>;
-      _myConnection.addCandidate(RTCIceCandidate(candidateData['candidate'],
-          candidateData['sdpMid'], candidateData['sdpMLineIndex']));
-    }
-
-    // Sets ICE candidates handler
-    _myConnection.onIceCandidate = (candidate) async {
-      // Create OfferCandidate instance
-      final offer = ParseObject('AnswerCandidate')
-        ..set('data', candidate.toMap())
-        ..set('owner', ParseObject('Peer')..objectId = _selfId);
-
-      // Save into DB
-      final saveSuccess = await offer.save();
-      if (saveSuccess.error != null) {
-        Logger().d(saveSuccess.error);
-      }
-    };
-
-    // Creates WebRTC offer
-    final answer = await _myConnection.createAnswer();
-    await _myConnection.setLocalDescription(answer);
-
-    // Save answer in db
-    final answerDbInstance = ParseObject('Answer')
-      ..set('data', {
-        "type": answer.type,
-        "sdp": answer.sdp,
-      })
-      ..set('owner', ParseObject('Peer')..objectId = _selfId);
-    final saveSuccess = await answerDbInstance.save();
-    if (saveSuccess.error != null) {
-      Logger().d(saveSuccess.error);
-      return JoiningRoomState.error;
-    }
-
-    return JoiningRoomState.success;
+    return;
   }
 
   Future<void> removeSelfFromRoomJoiner() async {
-    final roomInstance = ParseObject('Room')..objectId = _roomId;
-    roomInstance.set('joiner', null);
-    await roomInstance.save();
+    // todo removeSelfFromRoomJoiner
   }
 
   Future<void> removePeerFromDB() async {
-    final localPeer = ParseObject('Peer')..objectId = _selfId;
-    await localPeer.delete();
+    // todo removePeerFromDB
   }
 
   String? get selfId => _selfId;

@@ -16,22 +16,15 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_i18n/flutter_i18n.dart';
 import 'package:flutter_i18n/loaders/decoders/json_decode_strategy.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
-import 'package:peer_chess/logic/parse_connectivity_provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:logger/logger.dart';
 import 'screens/game_screen.dart';
 import 'screens/new_game_screen.dart';
 import 'screens/new_game_position_editor_screen.dart';
-
-const parseServerUrl = 'https://parseapi.back4app.com';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,18 +33,6 @@ void main() async {
   windowManager.setTitle("Peer chess");
   windowManager.setMinimumSize(
     const Size(600, 400),
-  );
-
-  final back4appCredentialsText = await rootBundle
-      .loadString('assets/credentials/back4app_credentials.json');
-  final back4appCredentials =
-      await jsonDecode(back4appCredentialsText) as Map<String, dynamic>;
-  await Parse().initialize(
-    back4appCredentials['appId']!,
-    parseServerUrl,
-    clientKey: back4appCredentials['clientKey'],
-    connectivityProvider: CustomParseConnectivityProvider(),
-    liveQueryUrl: back4appCredentials['liveQueryUrl'],
   );
 
   runApp(const MyApp());

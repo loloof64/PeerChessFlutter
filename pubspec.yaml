@@ -45,10 +45,10 @@ dependencies:
   editable_chess_board: ^0.1.6
   flutter_webrtc: ^0.9.22
   collection_ext: ^1.0.0
-  parse_server_sdk_flutter: ^4.0.0
   window_manager: ^0.3.1
   flutter_window_close: ^0.2.2
   http: ^0.13.5
+  web_socket_channel: ^2.4.0
 
 dev_dependencies:
   flutter_test:
