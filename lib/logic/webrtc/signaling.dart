@@ -76,9 +76,8 @@ class Signaling {
         await rootBundle.loadString('assets/secrets/signaling.json');
     final secrets = await json.decode(secretsText);
     final serverUrl = secrets['serverUrl'] as String;
-    final serverPort = secrets['serverPort'] as int;
 
-    final uri = Uri.parse("wss://$serverUrl:$serverPort");
+    final uri = Uri.parse(serverUrl);
 
     _wsChannel = WebSocketChannel.connect(
       uri,
