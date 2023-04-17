@@ -30,7 +30,7 @@ import 'package:chess/chess.dart' as chess;
 import 'package:flutter_i18n/flutter_i18n.dart';
 import '../logic/managers/game_manager.dart';
 import '../logic/managers/history_manager.dart';
-import '../logic/webrtc/signalling.dart';
+import '../logic/webrtc/signaling.dart';
 import '../logic/history_builder.dart';
 import '../components/history.dart';
 import '../components/dialog_buttons.dart';
@@ -87,6 +87,7 @@ class _GameScreenState extends State<GameScreen> {
   void dispose() {
     _roomIdController.dispose();
     _signaling.removePeerFromDB();
+    _signaling.dispose();
     super.dispose();
   }
 
@@ -451,6 +452,7 @@ class _GameScreenState extends State<GameScreen> {
 
   _hangUp() {
     _signaling.hangUp();
+    _signaling.dispose();
   }
 
   void _sendMove(ShortMove move) {

@@ -22,6 +22,7 @@ import 'dart:convert';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:logger/logger.dart';
 import 'package:flutter/services.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:http/http.dart' as http;
 
 enum MakingCallResult {
@@ -46,6 +47,7 @@ enum JoiningRoomState {
 class Signaling {
   RTCDataChannel? _dataChannel;
   late RTCPeerConnection _myConnection;
+  late WebSocketChannel _wsChannel;
 
   String? _selfId;
   String? _roomId;
@@ -61,7 +63,31 @@ class Signaling {
   late Map<String, dynamic> _iceServers;
 
   Signaling() {
-    _initializeIceServers().then((value) => _createMyConnection());
+    _initializeWebSocket().then((value) =>
+        _initializeIceServers().then((value) => _createMyConnection()));
+  }
+
+  void dispose() {
+    _wsChannel.sink.close();
+  }
+
+  Future<void> _initializeWebSocket() async {
+    final String secretsText =
+        await rootBundle.loadString('assets/secrets/signaling.json');
+    final secrets = await json.decode(secretsText);
+    final serverUrl = secrets['serverUrl'] as String;
+    final serverPort = secrets['serverPort'] as int;
+
+    final uri = Uri.parse("wss://$serverUrl:$serverPort");
+
+    _wsChannel = WebSocketChannel.connect(
+      uri,
+    );
+
+    _wsChannel.stream.listen((element) {
+      Logger().d(element);
+    });
+    _wsChannel.sink.add('Hello !');
   }
 
   Future<void> _initializeIceServers() async {
