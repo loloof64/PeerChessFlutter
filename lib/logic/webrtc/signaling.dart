@@ -71,6 +71,23 @@ class Signaling {
     _wsChannel.sink.close();
   }
 
+  void _processIncomingMessage(message) {
+    final dataAsJson = jsonDecode(message) as Map<String, dynamic>;
+    if (dataAsJson.containsKey('error')) {
+      Logger().e(dataAsJson['error']);
+    } else if (dataAsJson.containsKey('socketID')) {
+      _selfId = dataAsJson['socketID'];
+      ////////////////////
+      Logger().d(_selfId);
+      ////////////////////
+    } else if (dataAsJson.containsKey('type')) {
+      if (dataAsJson['type'] == 'disconnection') {
+        final id = dataAsJson['id'];
+        Logger().d('Peer $id has disconnected.');
+      }
+    }
+  }
+
   Future<void> _initializeWebSocket() async {
     final String secretsText =
         await rootBundle.loadString('assets/secrets/signaling.json');
@@ -84,9 +101,9 @@ class Signaling {
     );
 
     _wsChannel.stream.listen((element) {
-      Logger().d(element);
+      _processIncomingMessage(element);
     });
-    _wsChannel.sink.add('Hello !');
+    //_wsChannel.sink.add('Hello !');
   }
 
   Future<void> _initializeIceServers() async {
