@@ -98,6 +98,9 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _processWebSocketMessage(message) {
+    ////////////////////////////
+    Logger().d(message);
+    ////////////////////////////
     final dataAsJson = jsonDecode(message) as Map<String, dynamic>;
     if (dataAsJson.containsKey('error')) {
       Logger().e(dataAsJson['error']);
