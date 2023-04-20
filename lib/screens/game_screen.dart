@@ -133,6 +133,10 @@ class _GameScreenState extends State<GameScreen> {
           remoteId: dataAsJson['fromPeer'],
           message: dataAsJson['message'],
         );
+        ///////////////////////////
+        Logger().d(accepted);
+        /////////////////////////////
+
         // Process answer
         if (accepted) {
           // Close the waiting for peer dialog
@@ -142,9 +146,6 @@ class _GameScreenState extends State<GameScreen> {
             'type': 'connectionAccepted',
             'fromPeer': _selfId,
           };
-          ///////////////////////////////////
-          Logger().d(_wsChannel);
-          ///////////////////////////////////
           _wsChannel?.sink.add(jsonEncode(dataToSend));
           setState(() {
             _remoteId = dataAsJson['fromPeer'];
@@ -157,9 +158,6 @@ class _GameScreenState extends State<GameScreen> {
             'reason': 'refusal',
             'fromPeer': _selfId,
           };
-          ///////////////////////////////////
-          Logger().d(_wsChannel);
-          ///////////////////////////////////
           _wsChannel?.sink.add(jsonEncode(dataToSend));
           return;
         }
@@ -245,7 +243,7 @@ class _GameScreenState extends State<GameScreen> {
                       Navigator.of(context).pop(false);
                     },
                     textContent: I18nText(
-                      'buttons.cancel',
+                      'buttons.deny',
                     ),
                     textColor: Colors.white,
                     backgroundColor: Colors.redAccent,
@@ -661,9 +659,6 @@ class _GameScreenState extends State<GameScreen> {
       'fromPeer': _selfId,
       'toPeer': remoteId,
     };
-    ///////////////////////////////////
-    Logger().d(_wsChannel);
-    ///////////////////////////////////
     _wsChannel?.sink.add(jsonEncode(dataToSend));
   }
 
@@ -677,9 +672,6 @@ class _GameScreenState extends State<GameScreen> {
       "toPeer": requestedRoomId,
       "message": requestMessage,
     };
-    ///////////////////////////////////
-    Logger().d(_wsChannel);
-    ///////////////////////////////////
     _wsChannel?.sink.add(jsonEncode(dataToSend));
 
     // showing waiting for answer dialog

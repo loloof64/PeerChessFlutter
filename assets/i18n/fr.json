@@ -5,7 +5,8 @@
     },
     "buttons": {
         "ok": "D'accord",
-        "cancel": "Annuler"
+        "cancel": "Annuler",
+        "deny": "Refuser"
     },
     "clipboard": {
         "content_copied": "Texte copié dans le presse-papier."
