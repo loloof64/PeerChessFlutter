@@ -28,7 +28,10 @@
         "already_a_pending_request": "You can't make two requests at once.",
         "incoming_request_title": "Incoming connection request",
         "incoming_request_message": "Accept this connection request ?",
-        "rejected_request": "Your request has been rejected."
+        "rejected_request": "Your request has been rejected.",
+        "waiting_call_answer_title": "Waiting for answer",
+        "waiting_call_answer_message": "Waiting for the answer ...",
+        "peer_disconnected": "Session closed because remote peer has disconnected."
     },
     "game_termination": {
         "black_checkmate_white": "Black has won by checkmate.",

@@ -114,6 +114,12 @@ class _GameScreenState extends State<GameScreen> {
             _remoteId = null;
             _sessionActive = false;
           });
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: I18nText('game.peer_disconnected'),
+            ),
+          );
         }
       } else if (dataAsJson['type'] == 'connectionRequest') {
         // Close the waiting for peer dialog
@@ -167,6 +173,9 @@ class _GameScreenState extends State<GameScreen> {
           _remoteId = dataAsJson['fromPeer'];
           _sessionActive = true;
         });
+      } else if (dataAsJson['type'] == 'cancelCall') {
+        // Removes the answer choice pop up
+        Navigator.of(context).pop();
       }
     }
   }
@@ -619,6 +628,15 @@ class _GameScreenState extends State<GameScreen> {
     _dataChannel?.send(RTCDataChannelMessage(moveAsJson));
   }
 
+  Future<void> _cancelCall() async {
+    final dataToSend = {
+      'type': 'cancelCall',
+      'fromPeer': _selfId,
+      'toPeer': _remoteId,
+    };
+    _wsChannel?.sink.add(dataToSend);
+  }
+
   Future<void> _handleRoomJoiningRequest() async {
     final requestedRoomId = _roomIdController.text;
     final requestMessage = _ringingMessageController.text;
@@ -630,6 +648,30 @@ class _GameScreenState extends State<GameScreen> {
       "message": requestMessage,
     };
     _wsChannel?.sink.add(jsonEncode(dataToSend));
+
+    // showing waiting for answer dialog
+    showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx2) {
+          return AlertDialog(
+            title: I18nText('game.waiting_call_answer_title'),
+            content: I18nText('game.waiting_call_answer_message'),
+            actions: [
+              DialogActionButton(
+                onPressed: () {
+                  Navigator.of(ctx2).pop();
+                  _cancelCall();
+                },
+                textContent: I18nText(
+                  'buttons.cancel',
+                ),
+                textColor: Colors.white,
+                backgroundColor: Colors.redAccent,
+              )
+            ],
+          );
+        });
   }
 
   Future<void> _joinRoom() async {
