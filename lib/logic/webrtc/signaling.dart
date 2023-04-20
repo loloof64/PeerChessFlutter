@@ -35,12 +35,6 @@ enum CreatingRoomState {
   alreadyCreatedARoom,
 }
 
-enum JoiningRoomState {
-  success,
-  noRoomWithThisId,
-  alreadySomeonePairingWithHost,
-}
-
 class Signaling {
   RTCDataChannel? _dataChannel;
   late RTCPeerConnection _myConnection;
@@ -109,26 +103,6 @@ class Signaling {
       return CreatingRoomState.alreadyCreatedARoom;
     }
     return CreatingRoomState.success;
-  }
-
-  Future<JoiningRoomState> joinRoom(String requestedRoomId) async {
-    // todo Check that the room exists
-
-    // todo Check that nobody is playing with the room's host
-
-    // todo Set remote description with offer from host
-
-    // todo Register the joiner of the room in the DB
-
-    // todo Set the ICE candidates from the offer
-
-    // todo Set ICE candidates handler
-
-    // todo Create WebRTC offer
-
-    // todo Save answer in db
-
-    return JoiningRoomState.success;
   }
 
   Future<void> removeSelfFromRoomJoiner() async {

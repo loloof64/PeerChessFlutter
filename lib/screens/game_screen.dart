@@ -116,6 +116,12 @@ class _GameScreenState extends State<GameScreen> {
         Logger()
             .i("Got a connection request from peer ${dataAsJson['fromPeer']}");
         Logger().i("Message : [${dataAsJson['message']}]");
+      } else if (dataAsJson['type'] == 'connectionRequestFailed') {
+        if (dataAsJson['reason'] == 'noRoomWithThisId') {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: I18nText('game.no_matching_room')));
+        }
       }
     }
   }
@@ -531,21 +537,6 @@ class _GameScreenState extends State<GameScreen> {
   Future<void> _handleRoomJoiningRequest() async {
     final requestedRoomId = _roomIdController.text;
     final requestMessage = _ringingMessageController.text;
-    final joiningResult = await _signaling.joinRoom(requestedRoomId);
-    switch (joiningResult) {
-      case JoiningRoomState.alreadySomeonePairingWithHost:
-        if (!mounted) return;
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: I18nText('game.busy_room')));
-        return;
-      case JoiningRoomState.noRoomWithThisId:
-        if (!mounted) return;
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: I18nText('game.no_matching_room')));
-        return;
-      case JoiningRoomState.success:
-        break;
-    }
 
     final dataToSend = {
       "type": "connectionRequest",
