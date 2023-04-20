@@ -136,12 +136,12 @@ class _GameScreenState extends State<GameScreen> {
             _sessionActive = true;
           });
         } else {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: I18nText('game.rejected_request'),
-            ),
-          );
+          final dataToSend = {
+            'type': 'connectionRequestFailed',
+            'reason': 'refusal',
+            'fromPeer': _selfId,
+          };
+          _wsChannel?.sink.add(jsonEncode(dataToSend));
         }
       } else if (dataAsJson['type'] == 'connectionRequestFailed') {
         if (dataAsJson['reason'] == 'noRoomWithThisId') {
@@ -149,6 +149,13 @@ class _GameScreenState extends State<GameScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: I18nText('game.no_matching_room'),
+            ),
+          );
+        } else if (dataAsJson['reason'] == 'refusal') {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: I18nText('game.rejected_request'),
             ),
           );
         }
