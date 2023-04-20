@@ -628,11 +628,13 @@ class _GameScreenState extends State<GameScreen> {
     _dataChannel?.send(RTCDataChannelMessage(moveAsJson));
   }
 
-  Future<void> _cancelCall() async {
+  Future<void> _cancelCall({
+    required String? remoteId,
+  }) async {
     final dataToSend = {
       'type': 'cancelCall',
       'fromPeer': _selfId,
-      'toPeer': _remoteId,
+      'toPeer': remoteId,
     };
     _wsChannel?.sink.add(dataToSend);
   }
@@ -661,7 +663,7 @@ class _GameScreenState extends State<GameScreen> {
               DialogActionButton(
                 onPressed: () {
                   Navigator.of(ctx2).pop();
-                  _cancelCall();
+                  _cancelCall(remoteId: dataToSend['toPeer']);
                 },
                 textContent: I18nText(
                   'buttons.cancel',
