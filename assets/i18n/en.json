@@ -25,7 +25,10 @@
         "no_matching_room": "There's no room with this id.",
         "already_created_room": "You can't create two rooms at twice.",
         "busy_room": "The room is already busy.",
-        "already_a_pending_request": "You can't make two requests at once."
+        "already_a_pending_request": "You can't make two requests at once.",
+        "incoming_request_title": "Incoming connection request",
+        "incoming_request_message": "Accept this connection request ?",
+        "rejected_request": "Your request has been rejected."
     },
     "game_termination": {
         "black_checkmate_white": "Black has won by checkmate.",

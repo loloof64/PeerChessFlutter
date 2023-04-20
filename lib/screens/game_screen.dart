@@ -56,6 +56,7 @@ class _GameScreenState extends State<GameScreen> {
   late TextEditingController _ringingMessageController;
   BuildContext? _pendingCallContext;
   bool _sessionActive = false;
+  String? _selfId;
   String? _remoteId;
 
   WebSocketChannel? _wsChannel;
@@ -82,7 +83,6 @@ class _GameScreenState extends State<GameScreen> {
     });
 
     FlutterWindowClose.setWindowShouldCloseHandler(() async {
-      await _signaling.leaveRoom();
       return true;
     });
 
@@ -97,33 +97,122 @@ class _GameScreenState extends State<GameScreen> {
     super.dispose();
   }
 
-  void _processWebSocketMessage(message) {
-    ////////////////////////////
-    Logger().d(message);
-    ////////////////////////////
+  Future<void> _processWebSocketMessage(message) async {
     final dataAsJson = jsonDecode(message) as Map<String, dynamic>;
     if (dataAsJson.containsKey('error')) {
       Logger().e(dataAsJson['error']);
     } else if (dataAsJson.containsKey('socketID')) {
-      _signaling.setSelfId(dataAsJson['socketID']);
+      setState(() {
+        _selfId = dataAsJson['socketID'];
+      });
     } else if (dataAsJson.containsKey('type')) {
       if (dataAsJson['type'] == 'disconnection') {
         final id = dataAsJson['id'];
-        Logger().d('Peer $id has disconnected.');
+        final weNeedToCloseSession = _sessionActive && _remoteId == id;
+        if (weNeedToCloseSession) {
+          setState(() {
+            _remoteId = null;
+            _sessionActive = false;
+          });
+        }
       } else if (dataAsJson['type'] == 'connectionRequest') {
         // Close the waiting for peer dialog
         Navigator.of(context).pop();
-        Logger()
-            .i("Got a connection request from peer ${dataAsJson['fromPeer']}");
-        Logger().i("Message : [${dataAsJson['message']}]");
+
+        // Shows the incoming call
+        final accepted = await _showIncomingCall(
+          remoteId: dataAsJson['fromPeer'],
+          message: dataAsJson['message'],
+        );
+        // Process answer
+        if (accepted) {
+          final dataToSend = {
+            'type': 'connectionAccepted',
+            'fromPeer': _selfId,
+          };
+          _wsChannel?.sink.add(jsonEncode(dataToSend));
+          setState(() {
+            _remoteId = dataAsJson['fromPeer'];
+            _sessionActive = true;
+          });
+        } else {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: I18nText('game.rejected_request'),
+            ),
+          );
+        }
       } else if (dataAsJson['type'] == 'connectionRequestFailed') {
         if (dataAsJson['reason'] == 'noRoomWithThisId') {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: I18nText('game.no_matching_room')));
+            SnackBar(
+              content: I18nText('game.no_matching_room'),
+            ),
+          );
         }
+      } else if (dataAsJson['type'] == 'connectionAccepted') {
+        // Removes the waiting pop up
+        Navigator.of(context).pop();
+        // Update state
+        setState(() {
+          _remoteId = dataAsJson['fromPeer'];
+          _sessionActive = true;
+        });
       }
     }
+  }
+
+  Future<bool> _showIncomingCall({
+    required String remoteId,
+    required String message,
+  }) async {
+    return await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx2) {
+              return AlertDialog(
+                title: I18nText('game.incoming_request_title'),
+                content: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    I18nText('game.incoming_request_message'),
+                    Text(
+                      message,
+                      style: TextStyle(
+                        backgroundColor: Colors.blueGrey[300],
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  DialogActionButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(true);
+                    },
+                    textContent: I18nText(
+                      'buttons.ok',
+                    ),
+                    backgroundColor: Colors.tealAccent,
+                    textColor: Colors.white,
+                  ),
+                  DialogActionButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(false);
+                    },
+                    textContent: I18nText(
+                      'buttons.cancel',
+                    ),
+                    textColor: Colors.white,
+                    backgroundColor: Colors.redAccent,
+                  )
+                ],
+              );
+            }) ??
+        false;
   }
 
   Future<void> _initializeWebSocket() async {
@@ -420,16 +509,6 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Future<void> _createRoom() async {
-    final roomCreationState = await _signaling.createRoom();
-    switch (roomCreationState) {
-      case CreatingRoomState.alreadyCreatedARoom:
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: I18nText('game.already_created_room')));
-        return;
-      case CreatingRoomState.success:
-        break;
-    }
     if (!mounted) return;
 
     showDialog(
@@ -446,7 +525,7 @@ class _GameScreenState extends State<GameScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  _signaling.selfId!,
+                  _selfId!,
                   style: const TextStyle(
                     backgroundColor: Colors.blueGrey,
                   ),
@@ -454,7 +533,7 @@ class _GameScreenState extends State<GameScreen> {
                 IconButton(
                   onPressed: () async {
                     await Clipboard.setData(
-                      ClipboardData(text: _signaling.selfId),
+                      ClipboardData(text: _selfId),
                     );
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -474,7 +553,6 @@ class _GameScreenState extends State<GameScreen> {
             DialogActionButton(
               onPressed: () async {
                 Navigator.of(context).pop();
-                await _signaling.leaveRoom();
               },
               textContent: I18nText(
                 'buttons.cancel',
@@ -540,7 +618,7 @@ class _GameScreenState extends State<GameScreen> {
 
     final dataToSend = {
       "type": "connectionRequest",
-      "fromPeer": _signaling.selfId,
+      "fromPeer": _selfId,
       "toPeer": requestedRoomId,
       "message": requestMessage,
     };

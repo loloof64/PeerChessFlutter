@@ -25,7 +25,10 @@
         "no_matching_room": "No hay sala con esta identificación.",
         "already_created_room": "No puedes crear dos salas a la vez.",
         "busy_room": "La sala ya está ocupada.",
-        "already_a_pending_request": "No puedes hacer dos solicitas a la vez."
+        "already_a_pending_request": "No puedes hacer dos solicitas a la vez.",
+        "incoming_request_title": "Solicitud de conexión entrante",
+        "incoming_request_message": "¿Aceptar esta solicitud de conexión?",
+        "rejected_request": "Su solicitud ha sido rechazada."
     },
     "game_termination": {
         "black_checkmate_white": "Los Negros ha ganado por jaque mate.",

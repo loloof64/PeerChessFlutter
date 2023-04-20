@@ -25,7 +25,10 @@
         "no_matching_room": "Aucune salle ne correspond cet identifiant.",
         "already_created_room": "Vous ne pouvez pas créér deux salons simultanément.",
         "busy_room": "La salle est occupée.",
-        "already_a_pending_request": "Impossible de passer deux requêtes à la fois."
+        "already_a_pending_request": "Impossible de passer deux requêtes à la fois.",
+        "incoming_request_title": "Demande de connexion entrante",
+        "incoming_request_message": "Accepter cette demande de connexion ?",
+        "rejected_request": "Votre requête a été rejetée."
     },
     "game_termination": {
         "black_checkmate_white": "Les Noirs gagnent par échec et mat.",

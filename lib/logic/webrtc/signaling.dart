@@ -24,26 +24,9 @@ import 'package:logger/logger.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
-enum MakingCallResult {
-  success,
-  remotePeerDoesNotExist,
-  alreadyAPendingCall,
-}
-
-enum CreatingRoomState {
-  success,
-  alreadyCreatedARoom,
-}
-
 class Signaling {
   RTCDataChannel? _dataChannel;
   late RTCPeerConnection _myConnection;
-
-  String? _selfId;
-  String? _remoteId;
-
-  String? get selfId => _selfId;
-  String? get remoteId => _remoteId;
 
   bool get remoteDescriptionNeeded =>
       _myConnection.connectionState !=
@@ -52,10 +35,6 @@ class Signaling {
           RTCPeerConnectionState.RTCPeerConnectionStateConnecting;
 
   late Map<String, dynamic> _iceServers;
-
-  void setSelfId(String selfId) {
-    _selfId = selfId;
-  }
 
   Signaling() {
     _initializeIceServers().then((value) => _createMyConnection());
@@ -83,11 +62,6 @@ class Signaling {
     _myConnection.addStream(stream);
   }
 
-  Future<void> leaveRoom() async {
-    if (_remoteId == null) return;
-    _remoteId = null;
-  }
-
   Future<void> setRemoteDescriptionFromAnswer(
       RTCSessionDescription description) async {
     await _myConnection.setRemoteDescription(description);
@@ -95,14 +69,6 @@ class Signaling {
 
   Future<void> addIceCandidate(RTCIceCandidate candidate) async {
     await _myConnection.addCandidate(candidate);
-  }
-
-  Future<CreatingRoomState> createRoom() async {
-    final peerAlreadyInARoom = _remoteId != null;
-    if (peerAlreadyInARoom) {
-      return CreatingRoomState.alreadyCreatedARoom;
-    }
-    return CreatingRoomState.success;
   }
 
   Future<void> removeSelfFromRoomJoiner() async {
