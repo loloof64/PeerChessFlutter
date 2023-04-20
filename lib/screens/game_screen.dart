@@ -27,6 +27,7 @@ import 'package:simple_chess_board/models/board_arrow.dart';
 import 'package:simple_chess_board/simple_chess_board.dart';
 import 'package:chess_vectors_flutter/chess_vectors_flutter.dart';
 import 'package:chess/chess.dart' as chess;
+import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:flutter_i18n/flutter_i18n.dart';
 import '../logic/managers/game_manager.dart';
 import '../logic/managers/history_manager.dart';
@@ -35,8 +36,6 @@ import '../logic/history_builder.dart';
 import '../components/history.dart';
 import '../components/dialog_buttons.dart';
 import '../screens/new_game_screen.dart';
-
-const ringingMessageKey = 'ringingMessage';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -54,9 +53,12 @@ class _GameScreenState extends State<GameScreen> {
   Map<String, String> _receivedPeerData = {};
   RTCDataChannel? _dataChannel;
   late TextEditingController _roomIdController;
+  late TextEditingController _ringingMessageController;
   BuildContext? _pendingCallContext;
   bool _sessionActive = false;
   String? _remoteId;
+
+  WebSocketChannel? _wsChannel;
 
   final ScrollController _historyScrollController =
       ScrollController(initialScrollOffset: 0.0, keepScrollOffset: true);
@@ -64,6 +66,7 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     _roomIdController = TextEditingController();
+    _ringingMessageController = TextEditingController();
     _gameManager = GameManager();
     _historyManager = HistoryManager(
       onUpdateChildrenWidgets: _updateHistoryChildrenWidgets,
@@ -72,7 +75,11 @@ class _GameScreenState extends State<GameScreen> {
       isStartMoveNumber: _isStartMoveNumber,
     );
 
-    _signaling = Signaling();
+    _initializeWebSocket().then((value) {
+      setState(() {
+        _signaling = Signaling();
+      });
+    });
 
     FlutterWindowClose.setWindowShouldCloseHandler(() async {
       await _signaling.leaveRoom();
@@ -84,9 +91,56 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   void dispose() {
+    _ringingMessageController.dispose();
     _roomIdController.dispose();
-    _signaling.dispose();
+    _closeWebSocket();
     super.dispose();
+  }
+
+  void _processWebSocketMessage(message) {
+    final dataAsJson = jsonDecode(message) as Map<String, dynamic>;
+    if (dataAsJson.containsKey('error')) {
+      Logger().e(dataAsJson['error']);
+    } else if (dataAsJson.containsKey('socketID')) {
+      _signaling.setSelfId(dataAsJson['socketID']);
+    } else if (dataAsJson.containsKey('type')) {
+      if (dataAsJson['type'] == 'disconnection') {
+        final id = dataAsJson['id'];
+        Logger().d('Peer $id has disconnected.');
+      } else if (dataAsJson['type'] == 'connectionRequest') {
+        // Close the waiting for peer dialog
+        Navigator.of(context).pop();
+        Logger()
+            .i("Got a connection request from peer ${dataAsJson['fromPeer']}");
+        Logger().i("Message : [${dataAsJson['message']}]");
+      }
+    }
+  }
+
+  Future<void> _initializeWebSocket() async {
+    final socketOpened = _wsChannel != null && _wsChannel?.closeCode == null;
+    if (socketOpened) return;
+
+    final String secretsText =
+        await rootBundle.loadString('assets/secrets/signaling.json');
+    final secrets = await json.decode(secretsText);
+    final serverUrl = secrets['serverUrl'] as String;
+
+    final uri = Uri.parse(serverUrl);
+
+    _wsChannel = WebSocketChannel.connect(
+      uri,
+    );
+
+    _wsChannel?.stream.listen((element) {
+      _processWebSocketMessage(element);
+    });
+  }
+
+  Future<void> _closeWebSocket() async {
+    final socketNotOpened = _wsChannel == null || _wsChannel?.closeCode != null;
+    if (socketNotOpened) return;
+    await _wsChannel?.sink.close();
   }
 
   bool _isStartMoveNumber(int moveNumber) {
@@ -457,7 +511,6 @@ class _GameScreenState extends State<GameScreen> {
 
   _hangUp() {
     _signaling.hangUp();
-    _signaling.dispose();
   }
 
   void _sendMove(ShortMove move) {
@@ -474,6 +527,7 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _handleRoomJoiningRequest() async {
     final requestedRoomId = _roomIdController.text;
+    final requestMessage = _ringingMessageController.text;
     final joiningResult = await _signaling.joinRoom(requestedRoomId);
     switch (joiningResult) {
       case JoiningRoomState.alreadySomeonePairingWithHost:
@@ -489,6 +543,14 @@ class _GameScreenState extends State<GameScreen> {
       case JoiningRoomState.success:
         break;
     }
+
+    final dataToSend = {
+      "type": "connectionRequest",
+      "fromPeer": _signaling.selfId,
+      "toPeer": requestedRoomId,
+      "message": requestMessage,
+    };
+    _wsChannel?.sink.add(jsonEncode(dataToSend));
   }
 
   Future<void> _joinRoom() async {
@@ -496,6 +558,7 @@ class _GameScreenState extends State<GameScreen> {
 
     setState(() {
       _roomIdController.text = "";
+      _ringingMessageController.text = "";
     });
 
     showDialog(
@@ -533,6 +596,14 @@ class _GameScreenState extends State<GameScreen> {
                     ),
                   ],
                 ),
+                TextField(
+                  controller: _ringingMessageController,
+                  maxLines: 6,
+                  decoration: InputDecoration(
+                    hintText: FlutterI18n.translate(
+                        context, "game.joininingMessageHint"),
+                  ),
+                )
               ],
             ),
             actions: [

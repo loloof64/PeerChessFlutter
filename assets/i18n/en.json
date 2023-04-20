@@ -21,6 +21,7 @@
         "join_room": "Join a room",
         "enterRoomId": "Please, enter the room id :",
         "roomIdHint": "The room id",
+        "joininingMessageHint": "Your message for the room owner",
         "no_matching_room": "There's no room with this id.",
         "already_created_room": "You can't create two rooms at twice.",
         "busy_room": "The room is already busy.",

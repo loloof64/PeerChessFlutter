@@ -21,6 +21,7 @@
         "join_room": "Vener a una sala",
         "enterRoomId": "Por favor, introduzca la identificación de la sala:",
         "roomIdHint": "la identificación de la sala",
+        "joininingMessageHint": "Tu mensaje para el dueño de la sala",
         "no_matching_room": "No hay sala con esta identificación.",
         "already_created_room": "No puedes crear dos salas a la vez.",
         "busy_room": "La sala ya está ocupada.",

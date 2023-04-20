@@ -22,7 +22,6 @@ import 'dart:convert';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:logger/logger.dart';
 import 'package:flutter/services.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:http/http.dart' as http;
 
 enum MakingCallResult {
@@ -45,7 +44,6 @@ enum JoiningRoomState {
 class Signaling {
   RTCDataChannel? _dataChannel;
   late RTCPeerConnection _myConnection;
-  WebSocketChannel? _wsChannel;
 
   String? _selfId;
   String? _remoteId;
@@ -61,53 +59,12 @@ class Signaling {
 
   late Map<String, dynamic> _iceServers;
 
+  void setSelfId(String selfId) {
+    _selfId = selfId;
+  }
+
   Signaling() {
-    _initializeWebSocket().then((value) =>
-        _initializeIceServers().then((value) => _createMyConnection()));
-  }
-
-  void dispose() {
-    _closeWebSocket();
-  }
-
-  void _processIncomingMessage(message) {
-    final dataAsJson = jsonDecode(message) as Map<String, dynamic>;
-    if (dataAsJson.containsKey('error')) {
-      Logger().e(dataAsJson['error']);
-    } else if (dataAsJson.containsKey('socketID')) {
-      _selfId = dataAsJson['socketID'];
-    } else if (dataAsJson.containsKey('type')) {
-      if (dataAsJson['type'] == 'disconnection') {
-        final id = dataAsJson['id'];
-        Logger().d('Peer $id has disconnected.');
-      }
-    }
-  }
-
-  Future<void> _initializeWebSocket() async {
-    final socketOpened = _wsChannel != null && _wsChannel?.closeCode == null;
-    if (socketOpened) return;
-
-    final String secretsText =
-        await rootBundle.loadString('assets/secrets/signaling.json');
-    final secrets = await json.decode(secretsText);
-    final serverUrl = secrets['serverUrl'] as String;
-
-    final uri = Uri.parse(serverUrl);
-
-    _wsChannel = WebSocketChannel.connect(
-      uri,
-    );
-
-    _wsChannel?.stream.listen((element) {
-      _processIncomingMessage(element);
-    });
-  }
-
-  Future<void> _closeWebSocket() async {
-    final socketNotOpened = _wsChannel == null || _wsChannel?.closeCode != null;
-    if (socketNotOpened) return;
-    await _wsChannel?.sink.close();
+    _initializeIceServers().then((value) => _createMyConnection());
   }
 
   Future<void> _initializeIceServers() async {

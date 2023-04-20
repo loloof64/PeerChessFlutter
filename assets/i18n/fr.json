@@ -21,6 +21,7 @@
         "join_room": "Rejoindre un salon",
         "enterRoomId": "Veuillez entrer l'identifiant du salon :",
         "roomIdHint": "l'identifiant du salon",
+        "joininingMessageHint": "Votre message pour le propriétaire du salon",
         "no_matching_room": "Aucune salle ne correspond cet identifiant.",
         "already_created_room": "Vous ne pouvez pas créér deux salons simultanément.",
         "busy_room": "La salle est occupée.",
