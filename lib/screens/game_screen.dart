@@ -631,9 +631,9 @@ class _GameScreenState extends State<GameScreen> {
     _dataChannel?.send(RTCDataChannelMessage(moveAsJson));
   }
 
-  Future<void> _cancelCall({
+  void _cancelCall({
     required String? remoteId,
-  }) async {
+  }) {
     ///////////////////////////////////
     Logger().d(remoteId);
     ///////////////////////////////////
