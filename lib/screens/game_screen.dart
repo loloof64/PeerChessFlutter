@@ -634,15 +634,12 @@ class _GameScreenState extends State<GameScreen> {
   void _cancelCall({
     required String? remoteId,
   }) {
-    ///////////////////////////////////
-    Logger().d(remoteId);
-    ///////////////////////////////////
     final dataToSend = {
       'type': 'cancelCall',
       'fromPeer': _selfId,
       'toPeer': remoteId,
     };
-    _wsChannel?.sink.add(dataToSend);
+    _wsChannel?.sink.add(jsonEncode(dataToSend));
   }
 
   Future<void> _handleRoomJoiningRequest() async {
