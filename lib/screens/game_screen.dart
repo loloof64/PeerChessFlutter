@@ -160,6 +160,9 @@ class _GameScreenState extends State<GameScreen> {
       } else if (dataAsJson['type'] == 'connectionRequestFailed') {
         if (dataAsJson['reason'] == 'noRoomWithThisId') {
           if (!mounted) return;
+          // Remove the waiting answer pop up
+          Navigator.of(context).pop();
+          // Show notification
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: I18nText('game.no_matching_room'),
@@ -168,6 +171,9 @@ class _GameScreenState extends State<GameScreen> {
           return;
         } else if (dataAsJson['reason'] == 'refusal') {
           if (!mounted) return;
+          // Remove the waiting answer pop up
+          Navigator.of(context).pop();
+          // Show notification
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: I18nText('game.rejected_request'),
