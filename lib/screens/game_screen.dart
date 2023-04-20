@@ -634,6 +634,9 @@ class _GameScreenState extends State<GameScreen> {
   Future<void> _cancelCall({
     required String? remoteId,
   }) async {
+    ///////////////////////////////////
+    Logger().d(remoteId);
+    ///////////////////////////////////
     final dataToSend = {
       'type': 'cancelCall',
       'fromPeer': _selfId,
@@ -666,7 +669,7 @@ class _GameScreenState extends State<GameScreen> {
               DialogActionButton(
                 onPressed: () {
                   Navigator.of(ctx2).pop();
-                  _cancelCall(remoteId: dataToSend['toPeer']);
+                  _cancelCall(remoteId: requestedRoomId);
                 },
                 textContent: I18nText(
                   'buttons.cancel',
