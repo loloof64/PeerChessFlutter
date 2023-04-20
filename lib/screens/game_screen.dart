@@ -104,10 +104,12 @@ class _GameScreenState extends State<GameScreen> {
     final dataAsJson = jsonDecode(message) as Map<String, dynamic>;
     if (dataAsJson.containsKey('error')) {
       Logger().e(dataAsJson['error']);
+      return;
     } else if (dataAsJson.containsKey('socketID')) {
       setState(() {
         _selfId = dataAsJson['socketID'];
       });
+      return;
     } else if (dataAsJson.containsKey('type')) {
       if (dataAsJson['type'] == 'disconnection') {
         final id = dataAsJson['id'];
@@ -124,6 +126,7 @@ class _GameScreenState extends State<GameScreen> {
             ),
           );
         }
+        return;
       } else if (dataAsJson['type'] == 'connectionRequest') {
         // Shows the incoming call
         final accepted = await _showIncomingCall(
@@ -144,6 +147,7 @@ class _GameScreenState extends State<GameScreen> {
             _remoteId = dataAsJson['fromPeer'];
             _sessionActive = true;
           });
+          return;
         } else {
           final dataToSend = {
             'type': 'connectionRequestFailed',
@@ -151,6 +155,7 @@ class _GameScreenState extends State<GameScreen> {
             'fromPeer': _selfId,
           };
           _wsChannel?.sink.add(jsonEncode(dataToSend));
+          return;
         }
       } else if (dataAsJson['type'] == 'connectionRequestFailed') {
         if (dataAsJson['reason'] == 'noRoomWithThisId') {
@@ -160,6 +165,7 @@ class _GameScreenState extends State<GameScreen> {
               content: I18nText('game.no_matching_room'),
             ),
           );
+          return;
         } else if (dataAsJson['reason'] == 'refusal') {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
@@ -167,6 +173,7 @@ class _GameScreenState extends State<GameScreen> {
               content: I18nText('game.rejected_request'),
             ),
           );
+          return;
         }
       } else if (dataAsJson['type'] == 'connectionAccepted') {
         // Removes the waiting pop up
@@ -176,9 +183,11 @@ class _GameScreenState extends State<GameScreen> {
           _remoteId = dataAsJson['fromPeer'];
           _sessionActive = true;
         });
+        return;
       } else if (dataAsJson['type'] == 'cancelCall') {
         // Removes the answer choice pop up
         Navigator.of(context).pop();
+        return;
       }
     }
   }
