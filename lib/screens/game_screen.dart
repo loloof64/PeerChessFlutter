@@ -125,9 +125,6 @@ class _GameScreenState extends State<GameScreen> {
           );
         }
       } else if (dataAsJson['type'] == 'connectionRequest') {
-        // Close the waiting for peer dialog
-        Navigator.of(context).pop();
-
         // Shows the incoming call
         final accepted = await _showIncomingCall(
           remoteId: dataAsJson['fromPeer'],
@@ -135,6 +132,9 @@ class _GameScreenState extends State<GameScreen> {
         );
         // Process answer
         if (accepted) {
+          // Close the waiting for peer dialog
+          if (!mounted) return;
+          Navigator.of(context).pop();
           final dataToSend = {
             'type': 'connectionAccepted',
             'fromPeer': _selfId,
