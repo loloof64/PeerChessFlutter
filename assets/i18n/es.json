@@ -23,8 +23,7 @@
         "roomIdHint": "la identificación de la sala",
         "no_matching_room": "No hay sala con esta identificación.",
         "already_created_room": "No puedes crear dos salas a la vez.",
-        "failed_creating_room": "No se pudo crear la sala.",
-        "busy_room": "La sala ya está ocupada o ya hay una solicitud de ingreso en curso.",
+        "busy_room": "La sala ya está ocupada.",
         "already_a_pending_request": "No puedes hacer dos solicitas a la vez."
     },
     "game_termination": {

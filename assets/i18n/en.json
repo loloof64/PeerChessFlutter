@@ -23,8 +23,7 @@
         "roomIdHint": "The room id",
         "no_matching_room": "There's no room with this id.",
         "already_created_room": "You can't create two rooms at twice.",
-        "failed_creating_room": "Failed to create room.",
-        "busy_room": "The room is already busy or a joining request is already in progress.",
+        "busy_room": "The room is already busy.",
         "already_a_pending_request": "You can't make two requests at once."
     },
     "game_termination": {

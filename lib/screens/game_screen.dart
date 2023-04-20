@@ -75,8 +75,7 @@ class _GameScreenState extends State<GameScreen> {
     _signaling = Signaling();
 
     FlutterWindowClose.setWindowShouldCloseHandler(() async {
-      await _signaling.removePeerFromDB();
-      await _signaling.deleteRoom();
+      await _signaling.leaveRoom();
       return true;
     });
 
@@ -86,7 +85,6 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void dispose() {
     _roomIdController.dispose();
-    _signaling.removePeerFromDB();
     _signaling.dispose();
     super.dispose();
   }
@@ -359,11 +357,18 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Future<void> _createRoom() async {
-    // todo handle errors
-    await _signaling.createRoom();
+    final roomCreationState = await _signaling.createRoom();
+    switch (roomCreationState) {
+      case CreatingRoomState.alreadyCreatedARoom:
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: I18nText('game.already_created_room')));
+        return;
+      case CreatingRoomState.success:
+        break;
+    }
     if (!mounted) return;
 
-    /*
     showDialog(
       barrierDismissible: false,
       context: context,
@@ -378,7 +383,7 @@ class _GameScreenState extends State<GameScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  _signaling.roomId!,
+                  _signaling.selfId!,
                   style: const TextStyle(
                     backgroundColor: Colors.blueGrey,
                   ),
@@ -386,7 +391,7 @@ class _GameScreenState extends State<GameScreen> {
                 IconButton(
                   onPressed: () async {
                     await Clipboard.setData(
-                      ClipboardData(text: _signaling.roomId),
+                      ClipboardData(text: _signaling.selfId),
                     );
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -406,7 +411,7 @@ class _GameScreenState extends State<GameScreen> {
             DialogActionButton(
               onPressed: () async {
                 Navigator.of(context).pop();
-                await _signaling.deleteRoom();
+                await _signaling.leaveRoom();
               },
               textContent: I18nText(
                 'buttons.cancel',
@@ -417,7 +422,7 @@ class _GameScreenState extends State<GameScreen> {
           ],
         );
       },
-    );*/
+    );
   }
 
   void _purposeStopGame() {
@@ -469,8 +474,21 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _handleRoomJoiningRequest() async {
     final requestedRoomId = _roomIdController.text;
-    // todo handle errors
-    await _signaling.joinRoom(requestedRoomId);
+    final joiningResult = await _signaling.joinRoom(requestedRoomId);
+    switch (joiningResult) {
+      case JoiningRoomState.alreadySomeonePairingWithHost:
+        if (!mounted) return;
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: I18nText('game.busy_room')));
+        return;
+      case JoiningRoomState.noRoomWithThisId:
+        if (!mounted) return;
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: I18nText('game.no_matching_room')));
+        return;
+      case JoiningRoomState.success:
+        break;
+    }
   }
 
   Future<void> _joinRoom() async {

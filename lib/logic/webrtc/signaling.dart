@@ -34,25 +34,24 @@ enum MakingCallResult {
 enum CreatingRoomState {
   success,
   alreadyCreatedARoom,
-  error,
 }
 
 enum JoiningRoomState {
   success,
   noRoomWithThisId,
   alreadySomeonePairingWithHost,
-  error,
 }
 
 class Signaling {
   RTCDataChannel? _dataChannel;
   late RTCPeerConnection _myConnection;
-  late WebSocketChannel _wsChannel;
+  WebSocketChannel? _wsChannel;
 
   String? _selfId;
-  String? _roomId;
+  String? _remoteId;
 
-  String? get roomId => _roomId;
+  String? get selfId => _selfId;
+  String? get remoteId => _remoteId;
 
   bool get remoteDescriptionNeeded =>
       _myConnection.connectionState !=
@@ -68,7 +67,7 @@ class Signaling {
   }
 
   void dispose() {
-    _wsChannel.sink.close();
+    _closeWebSocket();
   }
 
   void _processIncomingMessage(message) {
@@ -77,9 +76,6 @@ class Signaling {
       Logger().e(dataAsJson['error']);
     } else if (dataAsJson.containsKey('socketID')) {
       _selfId = dataAsJson['socketID'];
-      ////////////////////
-      Logger().d(_selfId);
-      ////////////////////
     } else if (dataAsJson.containsKey('type')) {
       if (dataAsJson['type'] == 'disconnection') {
         final id = dataAsJson['id'];
@@ -89,6 +85,9 @@ class Signaling {
   }
 
   Future<void> _initializeWebSocket() async {
+    final socketOpened = _wsChannel != null && _wsChannel?.closeCode == null;
+    if (socketOpened) return;
+
     final String secretsText =
         await rootBundle.loadString('assets/secrets/signaling.json');
     final secrets = await json.decode(secretsText);
@@ -100,10 +99,15 @@ class Signaling {
       uri,
     );
 
-    _wsChannel.stream.listen((element) {
+    _wsChannel?.stream.listen((element) {
       _processIncomingMessage(element);
     });
-    //_wsChannel.sink.add('Hello !');
+  }
+
+  Future<void> _closeWebSocket() async {
+    final socketNotOpened = _wsChannel == null || _wsChannel?.closeCode != null;
+    if (socketNotOpened) return;
+    await _wsChannel?.sink.close();
   }
 
   Future<void> _initializeIceServers() async {
@@ -126,14 +130,11 @@ class Signaling {
         await mediaDevices.getUserMedia({"audio": false, "video": false});
     _myConnection = await createPeerConnection(_iceServers);
     _myConnection.addStream(stream);
-
-    // todo add peer in db
   }
 
-  Future<void> deleteRoom() async {
-    if (_roomId == null) return;
-    // todo remove room in db
-    _roomId = null;
+  Future<void> leaveRoom() async {
+    if (_remoteId == null) return;
+    _remoteId = null;
   }
 
   Future<void> setRemoteDescriptionFromAnswer(
@@ -145,24 +146,15 @@ class Signaling {
     await _myConnection.addCandidate(candidate);
   }
 
-  Future<void> createRoom() async {
-    // Checking that this peer is not already in a room
-    final peerAlreadyInARoom = _roomId != null;
-
-    // todo Save Room into DB and join this peer to it
-
-    // todo Update room id
-
-    // todo Set ICE candidates handler
-
-    // todo Create WebRTC offer
-
-    // todo Save offer in db
-
-    return;
+  Future<CreatingRoomState> createRoom() async {
+    final peerAlreadyInARoom = _remoteId != null;
+    if (peerAlreadyInARoom) {
+      return CreatingRoomState.alreadyCreatedARoom;
+    }
+    return CreatingRoomState.success;
   }
 
-  Future<void> joinRoom(String requestedRoomId) async {
+  Future<JoiningRoomState> joinRoom(String requestedRoomId) async {
     // todo Check that the room exists
 
     // todo Check that nobody is playing with the room's host
@@ -179,18 +171,12 @@ class Signaling {
 
     // todo Save answer in db
 
-    return;
+    return JoiningRoomState.success;
   }
 
   Future<void> removeSelfFromRoomJoiner() async {
     // todo removeSelfFromRoomJoiner
   }
-
-  Future<void> removePeerFromDB() async {
-    // todo removePeerFromDB
-  }
-
-  String? get selfId => _selfId;
 
   Function(RTCDataChannel dc, RTCDataChannelMessage data)? onDataChannelMessage;
   Function(RTCDataChannel dc)? onDataChannel;
