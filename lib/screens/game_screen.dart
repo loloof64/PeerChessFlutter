@@ -142,6 +142,9 @@ class _GameScreenState extends State<GameScreen> {
             'type': 'connectionAccepted',
             'fromPeer': _selfId,
           };
+          ///////////////////////////////////
+          Logger().d(_wsChannel);
+          ///////////////////////////////////
           _wsChannel?.sink.add(jsonEncode(dataToSend));
           setState(() {
             _remoteId = dataAsJson['fromPeer'];
@@ -154,6 +157,9 @@ class _GameScreenState extends State<GameScreen> {
             'reason': 'refusal',
             'fromPeer': _selfId,
           };
+          ///////////////////////////////////
+          Logger().d(_wsChannel);
+          ///////////////////////////////////
           _wsChannel?.sink.add(jsonEncode(dataToSend));
           return;
         }
@@ -181,6 +187,7 @@ class _GameScreenState extends State<GameScreen> {
           );
           return;
         }
+        return;
       } else if (dataAsJson['type'] == 'connectionAccepted') {
         // Removes the waiting pop up
         Navigator.of(context).pop();
@@ -654,6 +661,9 @@ class _GameScreenState extends State<GameScreen> {
       'fromPeer': _selfId,
       'toPeer': remoteId,
     };
+    ///////////////////////////////////
+    Logger().d(_wsChannel);
+    ///////////////////////////////////
     _wsChannel?.sink.add(jsonEncode(dataToSend));
   }
 
@@ -667,6 +677,9 @@ class _GameScreenState extends State<GameScreen> {
       "toPeer": requestedRoomId,
       "message": requestMessage,
     };
+    ///////////////////////////////////
+    Logger().d(_wsChannel);
+    ///////////////////////////////////
     _wsChannel?.sink.add(jsonEncode(dataToSend));
 
     // showing waiting for answer dialog
