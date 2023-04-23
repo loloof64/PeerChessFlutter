@@ -133,9 +133,6 @@ class _GameScreenState extends State<GameScreen> {
           remoteId: dataAsJson['fromPeer'],
           message: dataAsJson['message'],
         );
-        ///////////////////////////
-        Logger().d(accepted);
-        /////////////////////////////
 
         // Process answer
         if (accepted) {
@@ -269,8 +266,8 @@ class _GameScreenState extends State<GameScreen> {
       uri,
     );
 
-    _wsChannel?.stream.listen((element) {
-      _processWebSocketMessage(element);
+    _wsChannel?.stream.listen((element) async {
+      await _processWebSocketMessage(element);
     });
   }
 
@@ -667,7 +664,7 @@ class _GameScreenState extends State<GameScreen> {
     final requestMessage = _ringingMessageController.text;
 
     final dataToSend = {
-      "type": "connectionRequest",
+      "type": 'connectionRequest',
       "fromPeer": _selfId,
       "toPeer": requestedRoomId,
       "message": requestMessage,
