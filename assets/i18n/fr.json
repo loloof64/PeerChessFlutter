@@ -29,6 +29,7 @@
         "already_a_pending_request": "Impossible de passer deux requêtes à la fois.",
         "incoming_request_title": "Demande de connexion entrante",
         "incoming_request_message": "Accepter cette demande de connexion ?",
+        "accepted_request": "Votre requête a été acceptée.",
         "rejected_request": "Votre requête a été rejetée.",
         "waiting_call_answer_title": "En attente d'une réponse",
         "waiting_call_answer_message": "En attente d'une réponse ...",

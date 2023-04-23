@@ -193,6 +193,13 @@ class _GameScreenState extends State<GameScreen> {
       } else if (dataAsJson['type'] == 'connectionAccepted') {
         // Removes the waiting pop up
         Navigator.of(context).pop();
+        // Show notification
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: I18nText('game.accepted_request'),
+          ),
+        );
         // Update state
         setState(() {
           _remoteId = dataAsJson['fromPeer'];
