@@ -142,7 +142,7 @@ class _GameScreenState extends State<GameScreen> {
           final dataToSend = {
             'type': 'connectionAccepted',
             'fromPeer': _selfId,
-            'toPeer': _remoteId.toString(),
+            'toPeer': dataAsJson['toPeer'],
           };
           _wsChannel?.sink.add(jsonEncode(dataToSend));
           setState(() {
@@ -157,7 +157,7 @@ class _GameScreenState extends State<GameScreen> {
             'type': 'connectionRequestFailed',
             'reason': 'refusal',
             'fromPeer': _selfId,
-            'toPeer': _remoteId.toString(),
+            'toPeer': dataAsJson['toPeer'],
           };
           _wsChannel?.sink.add(jsonEncode(dataToSend));
           return;
