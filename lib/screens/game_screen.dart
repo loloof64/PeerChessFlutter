@@ -134,8 +134,8 @@ class _GameScreenState extends State<GameScreen> {
           message: dataAsJson['message'],
         );
 
-        // Process answer
-        if (accepted) {
+        // Accepted call
+        if (accepted == true) {
           // Close the waiting for peer dialog
           if (!mounted) return;
           Navigator.of(context).pop();
@@ -150,7 +150,9 @@ class _GameScreenState extends State<GameScreen> {
             _sessionActive = true;
           });
           return;
-        } else {
+        }
+        // Refused call
+        else if (accepted == false) {
           final dataToSend = {
             'type': 'connectionRequestFailed',
             'reason': 'refusal',
@@ -160,6 +162,9 @@ class _GameScreenState extends State<GameScreen> {
           _wsChannel?.sink.add(jsonEncode(dataToSend));
           return;
         }
+        // Exited the incoming call dialog without having send and answer
+        // because the user has cancelled its request.
+        return;
       } else if (dataAsJson['type'] == 'connectionRequestFailed') {
         if (dataAsJson['reason'] == 'noRoomWithThisId') {
           if (!mounted) return;
@@ -202,11 +207,11 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
-  Future<bool> _showIncomingCall({
+  Future<bool?> _showIncomingCall({
     required String remoteId,
     required String message,
   }) async {
-    return await showDialog<bool>(
+    return await showDialog<bool?>(
             context: context,
             barrierDismissible: false,
             builder: (ctx2) {
