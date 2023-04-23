@@ -212,50 +212,49 @@ class _GameScreenState extends State<GameScreen> {
     required String message,
   }) async {
     return await showDialog<bool?>(
-            context: context,
-            barrierDismissible: false,
-            builder: (ctx2) {
-              return AlertDialog(
-                title: I18nText('game.incoming_request_title'),
-                content: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    I18nText('game.incoming_request_message'),
-                    Text(
-                      message,
-                      style: TextStyle(
-                        backgroundColor: Colors.blueGrey[300],
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                actions: [
-                  DialogActionButton(
-                    onPressed: () {
-                      Navigator.of(context).pop(true);
-                    },
-                    textContent: I18nText(
-                      'buttons.ok',
-                    ),
-                    backgroundColor: Colors.tealAccent,
-                    textColor: Colors.white,
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx2) {
+          return AlertDialog(
+            title: I18nText('game.incoming_request_title'),
+            content: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                I18nText('game.incoming_request_message'),
+                Text(
+                  message,
+                  style: TextStyle(
+                    backgroundColor: Colors.blueGrey[300],
+                    fontWeight: FontWeight.bold,
                   ),
-                  DialogActionButton(
-                    onPressed: () {
-                      Navigator.of(context).pop(false);
-                    },
-                    textContent: I18nText(
-                      'buttons.deny',
-                    ),
-                    textColor: Colors.white,
-                    backgroundColor: Colors.redAccent,
-                  )
-                ],
-              );
-            }) ??
-        false;
+                ),
+              ],
+            ),
+            actions: [
+              DialogActionButton(
+                onPressed: () {
+                  Navigator.of(context).pop(true);
+                },
+                textContent: I18nText(
+                  'buttons.ok',
+                ),
+                backgroundColor: Colors.tealAccent,
+                textColor: Colors.white,
+              ),
+              DialogActionButton(
+                onPressed: () {
+                  Navigator.of(context).pop(false);
+                },
+                textContent: I18nText(
+                  'buttons.deny',
+                ),
+                textColor: Colors.white,
+                backgroundColor: Colors.redAccent,
+              )
+            ],
+          );
+        });
   }
 
   Future<void> _initializeWebSocket() async {
