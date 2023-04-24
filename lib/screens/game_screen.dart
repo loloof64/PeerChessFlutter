@@ -129,7 +129,7 @@ class _GameScreenState extends State<GameScreen> {
             );
           }
           // close current websocket
-          await _closeWebSocket();
+          _closeWebSocket();
           // starts a new one
           await _initializeWebSocket();
         }
