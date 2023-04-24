@@ -33,7 +33,11 @@
         "rejected_request": "Your request has been rejected.",
         "waiting_call_answer_title": "Waiting for answer",
         "waiting_call_answer_message": "Waiting for the answer ...",
-        "peer_disconnected": "Session closed because remote peer has disconnected."
+        "peer_disconnected": "Session closed because remote peer has disconnected.",
+        "call_cancel": {
+            "peer_disconnection": "Call cancelled as peer has disconnected.",
+            "peer_cancellation": "Call cancelled as peer has cancelled."
+        }
     },
     "game_termination": {
         "black_checkmate_white": "Black has won by checkmate.",

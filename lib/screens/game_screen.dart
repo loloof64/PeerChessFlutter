@@ -27,7 +27,7 @@ import 'package:simple_chess_board/models/board_arrow.dart';
 import 'package:simple_chess_board/simple_chess_board.dart';
 import 'package:chess_vectors_flutter/chess_vectors_flutter.dart';
 import 'package:chess/chess.dart' as chess;
-import 'package:web_socket_client/web_socket_client.dart' as ws;
+import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:flutter_i18n/flutter_i18n.dart';
 import '../logic/managers/game_manager.dart';
 import '../logic/managers/history_manager.dart';
@@ -58,8 +58,9 @@ class _GameScreenState extends State<GameScreen> {
   bool _sessionActive = false;
   String? _selfId;
   String? _remoteId;
+  bool _answerPopupChoiceActive = false;
 
-  ws.WebSocket? _wsChannel;
+  WebSocketChannel? _wsChannel;
 
   final ScrollController _historyScrollController =
       ScrollController(initialScrollOffset: 0.0, keepScrollOffset: true);
@@ -129,9 +130,23 @@ class _GameScreenState extends State<GameScreen> {
             );
           }
           // close current websocket
-          _closeWebSocket();
+          await _closeWebSocket();
           // starts a new one
           await _initializeWebSocket();
+        } else {
+          final weNeedToRemoveAnswerChoicePopup = _answerPopupChoiceActive;
+          if (weNeedToRemoveAnswerChoicePopup) {
+            // Removes the pop up
+            Navigator.of(context).pop();
+            // show notification
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: I18nText('game.call_cancel.peer_disconnection'),
+                ),
+              );
+            }
+          }
         }
         return;
       } else if (dataAsJson['type'] == 'connectionRequest') {
@@ -151,7 +166,7 @@ class _GameScreenState extends State<GameScreen> {
             'fromPeer': _selfId,
             'toPeer': dataAsJson['fromPeer'],
           };
-          _wsChannel?.send(jsonEncode(dataToSend));
+          _wsChannel?.sink.add(jsonEncode(dataToSend));
           setState(() {
             _remoteId = dataAsJson['fromPeer'];
             _sessionActive = true;
@@ -166,7 +181,7 @@ class _GameScreenState extends State<GameScreen> {
             'fromPeer': _selfId,
             'toPeer': dataAsJson['fromPeer'],
           };
-          _wsChannel?.send(jsonEncode(dataToSend));
+          _wsChannel?.sink.add(jsonEncode(dataToSend));
           return;
         }
         // Exited the incoming call dialog without having send and answer
@@ -216,6 +231,18 @@ class _GameScreenState extends State<GameScreen> {
       } else if (dataAsJson['type'] == 'cancelCall') {
         // Removes the answer choice pop up
         Navigator.of(context).pop();
+        // Update state
+        setState(() {
+          _answerPopupChoiceActive = false;
+        });
+        // show notification
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: I18nText('game.call_cancel.peer_cancellation'),
+            ),
+          );
+        }
         return;
       }
     }
@@ -225,6 +252,10 @@ class _GameScreenState extends State<GameScreen> {
     required String remoteId,
     required String message,
   }) async {
+    setState(() {
+      _answerPopupChoiceActive = true;
+    });
+
     return await showDialog<bool?>(
         context: context,
         barrierDismissible: false,
@@ -248,6 +279,9 @@ class _GameScreenState extends State<GameScreen> {
             actions: [
               DialogActionButton(
                 onPressed: () {
+                  setState(() {
+                    _answerPopupChoiceActive = false;
+                  });
                   Navigator.of(context).pop(true);
                 },
                 textContent: I18nText(
@@ -258,6 +292,7 @@ class _GameScreenState extends State<GameScreen> {
               ),
               DialogActionButton(
                 onPressed: () {
+                  _answerPopupChoiceActive = false;
                   Navigator.of(context).pop(false);
                 },
                 textContent: I18nText(
@@ -272,11 +307,8 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Future<void> _initializeWebSocket() async {
-    final socketOpened = _wsChannel != null;
-    final connectionState = _wsChannel?.connection.state;
-    final connectionOpened = connectionState is! ws.Disconnected &&
-        connectionState is! ws.Disconnecting;
-    if (socketOpened && connectionOpened) return;
+    final socketOpened = _wsChannel != null && _wsChannel?.closeCode == null;
+    if (socketOpened) return;
 
     final String secretsText =
         await rootBundle.loadString('assets/secrets/signaling.json');
@@ -285,21 +317,19 @@ class _GameScreenState extends State<GameScreen> {
 
     final uri = Uri.parse(serverUrl);
 
-    _wsChannel = ws.WebSocket(
+    _wsChannel = WebSocketChannel.connect(
       uri,
     );
 
-    _wsChannel?.messages.listen((element) async {
+    _wsChannel?.stream.listen((element) async {
       await _processWebSocketMessage(element);
     });
   }
 
-  void _closeWebSocket() {
-    final socketNotOpened = _wsChannel == null ||
-        _wsChannel is ws.Disconnected ||
-        _wsChannel is ws.Disconnecting;
+  Future<void> _closeWebSocket() async {
+    final socketNotOpened = _wsChannel == null || _wsChannel?.closeCode != null;
     if (socketNotOpened) return;
-    _wsChannel?.close();
+    await _wsChannel?.sink.close();
   }
 
   bool _isStartMoveNumber(int moveNumber) {
@@ -681,7 +711,7 @@ class _GameScreenState extends State<GameScreen> {
       'fromPeer': _selfId,
       'toPeer': remoteId,
     };
-    _wsChannel?.send(jsonEncode(dataToSend));
+    _wsChannel?.sink.add(jsonEncode(dataToSend));
   }
 
   Future<void> _handleRoomJoiningRequest() async {
@@ -694,7 +724,7 @@ class _GameScreenState extends State<GameScreen> {
       "toPeer": requestedRoomId,
       "message": requestMessage,
     };
-    _wsChannel?.send(jsonEncode(dataToSend));
+    _wsChannel?.sink.add(jsonEncode(dataToSend));
 
     // showing waiting for answer dialog
     showDialog(

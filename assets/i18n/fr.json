@@ -33,7 +33,11 @@
         "rejected_request": "Votre requête a été rejetée.",
         "waiting_call_answer_title": "En attente d'une réponse",
         "waiting_call_answer_message": "En attente d'une réponse ...",
-        "peer_disconnected": "Session interrompue car votre adversaire s'est déconnecté."
+        "peer_disconnected": "Session interrompue car votre adversaire s'est déconnecté.",
+        "call_cancel": {
+            "peer_disconnection": "Appel annulé car l'adversaire s'est déconnecté.",
+            "peer_cancellation": "Appel annulé car l'adversaire a annulé."
+        }
     },
     "game_termination": {
         "black_checkmate_white": "Les Noirs gagnent par échec et mat.",

@@ -33,7 +33,11 @@
         "rejected_request": "Su solicitud ha sido rechazada.",
         "waiting_call_answer_title": "Esperando respuesta",
         "waiting_call_answer_message": "Esperando la respuesta ...",
-        "peer_disconnected": "Sesión cerrada porque el par remoto se ha desconectado."
+        "peer_disconnected": "Sesión cerrada porque el par remoto se ha desconectado.",
+        "call_cancel": {
+            "peer_disconnection": "Llamada cancelada porque el compañero se ha desconectado.",
+            "peer_cancellation": "Llamada cancelada porque el par ha cancelado."
+        }
     },
     "game_termination": {
         "black_checkmate_white": "Los Negros ha ganado por jaque mate.",
