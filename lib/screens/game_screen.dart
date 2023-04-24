@@ -183,7 +183,7 @@ class _GameScreenState extends State<GameScreen> {
           });
 
           _wsChannel?.sink
-              .add(json.encode({"type": "answeringConnectionRequest"}));
+              .add(jsonEncode({"type": "answeringConnectionRequest"}));
 
           // Shows the incoming call
           final accepted = await _showIncomingCall(
@@ -202,9 +202,9 @@ class _GameScreenState extends State<GameScreen> {
               'toPeer': dataAsJson['fromPeer'],
             };
             _wsChannel?.sink.add(jsonEncode(dataToSend));
-            _wsChannel?.sink.add(json.encode({"type": "destroyedARoom"}));
+            _wsChannel?.sink.add(jsonEncode({"type": "destroyedARoom"}));
             _wsChannel?.sink
-                .add(json.encode({"type": "finishedWithConnectionRequest"}));
+                .add(jsonEncode({"type": "finishedWithConnectionRequest"}));
             setState(() {
               _weHaveAWaitingRoom = false;
               _tempRemoteId = null;
@@ -226,14 +226,14 @@ class _GameScreenState extends State<GameScreen> {
             };
             _wsChannel?.sink.add(jsonEncode(dataToSend));
             _wsChannel?.sink
-                .add(json.encode({"type": "finishedWithConnectionRequest"}));
+                .add(jsonEncode({"type": "finishedWithConnectionRequest"}));
             return;
           }
           // Exited the incoming call dialog without having send and answer
           // because the user has cancelled its request.
           else {
             _wsChannel?.sink
-                .add(json.encode({"type": "finishedWithConnectionRequest"}));
+                .add(jsonEncode({"type": "finishedWithConnectionRequest"}));
           }
         }
         return;
@@ -671,12 +671,11 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _createRoom() async {
     if (!mounted) return;
+    _wsChannel?.sink.add(jsonEncode({"type": "createdARoom"}));
 
     setState(() {
       _weHaveAWaitingRoom = true;
     });
-
-    _wsChannel?.sink.add(json.encode({"type": "createdARoom"}));
 
     showDialog(
       barrierDismissible: false,
@@ -722,7 +721,7 @@ class _GameScreenState extends State<GameScreen> {
                 setState(() {
                   _weHaveAWaitingRoom = false;
                 });
-                _wsChannel?.sink.add(json.encode({"type": "destroyedARoom"}));
+                _wsChannel?.sink.add(jsonEncode({"type": "destroyedARoom"}));
                 Navigator.of(context).pop();
               },
               textContent: I18nText(
