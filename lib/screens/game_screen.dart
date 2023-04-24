@@ -27,7 +27,7 @@ import 'package:simple_chess_board/models/board_arrow.dart';
 import 'package:simple_chess_board/simple_chess_board.dart';
 import 'package:chess_vectors_flutter/chess_vectors_flutter.dart';
 import 'package:chess/chess.dart' as chess;
-import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_socket_client/web_socket_client.dart' as ws;
 import 'package:flutter_i18n/flutter_i18n.dart';
 import '../logic/managers/game_manager.dart';
 import '../logic/managers/history_manager.dart';
@@ -59,7 +59,7 @@ class _GameScreenState extends State<GameScreen> {
   String? _selfId;
   String? _remoteId;
 
-  WebSocketChannel? _wsChannel;
+  ws.WebSocket? _wsChannel;
 
   final ScrollController _historyScrollController =
       ScrollController(initialScrollOffset: 0.0, keepScrollOffset: true);
@@ -144,7 +144,7 @@ class _GameScreenState extends State<GameScreen> {
             'fromPeer': _selfId,
             'toPeer': dataAsJson['fromPeer'],
           };
-          _wsChannel?.sink.add(jsonEncode(dataToSend));
+          _wsChannel?.send(jsonEncode(dataToSend));
           setState(() {
             _remoteId = dataAsJson['fromPeer'];
             _sessionActive = true;
@@ -159,7 +159,7 @@ class _GameScreenState extends State<GameScreen> {
             'fromPeer': _selfId,
             'toPeer': dataAsJson['fromPeer'],
           };
-          _wsChannel?.sink.add(jsonEncode(dataToSend));
+          _wsChannel?.send(jsonEncode(dataToSend));
           return;
         }
         // Exited the incoming call dialog without having send and answer
@@ -265,8 +265,11 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Future<void> _initializeWebSocket() async {
-    final socketOpened = _wsChannel != null && _wsChannel?.closeCode == null;
-    if (socketOpened) return;
+    final socketOpened = _wsChannel != null;
+    final connectionState = _wsChannel?.connection.state;
+    final connectionOpened = connectionState is! ws.Disconnected &&
+        connectionState is! ws.Disconnecting;
+    if (socketOpened && connectionOpened) return;
 
     final String secretsText =
         await rootBundle.loadString('assets/secrets/signaling.json');
@@ -275,19 +278,21 @@ class _GameScreenState extends State<GameScreen> {
 
     final uri = Uri.parse(serverUrl);
 
-    _wsChannel = WebSocketChannel.connect(
+    _wsChannel = ws.WebSocket(
       uri,
     );
 
-    _wsChannel?.stream.listen((element) async {
+    _wsChannel?.messages.listen((element) async {
       await _processWebSocketMessage(element);
     });
   }
 
-  Future<void> _closeWebSocket() async {
-    final socketNotOpened = _wsChannel == null || _wsChannel?.closeCode != null;
+  void _closeWebSocket() {
+    final socketNotOpened = _wsChannel == null ||
+        _wsChannel is ws.Disconnected ||
+        _wsChannel is ws.Disconnecting;
     if (socketNotOpened) return;
-    await _wsChannel?.sink.close();
+    _wsChannel?.close();
   }
 
   bool _isStartMoveNumber(int moveNumber) {
@@ -669,7 +674,7 @@ class _GameScreenState extends State<GameScreen> {
       'fromPeer': _selfId,
       'toPeer': remoteId,
     };
-    _wsChannel?.sink.add(jsonEncode(dataToSend));
+    _wsChannel?.send(jsonEncode(dataToSend));
   }
 
   Future<void> _handleRoomJoiningRequest() async {
@@ -682,7 +687,7 @@ class _GameScreenState extends State<GameScreen> {
       "toPeer": requestedRoomId,
       "message": requestMessage,
     };
-    _wsChannel?.sink.add(jsonEncode(dataToSend));
+    _wsChannel?.send(jsonEncode(dataToSend));
 
     // showing waiting for answer dialog
     showDialog(
