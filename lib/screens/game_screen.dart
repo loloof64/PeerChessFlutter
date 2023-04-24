@@ -60,6 +60,7 @@ class _GameScreenState extends State<GameScreen> {
   String? _remoteId;
   bool _answerPopupChoiceActive = false;
   bool _waitingAnswerPopupActive = false;
+  String? _tempRemoteId;
 
   WebSocketChannel? _wsChannel;
 
@@ -119,6 +120,7 @@ class _GameScreenState extends State<GameScreen> {
         if (weNeedToCloseSession) {
           // update state
           setState(() {
+            _tempRemoteId = null;
             _remoteId = null;
             _sessionActive = false;
           });
@@ -135,9 +137,15 @@ class _GameScreenState extends State<GameScreen> {
           // starts a new one
           await _initializeWebSocket();
         } else {
-          final weNeedToRemoveAnswerChoicePopup = _answerPopupChoiceActive;
-          final weNeedToRemoveWaitingAnswerPopup = _waitingAnswerPopupActive;
+          final weNeedToRemoveAnswerChoicePopup =
+              _answerPopupChoiceActive && _tempRemoteId == dataAsJson['id'];
+          final weNeedToRemoveWaitingAnswerPopup =
+              _waitingAnswerPopupActive && _tempRemoteId == dataAsJson['id'];
           if (weNeedToRemoveAnswerChoicePopup) {
+            // Update state
+            setState(() {
+              _tempRemoteId = null;
+            });
             // Removes the pop up
             Navigator.of(context).pop();
             // show notification
@@ -149,6 +157,10 @@ class _GameScreenState extends State<GameScreen> {
               );
             }
           } else if (weNeedToRemoveWaitingAnswerPopup) {
+            // Update state
+            setState(() {
+              _tempRemoteId = null;
+            });
             // Removes the pop up
             Navigator.of(context).pop();
             // show notification
@@ -163,6 +175,11 @@ class _GameScreenState extends State<GameScreen> {
         }
         return;
       } else if (dataAsJson['type'] == 'connectionRequest') {
+        // Update state
+        setState(() {
+          _tempRemoteId = dataAsJson['fromPeer'];
+        });
+
         // Shows the incoming call
         final accepted = await _showIncomingCall(
           remoteId: dataAsJson['fromPeer'],
@@ -181,6 +198,7 @@ class _GameScreenState extends State<GameScreen> {
           };
           _wsChannel?.sink.add(jsonEncode(dataToSend));
           setState(() {
+            _tempRemoteId = null;
             _remoteId = dataAsJson['fromPeer'];
             _sessionActive = true;
           });
@@ -188,6 +206,9 @@ class _GameScreenState extends State<GameScreen> {
         }
         // Refused call
         else if (accepted == false) {
+          setState(() {
+            _tempRemoteId = null;
+          });
           final dataToSend = {
             'type': 'connectionRequestFailed',
             'reason': 'refusal',
@@ -250,6 +271,7 @@ class _GameScreenState extends State<GameScreen> {
         Navigator.of(context).pop();
         // Update state
         setState(() {
+          _tempRemoteId = null;
           _answerPopupChoiceActive = false;
         });
         // show notification
@@ -745,7 +767,8 @@ class _GameScreenState extends State<GameScreen> {
 
     // update state
     setState(() {
-      _waitingAnswerPopupActive = false;
+      _tempRemoteId = requestedRoomId;
+      _waitingAnswerPopupActive = true;
     });
 
     // showing waiting for answer dialog
