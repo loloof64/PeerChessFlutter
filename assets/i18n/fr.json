@@ -35,7 +35,8 @@
         "waiting_call_answer_message": "En attente d'une réponse ...",
         "peer_disconnected": "Session interrompue car votre adversaire s'est déconnecté.",
         "call_cancel": {
-            "peer_disconnection": "Appel annulé car l'adversaire s'est déconnecté.",
+            "remote_disconnection": "Appel annulé car l'adversaire s'est déconnecté.",
+            "host_disconnection": "Appel annulé car l'hôte du salon s'est déconnecté.",
             "peer_cancellation": "Appel annulé car l'adversaire a annulé."
         }
     },

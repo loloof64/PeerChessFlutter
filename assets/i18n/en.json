@@ -35,7 +35,8 @@
         "waiting_call_answer_message": "Waiting for the answer ...",
         "peer_disconnected": "Session closed because remote peer has disconnected.",
         "call_cancel": {
-            "peer_disconnection": "Call cancelled as peer has disconnected.",
+            "remote_disconnection": "Call cancelled as peer has disconnected.",
+            "host_disconnection": "Call cancelled as room's owner has disconnected.",
             "peer_cancellation": "Call cancelled as peer has cancelled."
         }
     },

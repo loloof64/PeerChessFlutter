@@ -59,6 +59,7 @@ class _GameScreenState extends State<GameScreen> {
   String? _selfId;
   String? _remoteId;
   bool _answerPopupChoiceActive = false;
+  bool _waitingAnswerPopupActive = false;
 
   WebSocketChannel? _wsChannel;
 
@@ -135,6 +136,7 @@ class _GameScreenState extends State<GameScreen> {
           await _initializeWebSocket();
         } else {
           final weNeedToRemoveAnswerChoicePopup = _answerPopupChoiceActive;
+          final weNeedToRemoveWaitingAnswerPopup = _waitingAnswerPopupActive;
           if (weNeedToRemoveAnswerChoicePopup) {
             // Removes the pop up
             Navigator.of(context).pop();
@@ -142,7 +144,18 @@ class _GameScreenState extends State<GameScreen> {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: I18nText('game.call_cancel.peer_disconnection'),
+                  content: I18nText('game.call_cancel.remote_disconnection'),
+                ),
+              );
+            }
+          } else if (weNeedToRemoveWaitingAnswerPopup) {
+            // Removes the pop up
+            Navigator.of(context).pop();
+            // show notification
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: I18nText('game.call_cancel.host_disconnection'),
                 ),
               );
             }
@@ -203,6 +216,10 @@ class _GameScreenState extends State<GameScreen> {
           if (!mounted) return;
           // Remove the waiting answer pop up
           Navigator.of(context).pop();
+          // Update state
+          setState(() {
+            _waitingAnswerPopupActive = false;
+          });
           // Show notification
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -725,6 +742,11 @@ class _GameScreenState extends State<GameScreen> {
       "message": requestMessage,
     };
     _wsChannel?.sink.add(jsonEncode(dataToSend));
+
+    // update state
+    setState(() {
+      _waitingAnswerPopupActive = false;
+    });
 
     // showing waiting for answer dialog
     showDialog(

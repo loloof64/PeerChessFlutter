@@ -35,7 +35,8 @@
         "waiting_call_answer_message": "Esperando la respuesta ...",
         "peer_disconnected": "Sesión cerrada porque el par remoto se ha desconectado.",
         "call_cancel": {
-            "peer_disconnection": "Llamada cancelada porque el compañero se ha desconectado.",
+            "remote_disconnection": "Llamada cancelada porque el compañero se ha desconectado.",
+            "host_disconnection": "Llamada cancelada porque el dueño de la sala se desconectó.",
             "peer_cancellation": "Llamada cancelada porque el par ha cancelado."
         }
     },
