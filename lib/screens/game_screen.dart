@@ -60,6 +60,7 @@ class _GameScreenState extends State<GameScreen> {
   String? _remoteId;
   bool _answerPopupChoiceActive = false;
   bool _waitingAnswerPopupActive = false;
+  bool _weHaveAWaitingRoom = false;
   String? _tempRemoteId;
 
   WebSocketChannel? _wsChannel;
@@ -146,7 +147,7 @@ class _GameScreenState extends State<GameScreen> {
             setState(() {
               _tempRemoteId = null;
             });
-            // Removes the pop up
+            // Removes the answer choice pop up
             Navigator.of(context).pop();
             // show notification
             if (mounted) {
@@ -175,51 +176,53 @@ class _GameScreenState extends State<GameScreen> {
         }
         return;
       } else if (dataAsJson['type'] == 'connectionRequest') {
-        // Update state
-        setState(() {
-          _tempRemoteId = dataAsJson['fromPeer'];
-        });
-
-        // Shows the incoming call
-        final accepted = await _showIncomingCall(
-          remoteId: dataAsJson['fromPeer'],
-          message: dataAsJson['message'],
-        );
-
-        // Accepted call
-        if (accepted == true) {
-          // Close the waiting for peer dialog
-          if (!mounted) return;
-          Navigator.of(context).pop();
-          final dataToSend = {
-            'type': 'connectionAccepted',
-            'fromPeer': _selfId,
-            'toPeer': dataAsJson['fromPeer'],
-          };
-          _wsChannel?.sink.add(jsonEncode(dataToSend));
+        if (_weHaveAWaitingRoom) {
+          // Update state
           setState(() {
-            _tempRemoteId = null;
-            _remoteId = dataAsJson['fromPeer'];
-            _sessionActive = true;
+            _tempRemoteId = dataAsJson['fromPeer'];
           });
-          return;
+
+          // Shows the incoming call
+          final accepted = await _showIncomingCall(
+            remoteId: dataAsJson['fromPeer'],
+            message: dataAsJson['message'],
+          );
+
+          // Accepted call
+          if (accepted == true) {
+            // Close the waiting for peer dialog
+            if (!mounted) return;
+            Navigator.of(context).pop();
+            final dataToSend = {
+              'type': 'connectionAccepted',
+              'fromPeer': _selfId,
+              'toPeer': dataAsJson['fromPeer'],
+            };
+            _wsChannel?.sink.add(jsonEncode(dataToSend));
+            setState(() {
+              _tempRemoteId = null;
+              _remoteId = dataAsJson['fromPeer'];
+              _sessionActive = true;
+            });
+            return;
+          }
+          // Refused call
+          else if (accepted == false) {
+            setState(() {
+              _tempRemoteId = null;
+            });
+            final dataToSend = {
+              'type': 'connectionRequestFailed',
+              'reason': 'refusal',
+              'fromPeer': _selfId,
+              'toPeer': dataAsJson['fromPeer'],
+            };
+            _wsChannel?.sink.add(jsonEncode(dataToSend));
+            return;
+          }
+          // Exited the incoming call dialog without having send and answer
+          // because the user has cancelled its request.
         }
-        // Refused call
-        else if (accepted == false) {
-          setState(() {
-            _tempRemoteId = null;
-          });
-          final dataToSend = {
-            'type': 'connectionRequestFailed',
-            'reason': 'refusal',
-            'fromPeer': _selfId,
-            'toPeer': dataAsJson['fromPeer'],
-          };
-          _wsChannel?.sink.add(jsonEncode(dataToSend));
-          return;
-        }
-        // Exited the incoming call dialog without having send and answer
-        // because the user has cancelled its request.
         return;
       } else if (dataAsJson['type'] == 'connectionRequestFailed') {
         if (dataAsJson['reason'] == 'noRoomWithThisId') {
@@ -641,6 +644,10 @@ class _GameScreenState extends State<GameScreen> {
   Future<void> _createRoom() async {
     if (!mounted) return;
 
+    setState(() {
+      _weHaveAWaitingRoom = true;
+    });
+
     showDialog(
       barrierDismissible: false,
       context: context,
@@ -682,6 +689,9 @@ class _GameScreenState extends State<GameScreen> {
           actions: [
             DialogActionButton(
               onPressed: () async {
+                setState(() {
+                  _weHaveAWaitingRoom = false;
+                });
                 Navigator.of(context).pop();
               },
               textContent: I18nText(
