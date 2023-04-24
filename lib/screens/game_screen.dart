@@ -115,16 +115,23 @@ class _GameScreenState extends State<GameScreen> {
         final id = dataAsJson['id'];
         final weNeedToCloseSession = _sessionActive && _remoteId == id;
         if (weNeedToCloseSession) {
+          // update state
           setState(() {
             _remoteId = null;
             _sessionActive = false;
           });
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: I18nText('game.peer_disconnected'),
-            ),
-          );
+          // show notification
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: I18nText('game.peer_disconnected'),
+              ),
+            );
+          }
+          // close current websocket
+          await _closeWebSocket();
+          // starts a new one
+          await _initializeWebSocket();
         }
         return;
       } else if (dataAsJson['type'] == 'connectionRequest') {
