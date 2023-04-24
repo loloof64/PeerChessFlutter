@@ -199,7 +199,9 @@ class _GameScreenState extends State<GameScreen> {
               'toPeer': dataAsJson['fromPeer'],
             };
             _wsChannel?.sink.add(jsonEncode(dataToSend));
+            _wsChannel?.sink.add(json.encode({"type": "destroyedARoom"}));
             setState(() {
+              _weHaveAWaitingRoom = false;
               _tempRemoteId = null;
               _remoteId = dataAsJson['fromPeer'];
               _sessionActive = true;
@@ -648,6 +650,8 @@ class _GameScreenState extends State<GameScreen> {
       _weHaveAWaitingRoom = true;
     });
 
+    _wsChannel?.sink.add(json.encode({"type": "createdARoom"}));
+
     showDialog(
       barrierDismissible: false,
       context: context,
@@ -692,6 +696,7 @@ class _GameScreenState extends State<GameScreen> {
                 setState(() {
                   _weHaveAWaitingRoom = false;
                 });
+                _wsChannel?.sink.add(json.encode({"type": "destroyedARoom"}));
                 Navigator.of(context).pop();
               },
               textContent: I18nText(
