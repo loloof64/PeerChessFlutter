@@ -182,6 +182,9 @@ class _GameScreenState extends State<GameScreen> {
             _tempRemoteId = dataAsJson['fromPeer'];
           });
 
+          _wsChannel?.sink
+              .add(json.encode({"type": "answeringConnectionRequest"}));
+
           // Shows the incoming call
           final accepted = await _showIncomingCall(
             remoteId: dataAsJson['fromPeer'],
@@ -200,6 +203,8 @@ class _GameScreenState extends State<GameScreen> {
             };
             _wsChannel?.sink.add(jsonEncode(dataToSend));
             _wsChannel?.sink.add(json.encode({"type": "destroyedARoom"}));
+            _wsChannel?.sink
+                .add(json.encode({"type": "finishedWithConnectionRequest"}));
             setState(() {
               _weHaveAWaitingRoom = false;
               _tempRemoteId = null;
@@ -220,10 +225,16 @@ class _GameScreenState extends State<GameScreen> {
               'toPeer': dataAsJson['fromPeer'],
             };
             _wsChannel?.sink.add(jsonEncode(dataToSend));
+            _wsChannel?.sink
+                .add(json.encode({"type": "finishedWithConnectionRequest"}));
             return;
           }
           // Exited the incoming call dialog without having send and answer
           // because the user has cancelled its request.
+          else {
+            _wsChannel?.sink
+                .add(json.encode({"type": "finishedWithConnectionRequest"}));
+          }
         }
         return;
       } else if (dataAsJson['type'] == 'connectionRequestFailed') {
@@ -250,6 +261,21 @@ class _GameScreenState extends State<GameScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: I18nText('game.rejected_request'),
+            ),
+          );
+          return;
+        } else if (dataAsJson['reason'] == 'busyRoom') {
+          if (!mounted) return;
+          // Remove the waiting answer pop up
+          Navigator.of(context).pop();
+          // Update state
+          setState(() {
+            _waitingAnswerPopupActive = false;
+          });
+          // Show notification
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: I18nText('game.busy_room'),
             ),
           );
           return;
