@@ -132,24 +132,6 @@ class Signaling {
     if (_roomId == null) return;
     var nextPageToken = '';
 
-    // Deleting all related offer candidates
-    var matchingOfferCandidates = <Document>[];
-    while (true) {
-      final offerCandidateInstancesPage =
-          await Firestore.instance.collection('offerCandidates').get(
-                nextPageToken: nextPageToken,
-              );
-      final goodOfferCandidates = offerCandidateInstancesPage
-          .where((element) => element['ownerId'] == _selfId)
-          .toList();
-      matchingOfferCandidates.addAll(goodOfferCandidates);
-      if (!offerCandidateInstancesPage.hasNextPage) break;
-      nextPageToken = offerCandidateInstancesPage.nextPageToken;
-    }
-    for (var candidate in matchingOfferCandidates) {
-      await candidate.reference.delete();
-    }
-
     // Deleting all related offers
     nextPageToken = '';
     var matchingOffers = <Document>[];
@@ -190,6 +172,26 @@ class Signaling {
   }
 
   Future<void> removePeerFromDB() async {
+    // Deleting all related offer candidates
+    var nextPageToken = '';
+    var matchingOfferCandidates = <Document>[];
+    while (true) {
+      final offerCandidateInstancesPage =
+          await Firestore.instance.collection('offerCandidates').get(
+                nextPageToken: nextPageToken,
+              );
+      final goodOfferCandidates = offerCandidateInstancesPage
+          .where((element) => element['ownerId'] == _selfId)
+          .toList();
+      matchingOfferCandidates.addAll(goodOfferCandidates);
+      if (!offerCandidateInstancesPage.hasNextPage) break;
+      nextPageToken = offerCandidateInstancesPage.nextPageToken;
+    }
+    for (var candidate in matchingOfferCandidates) {
+      await candidate.reference.delete();
+    }
+
+    // Delete peer from DB
     final peerInstance =
         Firestore.instance.collection('peers').document(_selfId!);
     await peerInstance.delete();
