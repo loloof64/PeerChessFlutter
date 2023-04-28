@@ -18,21 +18,17 @@
 // Using code from https://github.com/flutter-webrtc/flutter-webrtc-demo/blob/master/lib/src/call_sample/random_string.dart
 
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:firedart/firedart.dart';
 import 'package:logger/logger.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
-String generateId() {
-  const digitsCount = 10;
-  String result = '';
-  var rng = Random();
-  for (var i = 0; i < digitsCount; i++) {
-    result += rng.nextInt(10).toString();
-  }
-  return result;
+enum CreatingRoomState {
+  success,
+  alreadyCreatedARoom,
+  miscError,
 }
 
 class Signaling {
@@ -40,9 +36,11 @@ class Signaling {
   late RTCPeerConnection _myConnection;
   String? _selfId;
   String? _remoteId;
+  String? _roomId;
 
   String? get selfId => _selfId;
   String? get remoteId => _remoteId;
+  String? get roomId => _roomId;
 
   bool get remoteDescriptionNeeded =>
       _myConnection.connectionState !=
@@ -72,10 +70,129 @@ class Signaling {
   }
 
   Future<void> _createMyConnection() async {
+    Firestore.instance.collection('peers').stream.forEach((newElementsList) {
+      if (_remoteId != null) {
+        final remoteHasBeenDeleted =
+            newElementsList.where((element) => element.id == _remoteId).isEmpty;
+        if (remoteHasBeenDeleted) {
+          Logger().i("Remote peer has been removed !");
+        }
+      }
+    });
+    final ourPeer = await Firestore.instance.collection('peers').add({});
+    _selfId = ourPeer.id;
     final stream =
         await mediaDevices.getUserMedia({"audio": false, "video": false});
     _myConnection = await createPeerConnection(_iceServers);
     _myConnection.addStream(stream);
+  }
+
+  Future<CreatingRoomState> createRoom() async {
+    // Checking that this peer is not already in a room
+    final peerAlreadyInARoom = _roomId != null;
+    if (peerAlreadyInARoom) return CreatingRoomState.alreadyCreatedARoom;
+
+    // Save Room into DB and join this peer to it
+    try {
+      final room = await Firestore.instance.collection('rooms').add({
+        "ownerId": _selfId,
+      });
+      // Marks this room as busy
+      _roomId = room.id;
+
+      // Sets ICE candidates handler
+      _myConnection.onIceCandidate = (candidate) async {
+        // Create OfferCandidate in DB
+        await Firestore.instance
+            .collection('offerCandidates')
+            .add({'data': candidate.toMap(), 'ownerId': _selfId});
+      };
+
+      // Creates WebRTC offer
+      final offer = await _myConnection.createOffer();
+      await _myConnection.setLocalDescription(offer);
+
+      // Save offer in db
+      await Firestore.instance.collection('offers').add({
+        'data': {
+          "type": offer.type,
+          "sdp": offer.sdp,
+        },
+        'ownerId': _selfId
+      });
+
+      return CreatingRoomState.success;
+    } catch (ex) {
+      Logger().e(ex);
+      return CreatingRoomState.miscError;
+    }
+  }
+
+  Future<void> deleteRoom() async {
+    if (_roomId == null) return;
+    var nextPageToken = '';
+
+    // Deleting all related offer candidates
+    var matchingOfferCandidates = <Document>[];
+    while (true) {
+      final offerCandidateInstancesPage =
+          await Firestore.instance.collection('offerCandidates').get(
+                nextPageToken: nextPageToken,
+              );
+      final goodOfferCandidates = offerCandidateInstancesPage
+          .where((element) => element['ownerId'] == _selfId)
+          .toList();
+      matchingOfferCandidates.addAll(goodOfferCandidates);
+      if (!offerCandidateInstancesPage.hasNextPage) break;
+      nextPageToken = offerCandidateInstancesPage.nextPageToken;
+    }
+    for (var candidate in matchingOfferCandidates) {
+      await candidate.reference.delete();
+    }
+
+    // Deleting all related offers
+    nextPageToken = '';
+    var matchingOffers = <Document>[];
+    while (true) {
+      final offerInstancesPage = await Firestore.instance
+          .collection('offers')
+          .get(nextPageToken: nextPageToken);
+      final goodOffers = offerInstancesPage
+          .where((element) => element['ownerId'] == _selfId)
+          .toList();
+      matchingOffers.addAll(goodOffers);
+      if (!offerInstancesPage.hasNextPage) break;
+      nextPageToken = offerInstancesPage.nextPageToken;
+    }
+    for (var offer in matchingOffers) {
+      await offer.reference.delete();
+    }
+
+    // Deleting room
+    nextPageToken = '';
+    var matchingRooms = [];
+    while (true) {
+      final roomsInstancesPage = await Firestore.instance
+          .collection('rooms')
+          .get(nextPageToken: nextPageToken);
+      final goodRooms = roomsInstancesPage
+          .where((element) => element['ownerId'] == _selfId)
+          .toList();
+      matchingRooms.addAll(goodRooms);
+      if (!roomsInstancesPage.hasNextPage) break;
+      nextPageToken = roomsInstancesPage.nextPageToken;
+    }
+    for (var room in matchingRooms) {
+      await room.reference.delete();
+    }
+
+    _roomId = null;
+  }
+
+  Future<void> removePeerFromDB() async {
+    final peerInstance =
+        Firestore.instance.collection('peers').document(_selfId!);
+    await peerInstance.delete();
   }
 
   Future<void> setRemoteDescriptionFromAnswer(

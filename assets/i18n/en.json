@@ -24,6 +24,7 @@
         "roomIdHint": "The room id",
         "joininingMessageHint": "Your message for the room owner",
         "no_matching_room": "There's no room with this id.",
+        "misc_room_creation_error": "Failed to create room for an unknown reason",
         "already_created_room": "You can't create two rooms at twice.",
         "busy_room": "The room is already busy.",
         "already_a_pending_request": "You can't make two requests at once.",

@@ -74,6 +74,8 @@ class _GameScreenState extends State<GameScreen> {
     _signaling = Signaling();
 
     FlutterWindowClose.setWindowShouldCloseHandler(() async {
+      await _signaling.deleteRoom();
+      await _signaling.removePeerFromDB();
       return true;
     });
 
@@ -84,7 +86,13 @@ class _GameScreenState extends State<GameScreen> {
   void dispose() {
     _ringingMessageController.dispose();
     _roomIdController.dispose();
-    _signaling.hangUp().then((value) => super.dispose());
+    _signaling.hangUp().then((value) {
+      _signaling.deleteRoom().then((value) {
+        _signaling.removePeerFromDB().then((value) {
+          super.dispose();
+        });
+      });
+    });
   }
 
   void _processServerEvents(dynamic event) {
@@ -411,6 +419,24 @@ class _GameScreenState extends State<GameScreen> {
   Future<void> _createRoom() async {
     if (!mounted) return;
 
+    final success = await _signaling.createRoom();
+    switch (success) {
+      case CreatingRoomState.alreadyCreatedARoom:
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: I18nText('game.already_created_room')));
+        break;
+      case CreatingRoomState.miscError:
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: I18nText('game.misc_room_creation_error')));
+        break;
+      case CreatingRoomState.success:
+        break;
+    }
+
+    if (!mounted) return;
+
     showDialog(
       barrierDismissible: false,
       context: context,
@@ -425,7 +451,7 @@ class _GameScreenState extends State<GameScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  _signaling.selfId!,
+                  _signaling.roomId!,
                   style: const TextStyle(
                     backgroundColor: Colors.blueGrey,
                   ),
@@ -433,7 +459,7 @@ class _GameScreenState extends State<GameScreen> {
                 IconButton(
                   onPressed: () async {
                     await Clipboard.setData(
-                      ClipboardData(text: _signaling.selfId!),
+                      ClipboardData(text: _signaling.roomId!),
                     );
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -453,6 +479,7 @@ class _GameScreenState extends State<GameScreen> {
             DialogActionButton(
               onPressed: () async {
                 Navigator.of(context).pop();
+                await _signaling.deleteRoom();
               },
               textContent: I18nText(
                 'buttons.cancel',

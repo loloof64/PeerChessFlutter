@@ -23,6 +23,7 @@
         "enterRoomId": "Veuillez entrer l'identifiant du salon :",
         "roomIdHint": "l'identifiant du salon",
         "joininingMessageHint": "Votre message pour le propriétaire du salon",
+        "misc_room_creation_error": "Echec de creation du salon pour une raison inconnue.",
         "no_matching_room": "Aucune salle ne correspond cet identifiant.",
         "already_created_room": "Vous ne pouvez pas créér deux salons simultanément.",
         "busy_room": "La salle est occupée.",
