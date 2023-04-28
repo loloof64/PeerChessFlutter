@@ -102,9 +102,9 @@ class Signaling {
 
       // Sets ICE candidates handler
       _myConnection.onIceCandidate = (candidate) async {
-        // Create OfferCandidate in DB
+        // Create candidate in DB
         await Firestore.instance
-            .collection('offerCandidates')
+            .collection('candidates')
             .add({'data': candidate.toMap(), 'ownerId': _selfId});
       };
 
@@ -172,12 +172,12 @@ class Signaling {
   }
 
   Future<void> removePeerFromDB() async {
-    // Deleting all related offer candidates
+    // Deleting all related candidates
     var nextPageToken = '';
     var matchingOfferCandidates = <Document>[];
     while (true) {
       final offerCandidateInstancesPage =
-          await Firestore.instance.collection('offerCandidates').get(
+          await Firestore.instance.collection('candidates').get(
                 nextPageToken: nextPageToken,
               );
       final goodOfferCandidates = offerCandidateInstancesPage
