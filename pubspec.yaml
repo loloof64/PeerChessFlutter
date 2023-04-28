@@ -48,7 +48,8 @@ dependencies:
   window_manager: ^0.3.1
   flutter_window_close: ^0.2.2
   http: ^0.13.5
-  web_socket_client: ^0.1.0-dev.3
+  fauna_dart_driver: ^0.0.1
+  faunadb_http: ^0.13.4
 
 dev_dependencies:
   flutter_test:

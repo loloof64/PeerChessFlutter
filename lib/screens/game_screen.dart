@@ -27,7 +27,6 @@ import 'package:simple_chess_board/models/board_arrow.dart';
 import 'package:simple_chess_board/simple_chess_board.dart';
 import 'package:chess_vectors_flutter/chess_vectors_flutter.dart';
 import 'package:chess/chess.dart' as chess;
-import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:flutter_i18n/flutter_i18n.dart';
 import '../logic/managers/game_manager.dart';
 import '../logic/managers/history_manager.dart';
@@ -56,14 +55,6 @@ class _GameScreenState extends State<GameScreen> {
   late TextEditingController _ringingMessageController;
   BuildContext? _pendingCallContext;
   bool _sessionActive = false;
-  String? _selfId;
-  String? _remoteId;
-  bool _answerPopupChoiceActive = false;
-  bool _waitingAnswerPopupActive = false;
-  bool _weHaveAWaitingRoom = false;
-  String? _tempRemoteId;
-
-  WebSocketChannel? _wsChannel;
 
   final ScrollController _historyScrollController =
       ScrollController(initialScrollOffset: 0.0, keepScrollOffset: true);
@@ -80,11 +71,7 @@ class _GameScreenState extends State<GameScreen> {
       isStartMoveNumber: _isStartMoveNumber,
     );
 
-    _initializeWebSocket().then((value) {
-      setState(() {
-        _signaling = Signaling();
-      });
-    });
+    _signaling = Signaling();
 
     FlutterWindowClose.setWindowShouldCloseHandler(() async {
       return true;
@@ -97,235 +84,17 @@ class _GameScreenState extends State<GameScreen> {
   void dispose() {
     _ringingMessageController.dispose();
     _roomIdController.dispose();
-    _closeWebSocket();
-    super.dispose();
+    _signaling.hangUp().then((value) => super.dispose());
   }
 
-  Future<void> _processWebSocketMessage(message) async {
-    ///////////////////////////////////
-    Logger().d(message);
-    ///////////////////////////////////
-    final dataAsJson = jsonDecode(message) as Map<String, dynamic>;
-    if (dataAsJson.containsKey('error')) {
-      Logger().e(dataAsJson['error']);
-      return;
-    } else if (dataAsJson.containsKey('socketID')) {
-      setState(() {
-        _selfId = dataAsJson['socketID'];
-      });
-      return;
-    } else if (dataAsJson.containsKey('type')) {
-      if (dataAsJson['type'] == 'disconnection') {
-        final id = dataAsJson['id'];
-        final weNeedToCloseSession = _sessionActive && _remoteId == id;
-        if (weNeedToCloseSession) {
-          // update state
-          setState(() {
-            _tempRemoteId = null;
-            _remoteId = null;
-            _sessionActive = false;
-          });
-          // show notification
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: I18nText('game.peer_disconnected'),
-              ),
-            );
-          }
-          // close current websocket
-          await _closeWebSocket();
-          // starts a new one
-          await _initializeWebSocket();
-        } else {
-          final weNeedToRemoveAnswerChoicePopup =
-              _answerPopupChoiceActive && _tempRemoteId == dataAsJson['id'];
-          final weNeedToRemoveWaitingAnswerPopup =
-              _waitingAnswerPopupActive && _tempRemoteId == dataAsJson['id'];
-          if (weNeedToRemoveAnswerChoicePopup) {
-            // Update state
-            setState(() {
-              _tempRemoteId = null;
-            });
-            // Removes the answer choice pop up
-            Navigator.of(context).pop();
-            // show notification
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: I18nText('game.call_cancel.remote_disconnection'),
-                ),
-              );
-            }
-          } else if (weNeedToRemoveWaitingAnswerPopup) {
-            // Update state
-            setState(() {
-              _tempRemoteId = null;
-            });
-            // Removes the pop up
-            Navigator.of(context).pop();
-            // show notification
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: I18nText('game.call_cancel.host_disconnection'),
-                ),
-              );
-            }
-          }
-        }
-        return;
-      } else if (dataAsJson['type'] == 'connectionRequest') {
-        if (_weHaveAWaitingRoom) {
-          // Update state
-          setState(() {
-            _tempRemoteId = dataAsJson['fromPeer'];
-          });
-
-          _wsChannel?.sink
-              .add(jsonEncode({"type": "answeringConnectionRequest"}));
-
-          // Shows the incoming call
-          final accepted = await _showIncomingCall(
-            remoteId: dataAsJson['fromPeer'],
-            message: dataAsJson['message'],
-          );
-
-          // Accepted call
-          if (accepted == true) {
-            // Close the waiting for peer dialog
-            if (!mounted) return;
-            Navigator.of(context).pop();
-            final dataToSend = {
-              'type': 'connectionAccepted',
-              'fromPeer': _selfId,
-              'toPeer': dataAsJson['fromPeer'],
-            };
-            _wsChannel?.sink.add(jsonEncode(dataToSend));
-            _wsChannel?.sink.add(jsonEncode({"type": "destroyedARoom"}));
-            _wsChannel?.sink
-                .add(jsonEncode({"type": "finishedWithConnectionRequest"}));
-            setState(() {
-              _weHaveAWaitingRoom = false;
-              _tempRemoteId = null;
-              _remoteId = dataAsJson['fromPeer'];
-              _sessionActive = true;
-            });
-            return;
-          }
-          // Refused call
-          else if (accepted == false) {
-            setState(() {
-              _tempRemoteId = null;
-            });
-            final dataToSend = {
-              'type': 'connectionRequestFailed',
-              'reason': 'refusal',
-              'fromPeer': _selfId,
-              'toPeer': dataAsJson['fromPeer'],
-            };
-            _wsChannel?.sink.add(jsonEncode(dataToSend));
-            _wsChannel?.sink
-                .add(jsonEncode({"type": "finishedWithConnectionRequest"}));
-            return;
-          }
-          // Exited the incoming call dialog without having send and answer
-          // because the user has cancelled its request.
-          else {
-            _wsChannel?.sink
-                .add(jsonEncode({"type": "finishedWithConnectionRequest"}));
-          }
-        }
-        return;
-      } else if (dataAsJson['type'] == 'connectionRequestFailed') {
-        if (dataAsJson['reason'] == 'noRoomWithThisId') {
-          if (!mounted) return;
-          // Remove the waiting answer pop up
-          Navigator.of(context).pop();
-          // Show notification
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: I18nText('game.no_matching_room'),
-            ),
-          );
-          return;
-        } else if (dataAsJson['reason'] == 'refusal') {
-          if (!mounted) return;
-          // Remove the waiting answer pop up
-          Navigator.of(context).pop();
-          // Update state
-          setState(() {
-            _waitingAnswerPopupActive = false;
-          });
-          // Show notification
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: I18nText('game.rejected_request'),
-            ),
-          );
-          return;
-        } else if (dataAsJson['reason'] == 'busyRoom') {
-          if (!mounted) return;
-          // Remove the waiting answer pop up
-          Navigator.of(context).pop();
-          // Update state
-          setState(() {
-            _waitingAnswerPopupActive = false;
-          });
-          // Show notification
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: I18nText('game.busy_room'),
-            ),
-          );
-          return;
-        }
-        return;
-      } else if (dataAsJson['type'] == 'connectionAccepted') {
-        // Removes the waiting pop up
-        Navigator.of(context).pop();
-        // Show notification
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: I18nText('game.accepted_request'),
-          ),
-        );
-        // Update state
-        setState(() {
-          _remoteId = dataAsJson['fromPeer'];
-          _sessionActive = true;
-        });
-        return;
-      } else if (dataAsJson['type'] == 'cancelCall') {
-        // Removes the answer choice pop up
-        Navigator.of(context).pop();
-        // Update state
-        setState(() {
-          _tempRemoteId = null;
-          _answerPopupChoiceActive = false;
-        });
-        // show notification
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: I18nText('game.call_cancel.peer_cancellation'),
-            ),
-          );
-        }
-        return;
-      }
-    }
+  void _processServerEvents(dynamic event) {
+    Logger().d("[Event]: ${event.data}");
   }
 
   Future<bool?> _showIncomingCall({
     required String remoteId,
     required String message,
   }) async {
-    setState(() {
-      _answerPopupChoiceActive = true;
-    });
-
     return await showDialog<bool?>(
         context: context,
         barrierDismissible: false,
@@ -349,9 +118,6 @@ class _GameScreenState extends State<GameScreen> {
             actions: [
               DialogActionButton(
                 onPressed: () {
-                  setState(() {
-                    _answerPopupChoiceActive = false;
-                  });
                   Navigator.of(context).pop(true);
                 },
                 textContent: I18nText(
@@ -362,7 +128,6 @@ class _GameScreenState extends State<GameScreen> {
               ),
               DialogActionButton(
                 onPressed: () {
-                  _answerPopupChoiceActive = false;
                   Navigator.of(context).pop(false);
                 },
                 textContent: I18nText(
@@ -374,32 +139,6 @@ class _GameScreenState extends State<GameScreen> {
             ],
           );
         });
-  }
-
-  Future<void> _initializeWebSocket() async {
-    final socketOpened = _wsChannel != null && _wsChannel?.closeCode == null;
-    if (socketOpened) return;
-
-    final String secretsText =
-        await rootBundle.loadString('assets/secrets/signaling.json');
-    final secrets = await json.decode(secretsText);
-    final serverUrl = secrets['serverUrl'] as String;
-
-    final uri = Uri.parse(serverUrl);
-
-    _wsChannel = WebSocketChannel.connect(
-      uri,
-    );
-
-    _wsChannel?.stream.listen((element) async {
-      await _processWebSocketMessage(element);
-    });
-  }
-
-  Future<void> _closeWebSocket() async {
-    final socketNotOpened = _wsChannel == null || _wsChannel?.closeCode != null;
-    if (socketNotOpened) return;
-    await _wsChannel?.sink.close();
   }
 
   bool _isStartMoveNumber(int moveNumber) {
@@ -671,11 +410,6 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _createRoom() async {
     if (!mounted) return;
-    _wsChannel?.sink.add(jsonEncode({"type": "createdARoom"}));
-
-    setState(() {
-      _weHaveAWaitingRoom = true;
-    });
 
     showDialog(
       barrierDismissible: false,
@@ -691,7 +425,7 @@ class _GameScreenState extends State<GameScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  _selfId!,
+                  _signaling.selfId!,
                   style: const TextStyle(
                     backgroundColor: Colors.blueGrey,
                   ),
@@ -699,7 +433,7 @@ class _GameScreenState extends State<GameScreen> {
                 IconButton(
                   onPressed: () async {
                     await Clipboard.setData(
-                      ClipboardData(text: _selfId),
+                      ClipboardData(text: _signaling.selfId!),
                     );
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -718,10 +452,6 @@ class _GameScreenState extends State<GameScreen> {
           actions: [
             DialogActionButton(
               onPressed: () async {
-                setState(() {
-                  _weHaveAWaitingRoom = false;
-                });
-                _wsChannel?.sink.add(jsonEncode({"type": "destroyedARoom"}));
                 Navigator.of(context).pop();
               },
               textContent: I18nText(
@@ -784,32 +514,11 @@ class _GameScreenState extends State<GameScreen> {
 
   void _cancelCall({
     required String? remoteId,
-  }) {
-    final dataToSend = {
-      'type': 'cancelCall',
-      'fromPeer': _selfId,
-      'toPeer': remoteId,
-    };
-    _wsChannel?.sink.add(jsonEncode(dataToSend));
-  }
+  }) {}
 
   Future<void> _handleRoomJoiningRequest() async {
     final requestedRoomId = _roomIdController.text;
     final requestMessage = _ringingMessageController.text;
-
-    final dataToSend = {
-      "type": 'connectionRequest',
-      "fromPeer": _selfId,
-      "toPeer": requestedRoomId,
-      "message": requestMessage,
-    };
-    _wsChannel?.sink.add(jsonEncode(dataToSend));
-
-    // update state
-    setState(() {
-      _tempRemoteId = requestedRoomId;
-      _waitingAnswerPopupActive = true;
-    });
 
     // showing waiting for answer dialog
     showDialog(

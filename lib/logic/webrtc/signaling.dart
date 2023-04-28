@@ -18,15 +18,35 @@
 // Using code from https://github.com/flutter-webrtc/flutter-webrtc-demo/blob/master/lib/src/call_sample/random_string.dart
 
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:logger/logger.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:fauna_dart_driver/fauna_dart_driver.dart';
+import 'package:faunadb_http/faunadb_http.dart' hide FaunaClient;
+import 'package:faunadb_http/query.dart';
+
+String generateId() {
+  const digitsCount = 10;
+  String result = '';
+  var rng = Random();
+  for (var i = 0; i < digitsCount; i++) {
+    result += rng.nextInt(10).toString();
+  }
+  return result;
+}
 
 class Signaling {
   RTCDataChannel? _dataChannel;
   late RTCPeerConnection _myConnection;
+  late FaunaClient _faunaClient;
+  String? _selfId;
+  String? _remoteId;
+
+  String? get selfId => _selfId;
+  String? get remoteId => _remoteId;
 
   bool get remoteDescriptionNeeded =>
       _myConnection.connectionState !=
@@ -37,7 +57,32 @@ class Signaling {
   late Map<String, dynamic> _iceServers;
 
   Signaling() {
-    _initializeIceServers().then((value) => _createMyConnection());
+    _initialiseFaunaListener().then((value) =>
+        _initializeIceServers().then((value) => _createMyConnection()));
+  }
+
+  Future<void> _initialiseFaunaListener() async {
+    final String secretsText =
+        await rootBundle.loadString('assets/secrets/fauna.json');
+    final secrets = await json.decode(secretsText);
+    final secretValue = secrets['secret'] as String;
+
+    _faunaClient = FaunaClient(
+      secret: secretValue,
+    );
+
+    _selfId = generateId();
+
+    await _faunaClient.query(Create(
+      Collection('peer'),
+      Obj(
+        {
+          "data": {
+            "id": _selfId,
+          },
+        },
+      ),
+    ));
   }
 
   Future<void> _initializeIceServers() async {
@@ -82,6 +127,7 @@ class Signaling {
     await _myConnection.close();
     await _dataChannel?.close();
     _dataChannel = null;
+    await _faunaClient.close();
   }
 
   void _addDataChannel(RTCDataChannel channel) {
