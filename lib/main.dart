@@ -25,10 +25,16 @@ import 'package:logger/logger.dart';
 import 'screens/game_screen.dart';
 import 'screens/new_game_screen.dart';
 import 'screens/new_game_position_editor_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: await DefaultFirebaseOptions().currentPlatform(),
+  );
 
   windowManager.setTitle("Peer chess");
   windowManager.setMinimumSize(
