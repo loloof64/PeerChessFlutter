@@ -16,25 +16,28 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_i18n/flutter_i18n.dart';
 import 'package:flutter_i18n/loaders/decoders/json_decode_strategy.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:logger/logger.dart';
+import 'package:firedart/firedart.dart';
+import 'package:flutter/services.dart';
 import 'screens/game_screen.dart';
 import 'screens/new_game_screen.dart';
 import 'screens/new_game_position_editor_screen.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: await DefaultFirebaseOptions().currentPlatform(),
-  );
+  final String configText =
+      await rootBundle.loadString('assets/secrets/firebase.json');
+  final config = await json.decode(configText);
+
+  Firestore.initialize(config['projectId']);
 
   windowManager.setTitle("Peer chess");
   windowManager.setMinimumSize(

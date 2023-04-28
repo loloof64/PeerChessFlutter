@@ -48,7 +48,7 @@ dependencies:
   window_manager: ^0.3.1
   flutter_window_close: ^0.2.2
   http: ^0.13.5
-  firebase_core: ^2.10.0
+  firedart: ^0.9.1+1
 
 dev_dependencies:
   flutter_test:
