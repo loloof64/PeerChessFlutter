@@ -301,7 +301,7 @@ class Signaling {
     // Set the remote description in the local WebRTC connection.
     final remoteDocument = await Firestore.instance
         .collection('peer')
-        .document(_ourPeerDocumentInDb?['remoteId'])
+        .document(_ourPeerDocumentInDb!['remoteId'])
         .get();
     final allRemoteAnswers = await _getAllDocumentsFromSubCollection(
         parentDocument: remoteDocument, collectionName: 'answers');
