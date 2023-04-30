@@ -202,6 +202,11 @@ class _GameScreenState extends State<GameScreen> {
             answer: answer,
             remoteDocument: remoteDocument,
           );
+          if (answer == true) {
+            setState(() {
+              _sessionActive = true;
+            });
+          }
           return;
         }
         final weHaveJustReceivedAJoiningAnswer = _waitingJoiningAnswer &&
