@@ -104,10 +104,13 @@ class Signaling {
           _ourPeerDocumentInDb?['positiveAnswerFromHost'];
       final joiningRequestMessage =
           _ourPeerDocumentInDb?['joiningRequestMessage'];
+      final cancelledJoiningRequest =
+          _ourPeerDocumentInDb?['cancelledJoiningRequest'];
       await _ourPeerDocumentInDb?.reference.set({
         'remoteId': remoteId,
         'positiveAnswerFromHost': positiveAnswerFromHost,
         'joiningRequestMessage': joiningRequestMessage,
+        'cancelledJoiningRequest': cancelledJoiningRequest,
         'roomOpened': true,
       });
 
@@ -136,10 +139,13 @@ class Signaling {
           _ourPeerDocumentInDb?['positiveAnswerFromHost'];
       final joiningRequestMessage =
           _ourPeerDocumentInDb?['joiningRequestMessage'];
+      final cancelledJoiningRequest =
+          _ourPeerDocumentInDb?['cancelledJoiningRequest'];
       await _ourPeerDocumentInDb?.reference.set({
         'remoteId': remoteId,
         'positiveAnswerFromHost': positiveAnswerFromHost,
         'joiningRequestMessage': joiningRequestMessage,
+        'cancelledJoiningRequest': cancelledJoiningRequest,
         'roomOpened': false,
       });
       return CreatingRoomState.miscError;
@@ -160,10 +166,12 @@ class Signaling {
       final roomOpened = remotePeer['roomOpened'];
       final positiveAnswerFromHost = remotePeer['positiveAnswerFromHost'];
       final joiningRequestMessage = remotePeer['joiningRequestMessage'];
+      final cancelledJoiningRequest = remotePeer['cancelledJoiningRequest'];
       await remotePeer.reference.set({
         'roomOpened': roomOpened,
         'positiveAnswerFromHost': positiveAnswerFromHost,
         'joiningRequestMessage': joiningRequestMessage,
+        'cancelledJoiningRequest': cancelledJoiningRequest,
         'remoteId': null,
       });
     }
@@ -172,10 +180,13 @@ class Signaling {
         _ourPeerDocumentInDb?['positiveAnswerFromHost'];
     final joiningRequestMessage =
         _ourPeerDocumentInDb?['joiningRequestMessage'];
+    final cancelledJoiningRequest =
+        _ourPeerDocumentInDb?['cancelledJoiningRequest'];
     await _ourPeerDocumentInDb?.reference.set({
       'roomOpened': roomOpened,
       'positiveAnswerFromHost': positiveAnswerFromHost,
       'joiningRequestMessage': joiningRequestMessage,
+      'cancelledJoiningRequest': cancelledJoiningRequest,
       'remoteId': null,
     });
   }
@@ -241,19 +252,25 @@ class Signaling {
     final hostPositiveAnswerFromHost =
         hostPeerInstance['positiveAnswerFromHost'];
     final hostJoiningRequestMessage = hostPeerInstance['joiningRequestMessage'];
+    final hostCancelledJoiningRequest =
+        hostPeerInstance['cancelledJoiningRequest'];
     await hostPeerInstance.reference.set({
       'roomOpened': hostRoomOpened,
       'positiveAnswerFromHost': hostPositiveAnswerFromHost,
       'joiningRequestMessage': hostJoiningRequestMessage,
+      'cancelledJoiningRequest': hostCancelledJoiningRequest,
       'remoteId': _selfId!,
     });
     final localRoomOpened = _ourPeerDocumentInDb?['roomOpened'];
     final localPositiveAnswerFromHost =
         _ourPeerDocumentInDb?['positiveAnswerFromHost'];
+    final localCancelledJoiningRequest =
+        _ourPeerDocumentInDb?['cancelledJoiningRequest'];
     await _ourPeerDocumentInDb!.reference.set({
       'roomOpened': localRoomOpened,
       'positiveAnswerFromlocal': localPositiveAnswerFromHost,
       'joiningRequestMessage': requestMessage,
+      'cancelledJoiningRequest': localCancelledJoiningRequest,
       'remoteId': requestedPeerId,
     });
 
@@ -363,10 +380,13 @@ class Signaling {
         _ourPeerDocumentInDb?['positiveAnswerFromHost'];
     final joiningRequestMessage =
         _ourPeerDocumentInDb?['joiningRequestMessage'];
+    final cancelledJoiningRequest =
+        _ourPeerDocumentInDb?['cancelledJoiningRequest'];
     await _ourPeerDocumentInDb?.reference.set({
       'remoteId': remoteId,
       'positiveAnswerFromlocal': positiveAnswerFromHost,
       'joiningRequestMessage': joiningRequestMessage,
+      'cancelledJoiningRequest': cancelledJoiningRequest,
       'roomOpened': false,
     });
   }

@@ -138,10 +138,13 @@ class _GameScreenState extends State<GameScreen> {
             final positiveAnswerFromHost =
                 ourDocument['positiveAnswerFromHost'];
             final roomOpened = ourDocument['roomOpened'];
+            final cancelledJoiningRequest =
+                ourDocument['cancelledJoiningRequest'];
             await ourDocument.reference.set({
               'remoteId': remoteId,
               'positiveAnswerFromHost': positiveAnswerFromHost,
               'roomOpened': roomOpened,
+              'cancelledJoiningRequest': cancelledJoiningRequest,
               'joiningRequestMessage': null,
             });
             if (!mounted) return;
@@ -160,8 +163,19 @@ class _GameScreenState extends State<GameScreen> {
             remoteDocument['cancelledJoiningRequest'] == true;
         if (remoteHasCancelledJoiningRequest) {
           if (_answeringJoiningRequest) {
-            await remoteDocument.reference
-                .set({'cancelledJoiningRequest': null});
+            final remoteId = remoteDocument['remoteId'];
+            final roomOpened = remoteDocument['roomOpened'];
+            final positiveAnswerFromHost =
+                remoteDocument['positiveAnswerFromHost'];
+            final joiningRequestMessage =
+                remoteDocument['joiningRequestMessage'];
+            await remoteDocument.reference.set({
+              'remoteId': remoteId,
+              'roomOpened': roomOpened,
+              'positiveAnswerFromHost': positiveAnswerFromHost,
+              'joiningRequestMessage': joiningRequestMessage,
+              'cancelledJoiningRequest': null,
+            });
             if (!mounted) return;
             // removing answering dialog
             Navigator.of(context).pop();
@@ -197,10 +211,13 @@ class _GameScreenState extends State<GameScreen> {
           final remoteId = ourDocument['remoteId'];
           final roomOpened = ourDocument['roomOpened'];
           final joiningRequestMessage = ourDocument['joiningRequestMessage'];
+          final cancelledJoiningRequest =
+              ourDocument['cancelledJoiningRequest'];
           await ourDocument.reference.set({
             'remoteId': remoteId,
             'roomOpened': roomOpened,
             'joiningRequestMessage': joiningRequestMessage,
+            'cancelledJoiningRequest': cancelledJoiningRequest,
             'positiveAnswerFromHost': null,
           });
           setState(() {
@@ -245,11 +262,13 @@ class _GameScreenState extends State<GameScreen> {
     // Update remote peer with the answer, in DB
     final remoteId = remoteDocument['remoteId'];
     final roomOpened = remoteDocument['roomOpened'];
+    final cancelledJoiningRequest = remoteDocument['cancelledJoiningRequest'];
     switch (answer) {
       case true:
         await remoteDocument.reference.set({
           'remoteId': remoteId,
           'roomOpened': roomOpened,
+          'cancelledJoiningRequest': cancelledJoiningRequest,
           'positiveAnswerFromHost': true,
           'joiningRequestMessage': null,
         });
@@ -258,6 +277,7 @@ class _GameScreenState extends State<GameScreen> {
         await remoteDocument.reference.set({
           'remoteId': remoteId,
           'roomOpened': roomOpened,
+          'cancelledJoiningRequest': cancelledJoiningRequest,
           'positiveAnswerFromHost': false,
           'joiningRequestMessage': null,
         });
@@ -273,10 +293,12 @@ class _GameScreenState extends State<GameScreen> {
     final ourRemoteId = ourDocument['remoteId'];
     final ourPositiveAnswerFromHost = ourDocument['positiveAnswerFromHost'];
     final ourJoiningRequestMessage = ourDocument['joiningRequestMessage'];
+    final ourCancelledJoiningRequest = ourDocument['cancelledJoiningRequest'];
     await ourDocument.reference.set({
       'remoteId': ourRemoteId,
       'positiveAnswerFromHost': ourPositiveAnswerFromHost,
       'joiningRequestMessage': ourJoiningRequestMessage,
+      'cancelledJoiningRequest': ourCancelledJoiningRequest,
       'roomOpened': false,
     });
   }
@@ -766,9 +788,11 @@ class _GameScreenState extends State<GameScreen> {
     final remoteId = ourDocument['remoteId'];
     final roomOpened = ourDocument['roomOpened'];
     final positiveAnswerFromHost = ourDocument['positiveAnswerFromHost'];
+    final cancelledJoiningRequest = ourDocument['cancelledJoiningRequest'];
     await ourDocument.reference.set({
       'remoteId': remoteId,
       'roomOpened': roomOpened,
+      'cancelledJoiningRequest': cancelledJoiningRequest,
       'positiveAnswerFromHost': positiveAnswerFromHost,
       'joiningRequestMessage': requestMessage,
     });
@@ -794,16 +818,43 @@ class _GameScreenState extends State<GameScreen> {
                   setState(() {
                     _waitingJoiningAnswer = false;
                   });
-                  await Firestore.instance
+                  final hostDocument = await Firestore.instance
                       .collection('peers')
                       .document(requestedRoomId)
-                      .set({
+                      .get();
+
+                  final hostRemoteId = hostDocument['remoteId'];
+                  final hostRoomOpened = hostDocument['roomOpened'];
+                  final hostPositiveAnswerFromHost =
+                      hostDocument['positiveAnswerFromHost'];
+                  final hostCancelledJoiningRequest =
+                      hostDocument['cancelledJoiningRequest'];
+
+                  await hostDocument.reference.set({
+                    'remoteId': hostRemoteId,
+                    'roomOpened': hostRoomOpened,
+                    'positiveAnswerFromHost': hostPositiveAnswerFromHost,
+                    'cancelledJoiningRequest': hostCancelledJoiningRequest,
                     'joiningRequestMessage': null,
                   });
-                  await Firestore.instance
+
+                  final ourDocument = await Firestore.instance
                       .collection('peers')
                       .document(_signaling.selfId!)
-                      .set({'cancelledJoiningRequest': true});
+                      .get();
+                  final ourRemoteId = ourDocument['remoteId'];
+                  final ourRoomOpened = ourDocument['roomOpened'];
+                  final ourPositiveAnswerFromHost =
+                      ourDocument['positiveAnswerFromHost'];
+                  final ourJoiningRequestMessage =
+                      ourDocument['joiningRequestMessage'];
+                  await ourDocument.reference.set({
+                    'remoteId': ourRemoteId,
+                    'roomOpened': ourRoomOpened,
+                    'positiveAnswerFromHost': ourPositiveAnswerFromHost,
+                    'joiningRequestMessage': ourJoiningRequestMessage,
+                    'cancelledJoiningRequest': true,
+                  });
                 },
                 textContent: I18nText(
                   'buttons.cancel',
