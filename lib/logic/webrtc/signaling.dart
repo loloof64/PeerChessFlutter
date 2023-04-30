@@ -106,7 +106,7 @@ class Signaling {
         // Add candidate to our peer document in DB
         await _ourPeerDocumentInDb?.reference
             .collection('candidates')
-            .add({'data': candidate.toMap()});
+            .add(candidate.toMap());
       };
 
       // Creates WebRTC offer
@@ -193,13 +193,8 @@ class Signaling {
     final offerFromHost = hostOffers.first;
 
     // Set remote description with offer from host
-    final hostOfferData = offerFromHost['data'];
-    if (hostOfferData == null) {
-      Logger().e('No data in host offer !');
-      return JoiningRoomState.miscError;
-    }
-    final sdp = hostOfferData['sdp'];
-    final type = hostOfferData['type'];
+    final sdp = offerFromHost['sdp'];
+    final type = offerFromHost['type'];
     final remoteSessionDescription = RTCSessionDescription(sdp, type);
     _myConnection.setRemoteDescription(remoteSessionDescription);
 
@@ -216,7 +211,7 @@ class Signaling {
     }
 
     for (var candidate in matchingCandidates) {
-      final candidateData = candidate['data'];
+      final candidateData = candidate;
       _myConnection.addCandidate(
         RTCIceCandidate(
           candidateData['candidate'],
@@ -231,7 +226,7 @@ class Signaling {
       // Create OfferCandidate instance
       await _ourPeerDocumentInDb?.reference
           .collection('candidates')
-          .add({'data': candidate.toMap()});
+          .add(candidate.toMap());
     };
 
     // Creates WebRTC offer
