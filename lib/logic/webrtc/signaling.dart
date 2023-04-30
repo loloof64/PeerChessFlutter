@@ -149,7 +149,7 @@ class Signaling {
   Future<void> removeOurselfFromRoom() async {
     final remotePeer = await Firestore.instance
         .collection('peers')
-        .document(_ourPeerDocumentInDb?['remoteId'])
+        .document(_ourPeerDocumentInDb!['remoteId'])
         .get();
     if (await remotePeer.reference.exists) {
       final ourAnswers = await _getAllDocumentsFromSubCollection(
@@ -250,24 +250,33 @@ class Signaling {
     final localRoomOpened = _ourPeerDocumentInDb?['roomOpened'];
     final localPositiveAnswerFromHost =
         _ourPeerDocumentInDb?['positiveAnswerFromHost'];
-    final localJoiningRequestMessage =
-        _ourPeerDocumentInDb?['joiningRequestMessage'];
     await _ourPeerDocumentInDb!.reference.set({
       'roomOpened': localRoomOpened,
       'positiveAnswerFromlocal': localPositiveAnswerFromHost,
-      'joiningRequestMessage': localJoiningRequestMessage,
+      'joiningRequestMessage': requestMessage,
       'remoteId': requestedPeerId,
     });
 
+    return JoiningRoomState.success;
+  }
+
+  Future<void> establishConnection() async {
     // Sets the ICE candidates from the offer
-    final matchingCandidates =
-        await hostPeerInstance.reference.collection('candidates').get();
-    if (matchingCandidates.isEmpty) {
+    // (from the room owner)
+    final hostPeerInstance = await Firestore.instance
+        .collection('peers')
+        .document(_ourPeerDocumentInDb!['remoteId'])
+        .get();
+    final hostCandidates = await _getAllDocumentsFromSubCollection(
+      parentDocument: hostPeerInstance,
+      collectionName: 'candidates',
+    );
+    if (hostCandidates.isEmpty) {
       Logger().e('No related ICE candidates !');
-      return JoiningRoomState.miscError;
+      return;
     }
 
-    for (var candidate in matchingCandidates) {
+    for (var candidate in hostCandidates) {
       final candidateData = candidate;
       _myConnection.addCandidate(
         RTCIceCandidate(
@@ -286,7 +295,7 @@ class Signaling {
           .add(candidate.toMap());
     };
 
-    // Creates WebRTC offer
+    // Creates WebRTC answer
     final answer = await _myConnection.createAnswer();
 
     // Save answer in db
@@ -294,44 +303,36 @@ class Signaling {
         .collection('answers')
         .add(answer.toMap());
 
-    return JoiningRoomState.success;
-  }
-
-  Future<void> establishConnection() async {
     // Set the remote description in the local WebRTC connection.
-    final remoteDocument = await Firestore.instance
-        .collection('peer')
-        .document(_ourPeerDocumentInDb!['remoteId'])
-        .get();
-    final allRemoteAnswers = await _getAllDocumentsFromSubCollection(
-        parentDocument: remoteDocument, collectionName: 'answers');
-    final remoteAnswer = allRemoteAnswers.first;
-    final answer = RTCSessionDescription(
-      remoteAnswer['sdp'],
-      remoteAnswer['type'],
+    final allRemoteOffers = await _getAllDocumentsFromSubCollection(
+        parentDocument: hostPeerInstance, collectionName: 'offers');
+    final remoteOffer = allRemoteOffers.first;
+    final remoteOfferAsRTCDescription = RTCSessionDescription(
+      remoteOffer['sdp'],
+      remoteOffer['type'],
     );
-    await _myConnection.setRemoteDescription(answer);
+    await _myConnection.setRemoteDescription(remoteOfferAsRTCDescription);
 
     // Set the local description in the local WebRTC connection.
     // Important :
     /// Must be done after the remote description has been set in the
     /// local WebRTC connection !
-    final allLocalOffers = await _getAllDocumentsFromSubCollection(
-        parentDocument: _ourPeerDocumentInDb!, collectionName: 'offers');
-    final localOffer = allLocalOffers.first;
+    final allLocalAnswers = await _getAllDocumentsFromSubCollection(
+        parentDocument: _ourPeerDocumentInDb!, collectionName: 'answers');
+    final localAnswer = allLocalAnswers.first;
     final offer = RTCSessionDescription(
-      localOffer['sdp'],
-      localOffer['type'],
+      localAnswer['sdp'],
+      localAnswer['type'],
     );
     await _myConnection.setLocalDescription(offer);
 
-    // Delete answers from remote peer
-    for (var answer in allRemoteAnswers) {
+    // Delete answers from local peer
+    for (var answer in allLocalAnswers) {
       await answer.reference.delete();
     }
 
-    // Delete offers from local peer
-    for (var offer in allLocalOffers) {
+    // Delete offers from remote peer
+    for (var offer in allRemoteOffers) {
       await offer.reference.delete();
     }
 
