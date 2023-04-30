@@ -80,7 +80,8 @@ class _GameScreenState extends State<GameScreen> {
       return true;
     });
 
-    _listenSnapshotsInDB().then((value) => super.initState());
+    _listenSnapshotsInDB().then((value) => {});
+    super.initState();
   }
 
   @override
@@ -98,114 +99,121 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _listenSnapshotsInDB() async {
     Firestore.instance.collection('peers').stream.forEach((peersList) async {
+      if (_signaling.selfId == null) return;
       final ourDocument = await Firestore.instance
           .collection('peers')
-          .document(_signaling.selfId ?? '')
+          .document(_signaling.selfId!)
           .get();
-      final ourDocumentExists = await ourDocument.reference.exists;
-      final remoteId = ourDocumentExists ? ourDocument['remoteId'] : null;
+      final remoteId = ourDocument['remoteId'];
 
-      final remoteDocument =
-          await Firestore.instance.collection('peers').document(remoteId).get();
-      final remoteDocumentExists = await remoteDocument.reference.exists;
+      if (remoteId != null) {
+        final remoteDocument = await Firestore.instance
+            .collection('peers')
+            .document(remoteId)
+            .get();
+        final remoteDocumentExists = await remoteDocument.reference.exists;
 
-      final remoteHasDisconnected = remoteId != null &&
-          peersList.where((peerDoc) => peerDoc.id == remoteId).isEmpty;
+        final remoteHasDisconnected = remoteId != null &&
+            peersList.where((peerDoc) => peerDoc.id == remoteId).isEmpty;
 
-      if (remoteHasDisconnected) {
-        if (_answeringJoiningRequest) {
+        if (remoteHasDisconnected) {
+          if (_answeringJoiningRequest) {
+            setState(() {
+              _answeringJoiningRequest = false;
+            });
+            if (!mounted) return;
+            // removing answering dialog
+            Navigator.of(context).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: I18nText('game.call_cancel.remote_disconnection'),
+              ),
+            );
+            return;
+          } else if (_waitingJoiningAnswer) {
+            setState(() {
+              _waitingJoiningAnswer = false;
+            });
+            await ourDocument.reference.set({
+              'joiningRequestMessage': null,
+            });
+            if (!mounted) return;
+            // removing waiting answer dialog
+            Navigator.of(context).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: I18nText('game.call_cancel.host_disconnection'),
+              ),
+            );
+            return;
+          }
+        }
+
+        final remoteHasCancelledJoiningRequest = remoteDocumentExists &&
+            remoteDocument['cancelledJoiningRequest'] == true;
+        if (remoteHasCancelledJoiningRequest) {
+          if (_answeringJoiningRequest) {
+            await remoteDocument.reference
+                .set({'cancelledJoiningRequest': null});
+            if (!mounted) return;
+            // removing answering dialog
+            Navigator.of(context).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: I18nText('game.call_cancel.remote_cancellation'),
+              ),
+            );
+            return;
+          }
+        }
+
+        final weHaveJustHadAJoinerInOurRoom = !_answeringJoiningRequest &&
+            remoteDocument['joiningRequestMessage'] != null;
+        if (weHaveJustHadAJoinerInOurRoom) {
           setState(() {
-            _answeringJoiningRequest = false;
+            _answeringJoiningRequest = true;
           });
-          if (!mounted) return;
-          // removing answering dialog
-          Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: I18nText('game.call_cancel.remote_disconnection'),
-            ),
+          final answer = await _showIncomingCall(
+            remoteId: remoteId,
+            message: remoteDocument['joiningRequestMessage'],
           );
+          await _sendAnswerToRoomHost(
+              answer: answer, remoteDocument: remoteDocument);
           return;
-        } else if (_waitingJoiningAnswer) {
+        }
+      }
+      // remoteId is null
+      else {
+        final weHaveJustReceivedAJoiningAnswer = !_waitingJoiningAnswer &&
+            ourDocument['positiveAnswerFromHost'] != null;
+        if (weHaveJustReceivedAJoiningAnswer) {
+          final accepted = ourDocument['positiveAnswerFromHost'] == true;
+          await ourDocument.reference.set({'positiveAnswerFromHost': null});
           setState(() {
             _waitingJoiningAnswer = false;
           });
-          await ourDocument.reference.set({
-            'joiningRequestMessage': null,
-          });
           if (!mounted) return;
-          // removing waiting answer dialog
+          // Removes the waiting answer dialog
           Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: I18nText('game.call_cancel.host_disconnection'),
-            ),
-          );
+          if (accepted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: I18nText('game.accepted_request'),
+              ),
+            );
+            await _signaling.establishConnection();
+            setState(() {
+              _sessionActive = true;
+            });
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: I18nText('game.rejected_request'),
+              ),
+            );
+          }
           return;
         }
-      }
-
-      final remoteHasCancelledJoiningRequest = remoteDocumentExists &&
-          remoteDocument['cancelledJoiningRequest'] == true;
-      if (remoteHasCancelledJoiningRequest) {
-        if (_answeringJoiningRequest) {
-          await remoteDocument.reference.set({'cancelledJoiningRequest': null});
-          if (!mounted) return;
-          // removing answering dialog
-          Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: I18nText('game.call_cancel.remote_cancellation'),
-            ),
-          );
-          return;
-        }
-      }
-
-      final weHaveJustHadAJoinerInOurRoom = !_answeringJoiningRequest &&
-          remoteDocument['joiningRequestMessage'] != null;
-      if (weHaveJustHadAJoinerInOurRoom) {
-        setState(() {
-          _answeringJoiningRequest = true;
-        });
-        final answer = await _showIncomingCall(
-          remoteId: remoteId,
-          message: remoteDocument['joiningRequestMessage'],
-        );
-        await _sendAnswerToRoomHost(
-            answer: answer, remoteDocument: remoteDocument);
-        return;
-      }
-
-      final weHaveJustReceivedAJoiningAnswer = !_waitingJoiningAnswer &&
-          ourDocument['positiveAnswerFromHost'] != null;
-      if (weHaveJustReceivedAJoiningAnswer) {
-        final accepted = ourDocument['positiveAnswerFromHost'] == true;
-        await ourDocument.reference.set({'positiveAnswerFromHost': null});
-        setState(() {
-          _waitingJoiningAnswer = false;
-        });
-        if (!mounted) return;
-        // Removes the waiting answer dialog
-        Navigator.of(context).pop();
-        if (accepted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: I18nText('game.accepted_request'),
-            ),
-          );
-          await _signaling.establishConnection();
-          setState(() {
-            _sessionActive = true;
-          });
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: I18nText('game.rejected_request'),
-            ),
-          );
-        }
-        return;
       }
     });
   }
