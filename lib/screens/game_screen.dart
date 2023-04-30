@@ -185,7 +185,9 @@ class _GameScreenState extends State<GameScreen> {
             message: remoteDocument['joiningRequestMessage'],
           );
           await _sendAnswerToRoomHost(
-              answer: answer, remoteDocument: remoteDocument);
+            answer: answer,
+            remoteDocument: remoteDocument,
+          );
           return;
         }
         final weHaveJustReceivedAJoiningAnswer = _waitingJoiningAnswer &&
@@ -263,6 +265,20 @@ class _GameScreenState extends State<GameScreen> {
       case null:
         break;
     }
+    // Update room as closed, in db
+    final ourDocument = await Firestore.instance
+        .collection('peers')
+        .document(_signaling.selfId!)
+        .get();
+    final ourRemoteId = ourDocument['remoteId'];
+    final ourPositiveAnswerFromHost = ourDocument['positiveAnswerFromHost'];
+    final ourJoiningRequestMessage = ourDocument['joiningRequestMessage'];
+    await ourDocument.reference.set({
+      'remoteId': ourRemoteId,
+      'positiveAnswerFromHost': ourPositiveAnswerFromHost,
+      'joiningRequestMessage': ourJoiningRequestMessage,
+      'roomOpened': false,
+    });
   }
 
   Future<bool?> _showIncomingCall({
