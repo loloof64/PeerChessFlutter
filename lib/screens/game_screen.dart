@@ -172,7 +172,7 @@ class _GameScreenState extends State<GameScreen> {
           remoteId: remoteId,
           message: remoteDocument['joiningRequestMessage'],
         );
-        await _processRoomJoiningAnswer(
+        await _sendAnswerToRoomHost(
             answer: answer, remoteDocument: remoteDocument);
         return;
       }
@@ -210,7 +210,7 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
-  Future<void> _processRoomJoiningAnswer(
+  Future<void> _sendAnswerToRoomHost(
       {required bool? answer, required Document remoteDocument}) async {
     // Removes the answering choice dialog
     Navigator.of(context).pop();

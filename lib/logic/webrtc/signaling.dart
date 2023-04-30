@@ -119,6 +119,7 @@ class Signaling {
           "type": offer.type,
           "sdp": offer.sdp,
         },
+        'raw': offer,
       });
 
       return CreatingRoomState.success;
@@ -210,8 +211,6 @@ class Signaling {
     await _ourPeerDocumentInDb?.reference.set({'remoteId': requestedPeerId});
 
     // Sets the ICE candidates from the offer
-    // Important !!!
-    /// Must be done after the answer has been saved in DB
     final matchingCandidates =
         await hostPeerInstance.reference.collection('candidates').get();
     if (matchingCandidates.isEmpty) {
@@ -240,7 +239,6 @@ class Signaling {
 
     // Creates WebRTC offer
     final answer = await _myConnection.createAnswer();
-    await _myConnection.setLocalDescription(answer);
 
     // Save answer in db
     await _ourPeerDocumentInDb?.reference.collection('answers').add({
@@ -248,13 +246,52 @@ class Signaling {
         'type': answer.type,
         'sdp': answer.sdp,
       },
+      'raw': answer,
       'ownerId': _selfId
     });
 
     return JoiningRoomState.success;
   }
 
-  Future<void> establishConnection() async {}
+  Future<void> establishConnection() async {
+    // Set the remote description in the local WebRTC connection.
+    final remoteDocument = await Firestore.instance
+        .collection('peer')
+        .document(_ourPeerDocumentInDb?['remoteId'])
+        .get();
+    final allRemoteAnswers = await _getAllDocumentsFromSubCollection(
+        parentDocument: remoteDocument, collectionName: 'answers');
+    final remoteAnswer = allRemoteAnswers.first['raw'];
+    await _myConnection.setRemoteDescription(remoteAnswer);
+
+    // Set the local description in the local WebRTC connection.
+    // Important :
+    /// Must be done after the remote description has been set in the
+    /// local WebRTC connection !
+    final allLocalOffers = await _getAllDocumentsFromSubCollection(
+        parentDocument: _ourPeerDocumentInDb!, collectionName: 'offers');
+    final localOffer = allLocalOffers.first['raw'];
+
+    await _myConnection.setLocalDescription(localOffer);
+
+    // Delete answers from remote peer
+    for (var answer in allRemoteAnswers) {
+      await answer.reference.delete();
+    }
+
+    // Delete offers from local peer
+    for (var offer in allLocalOffers) {
+      await offer.reference.delete();
+    }
+
+    // Create data channel
+    final channelInit = RTCDataChannelInit();
+    channelInit.binaryType = "blob";
+    channelInit.protocol = "json";
+    channelInit.ordered = true;
+    _dataChannel =
+        await _myConnection.createDataChannel('myChannel', channelInit);
+  }
 
   Future<void> deleteRoom() async {
     // Deleting all related offers
