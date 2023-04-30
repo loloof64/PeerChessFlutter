@@ -27,6 +27,7 @@
         "misc_room_creation_error": "No se pudo crear la sala por un motivo desconocido",
         "already_created_room": "No puedes crear dos salas a la vez.",
         "busy_room": "La sala ya está ocupada.",
+        "misc_room_joining_error": "No se pudo unir a la sala por un motivo desconocido",
         "already_a_pending_request": "No puedes hacer dos solicitas a la vez.",
         "incoming_request_title": "Solicitud de conexión entrante",
         "incoming_request_message": "¿Aceptar esta solicitud de conexión?",
@@ -34,11 +35,10 @@
         "rejected_request": "Su solicitud ha sido rechazada.",
         "waiting_call_answer_title": "Esperando respuesta",
         "waiting_call_answer_message": "Esperando la respuesta ...",
-        "peer_disconnected": "Sesión cerrada porque el par remoto se ha desconectado.",
         "call_cancel": {
             "remote_disconnection": "Llamada cancelada porque el compañero se ha desconectado.",
             "host_disconnection": "Llamada cancelada porque el dueño de la sala se desconectó.",
-            "peer_cancellation": "Llamada cancelada porque el par ha cancelado."
+            "remote_cancellation": "Llamada cancelada porque el par ha cancelado."
         }
     },
     "game_termination": {

@@ -27,6 +27,7 @@
         "misc_room_creation_error": "Failed to create room for an unknown reason",
         "already_created_room": "You can't create two rooms at twice.",
         "busy_room": "The room is already busy.",
+        "misc_room_joining_error": "Failed to join room for an unknown reason",
         "already_a_pending_request": "You can't make two requests at once.",
         "incoming_request_title": "Incoming connection request",
         "incoming_request_message": "Accept this connection request ?",
@@ -34,11 +35,10 @@
         "rejected_request": "Your request has been rejected.",
         "waiting_call_answer_title": "Waiting for answer",
         "waiting_call_answer_message": "Waiting for the answer ...",
-        "peer_disconnected": "Session closed because remote peer has disconnected.",
         "call_cancel": {
             "remote_disconnection": "Call cancelled as peer has disconnected.",
             "host_disconnection": "Call cancelled as room's owner has disconnected.",
-            "peer_cancellation": "Call cancelled as peer has cancelled."
+            "remote_cancellation": "Call cancelled as peer has cancelled."
         }
     },
     "game_termination": {
