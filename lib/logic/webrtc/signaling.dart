@@ -291,6 +291,10 @@ class Signaling {
     channelInit.ordered = true;
     _dataChannel =
         await _myConnection.createDataChannel('myChannel', channelInit);
+
+    _dataChannel?.onMessage = (RTCDataChannelMessage data) {
+      Logger().d("Got channel data : $data");
+    };
   }
 
   Future<void> deleteRoom() async {
@@ -318,29 +322,10 @@ class Signaling {
     await _myConnection.addCandidate(candidate);
   }
 
-  Function(RTCDataChannel dc, RTCDataChannelMessage data)? onDataChannelMessage;
-  Function(RTCDataChannel dc)? onDataChannel;
-
   Future<void> _closeCall() async {
     await _myConnection.close();
     await _dataChannel?.close();
     _dataChannel = null;
-  }
-
-  void _addDataChannel(RTCDataChannel channel) {
-    channel.onDataChannelState = (e) {};
-    channel.onMessage = (RTCDataChannelMessage data) {
-      onDataChannelMessage?.call(channel, data);
-    };
-    _dataChannel = channel;
-    onDataChannel?.call(channel);
-  }
-
-  Future<void> _createDataChannel({label = 'dataTransfer'}) async {
-    final dataChannelDict = RTCDataChannelInit()..maxRetransmits = 30;
-    final channel =
-        await _myConnection.createDataChannel(label, dataChannelDict);
-    _addDataChannel(channel);
   }
 
   Future<void> hangUp() async {

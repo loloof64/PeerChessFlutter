@@ -663,10 +663,6 @@ class _GameScreenState extends State<GameScreen> {
         });
   }
 
-  _hangUp() {
-    _signaling.hangUp();
-  }
-
   void _sendMove(ShortMove move) {
     final moveData = {
       "from": move.from,
