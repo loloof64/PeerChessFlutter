@@ -727,7 +727,7 @@ class _GameScreenState extends State<GameScreen> {
 
     await Firestore.instance
         .collection('peers')
-        .document(requestedRoomId)
+        .document(_signaling.selfId!)
         .set({'joiningRequestMessage': requestMessage});
     setState(() {
       _waitingJoiningAnswer = true;
