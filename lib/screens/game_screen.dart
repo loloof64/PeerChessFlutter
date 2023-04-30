@@ -746,10 +746,19 @@ class _GameScreenState extends State<GameScreen> {
         break;
     }
 
-    await Firestore.instance
+    final ourDocument = await Firestore.instance
         .collection('peers')
         .document(_signaling.selfId!)
-        .set({'joiningRequestMessage': requestMessage});
+        .get();
+    final remoteId = ourDocument['remoteId'];
+    final roomOpened = ourDocument['roomOpened'];
+    final positiveAnswerFromHost = ourDocument['positiveAnswerFromHost'];
+    await ourDocument.reference.set({
+      'remoteId': remoteId,
+      'roomOpened': roomOpened,
+      'positiveAnswerFromHost': positiveAnswerFromHost,
+      'joiningRequestMessage': requestMessage,
+    });
     setState(() {
       _waitingJoiningAnswer = true;
     });
