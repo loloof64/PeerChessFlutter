@@ -200,6 +200,7 @@ class Signaling {
 
     // Registers the joiner of the room in the DB
     await hostPeerInstance.reference.set({'remoteId': _selfId!});
+    await Future.delayed(const Duration(milliseconds: 200));
     await _ourPeerDocumentInDb!.reference.set({'remoteId': requestedPeerId});
 
     // Sets the ICE candidates from the offer
