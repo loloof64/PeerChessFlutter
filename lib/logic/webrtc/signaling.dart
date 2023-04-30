@@ -42,7 +42,6 @@ class Signaling {
   RTCDataChannel? _dataChannel;
   late RTCPeerConnection _myConnection;
   String? _selfId;
-  Document? _ourPeerDocumentInDb;
 
   String? get selfId => _selfId;
 
@@ -74,18 +73,8 @@ class Signaling {
   }
 
   Future<void> _createMyConnection() async {
-    Firestore.instance.collection('peers').stream.forEach((newElementsList) {
-      if (_ourPeerDocumentInDb?['remoteId'] != null) {
-        final remoteHasBeenDeleted = newElementsList
-            .where((element) => element.id == _ourPeerDocumentInDb?['remoteId'])
-            .isEmpty;
-        if (remoteHasBeenDeleted) {
-          Logger().i("Remote peer has been removed !");
-        }
-      }
-    });
-    _ourPeerDocumentInDb = await Firestore.instance.collection('peers').add({});
-    _selfId = _ourPeerDocumentInDb?.reference.id;
+    final ourDocument = await Firestore.instance.collection('peers').add({});
+    _selfId = ourDocument.reference.id;
     final stream =
         await mediaDevices.getUserMedia({"audio": false, "video": false});
     _myConnection = await createPeerConnection(_iceServers);
@@ -94,19 +83,18 @@ class Signaling {
 
   Future<CreatingRoomState> createRoom() async {
     // Checking that this peer is not already in a room
-    final peerAlreadyInARoom = _ourPeerDocumentInDb?['roomOpened'] == true;
+    final ourDocument =
+        await Firestore.instance.collection('peers').document(_selfId!).get();
+    final peerAlreadyInARoom = ourDocument['roomOpened'] == true;
     if (peerAlreadyInARoom) return CreatingRoomState.alreadyCreatedARoom;
 
     // Marks room as opened in db.
     try {
-      final remoteId = _ourPeerDocumentInDb?['remoteId'];
-      final positiveAnswerFromHost =
-          _ourPeerDocumentInDb?['positiveAnswerFromHost'];
-      final joiningRequestMessage =
-          _ourPeerDocumentInDb?['joiningRequestMessage'];
-      final cancelledJoiningRequest =
-          _ourPeerDocumentInDb?['cancelledJoiningRequest'];
-      await _ourPeerDocumentInDb?.reference.set({
+      final remoteId = ourDocument['remoteId'];
+      final positiveAnswerFromHost = ourDocument['positiveAnswerFromHost'];
+      final joiningRequestMessage = ourDocument['joiningRequestMessage'];
+      final cancelledJoiningRequest = ourDocument['cancelledJoiningRequest'];
+      await ourDocument.reference.set({
         'remoteId': remoteId,
         'positiveAnswerFromHost': positiveAnswerFromHost,
         'joiningRequestMessage': joiningRequestMessage,
@@ -117,7 +105,7 @@ class Signaling {
       // Sets ICE candidates handler
       _myConnection.onIceCandidate = (candidate) async {
         // Add candidate to our peer document in DB
-        await _ourPeerDocumentInDb?.reference
+        await ourDocument.reference
             .collection('candidates')
             .add(candidate.toMap());
       };
@@ -127,21 +115,16 @@ class Signaling {
       await _myConnection.setLocalDescription(offer);
 
       // Add offer to our peer document in db
-      await _ourPeerDocumentInDb?.reference
-          .collection('offers')
-          .add(offer.toMap());
+      await ourDocument.reference.collection('offers').add(offer.toMap());
 
       return CreatingRoomState.success;
     } catch (ex) {
       Logger().e(ex);
-      final remoteId = _ourPeerDocumentInDb?['remoteId'];
-      final positiveAnswerFromHost =
-          _ourPeerDocumentInDb?['positiveAnswerFromHost'];
-      final joiningRequestMessage =
-          _ourPeerDocumentInDb?['joiningRequestMessage'];
-      final cancelledJoiningRequest =
-          _ourPeerDocumentInDb?['cancelledJoiningRequest'];
-      await _ourPeerDocumentInDb?.reference.set({
+      final remoteId = ourDocument['remoteId'];
+      final positiveAnswerFromHost = ourDocument['positiveAnswerFromHost'];
+      final joiningRequestMessage = ourDocument['joiningRequestMessage'];
+      final cancelledJoiningRequest = ourDocument['cancelledJoiningRequest'];
+      await ourDocument.reference.set({
         'remoteId': remoteId,
         'positiveAnswerFromHost': positiveAnswerFromHost,
         'joiningRequestMessage': joiningRequestMessage,
@@ -153,13 +136,15 @@ class Signaling {
   }
 
   Future<void> removeOurselfFromRoom() async {
+    final ourDocument =
+        await Firestore.instance.collection('peers').document(_selfId!).get();
     final remotePeer = await Firestore.instance
         .collection('peers')
-        .document(_ourPeerDocumentInDb!['remoteId'])
+        .document(ourDocument['remoteId'])
         .get();
     if (await remotePeer.reference.exists) {
       final ourAnswers = await _getAllDocumentsFromSubCollection(
-          parentDocument: _ourPeerDocumentInDb!, collectionName: 'answers');
+          parentDocument: ourDocument, collectionName: 'answers');
       for (var answer in ourAnswers) {
         await answer.reference.delete();
       }
@@ -175,14 +160,11 @@ class Signaling {
         'remoteId': null,
       });
     }
-    final roomOpened = _ourPeerDocumentInDb?['roomOpened'];
-    final positiveAnswerFromHost =
-        _ourPeerDocumentInDb?['positiveAnswerFromHost'];
-    final joiningRequestMessage =
-        _ourPeerDocumentInDb?['joiningRequestMessage'];
-    final cancelledJoiningRequest =
-        _ourPeerDocumentInDb?['cancelledJoiningRequest'];
-    await _ourPeerDocumentInDb?.reference.set({
+    final roomOpened = ourDocument['roomOpened'];
+    final positiveAnswerFromHost = ourDocument['positiveAnswerFromHost'];
+    final joiningRequestMessage = ourDocument['joiningRequestMessage'];
+    final cancelledJoiningRequest = ourDocument['cancelledJoiningRequest'];
+    await ourDocument.reference.set({
       'roomOpened': roomOpened,
       'positiveAnswerFromHost': positiveAnswerFromHost,
       'joiningRequestMessage': joiningRequestMessage,
@@ -212,6 +194,8 @@ class Signaling {
 
   Future<JoiningRoomState> joinRoom(
       {required String requestedPeerId, required String requestMessage}) async {
+    final ourDocument =
+        await Firestore.instance.collection('peers').document(_selfId!).get();
     // Checks that the host peer exists
     final hostPeerInstance = await Firestore.instance
         .collection('peers')
@@ -261,12 +245,10 @@ class Signaling {
       'cancelledJoiningRequest': hostCancelledJoiningRequest,
       'remoteId': _selfId!,
     });
-    final localRoomOpened = _ourPeerDocumentInDb?['roomOpened'];
-    final localPositiveAnswerFromHost =
-        _ourPeerDocumentInDb?['positiveAnswerFromHost'];
-    final localCancelledJoiningRequest =
-        _ourPeerDocumentInDb?['cancelledJoiningRequest'];
-    await _ourPeerDocumentInDb!.reference.set({
+    final localRoomOpened = ourDocument['roomOpened'];
+    final localPositiveAnswerFromHost = ourDocument['positiveAnswerFromHost'];
+    final localCancelledJoiningRequest = ourDocument['cancelledJoiningRequest'];
+    await ourDocument.reference.set({
       'roomOpened': localRoomOpened,
       'positiveAnswerFromlocal': localPositiveAnswerFromHost,
       'joiningRequestMessage': requestMessage,
@@ -278,11 +260,13 @@ class Signaling {
   }
 
   Future<void> establishConnection() async {
+    final ourDocument =
+        await Firestore.instance.collection('peers').document(_selfId!).get();
     // Sets the ICE candidates from the offer
     // (from the room owner)
     final hostPeerInstance = await Firestore.instance
         .collection('peers')
-        .document(_ourPeerDocumentInDb!['remoteId'])
+        .document(ourDocument['remoteId'])
         .get();
     final hostCandidates = await _getAllDocumentsFromSubCollection(
       parentDocument: hostPeerInstance,
@@ -307,7 +291,7 @@ class Signaling {
     // Sets ICE candidates handler
     _myConnection.onIceCandidate = (candidate) async {
       // Create OfferCandidate instance
-      await _ourPeerDocumentInDb?.reference
+      await ourDocument.reference
           .collection('candidates')
           .add(candidate.toMap());
     };
@@ -316,9 +300,7 @@ class Signaling {
     final answer = await _myConnection.createAnswer();
 
     // Save answer in db
-    await _ourPeerDocumentInDb?.reference
-        .collection('answers')
-        .add(answer.toMap());
+    await ourDocument.reference.collection('answers').add(answer.toMap());
 
     // Set the remote description in the local WebRTC connection.
     final allRemoteOffers = await _getAllDocumentsFromSubCollection(
@@ -335,7 +317,7 @@ class Signaling {
     /// Must be done after the remote description has been set in the
     /// local WebRTC connection !
     final allLocalAnswers = await _getAllDocumentsFromSubCollection(
-        parentDocument: _ourPeerDocumentInDb!, collectionName: 'answers');
+        parentDocument: ourDocument, collectionName: 'answers');
     final localAnswer = allLocalAnswers.first;
     final offer = RTCSessionDescription(
       localAnswer['sdp'],
@@ -367,22 +349,21 @@ class Signaling {
   }
 
   Future<void> deleteRoom() async {
+    final ourDocument =
+        await Firestore.instance.collection('peers').document(_selfId!).get();
     // Deleting all related offers
     final relatedOffers = await _getAllDocumentsFromSubCollection(
-        parentDocument: _ourPeerDocumentInDb!, collectionName: 'offers');
+        parentDocument: ourDocument, collectionName: 'offers');
     for (var offer in relatedOffers) {
       await offer.reference.delete();
     }
 
     // Mark room as closed
-    final remoteId = _ourPeerDocumentInDb?['remoteId'];
-    final positiveAnswerFromHost =
-        _ourPeerDocumentInDb?['positiveAnswerFromHost'];
-    final joiningRequestMessage =
-        _ourPeerDocumentInDb?['joiningRequestMessage'];
-    final cancelledJoiningRequest =
-        _ourPeerDocumentInDb?['cancelledJoiningRequest'];
-    await _ourPeerDocumentInDb?.reference.set({
+    final remoteId = ourDocument['remoteId'];
+    final positiveAnswerFromHost = ourDocument['positiveAnswerFromHost'];
+    final joiningRequestMessage = ourDocument['joiningRequestMessage'];
+    final cancelledJoiningRequest = ourDocument['cancelledJoiningRequest'];
+    await ourDocument.reference.set({
       'remoteId': remoteId,
       'positiveAnswerFromlocal': positiveAnswerFromHost,
       'joiningRequestMessage': joiningRequestMessage,
@@ -392,16 +373,18 @@ class Signaling {
   }
 
   Future<void> removePeerFromDB() async {
+    final ourDocument =
+        await Firestore.instance.collection('peers').document(_selfId!).get();
     final allLocalOffers = await _getAllDocumentsFromSubCollection(
-      parentDocument: _ourPeerDocumentInDb!,
+      parentDocument: ourDocument,
       collectionName: 'offers',
     );
     final allLocalAnswers = await _getAllDocumentsFromSubCollection(
-      parentDocument: _ourPeerDocumentInDb!,
+      parentDocument: ourDocument,
       collectionName: 'answers',
     );
     final allLocalCandidates = await _getAllDocumentsFromSubCollection(
-      parentDocument: _ourPeerDocumentInDb!,
+      parentDocument: ourDocument,
       collectionName: 'candidates',
     );
 
@@ -414,7 +397,7 @@ class Signaling {
     for (var candidate in allLocalCandidates) {
       await candidate.reference.delete();
     }
-    await _ourPeerDocumentInDb?.reference.delete();
+    await ourDocument.reference.delete();
   }
 
   Future<void> setRemoteDescriptionFromAnswer(
