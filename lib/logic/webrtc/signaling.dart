@@ -99,7 +99,17 @@ class Signaling {
 
     // Marks room as opened in db.
     try {
-      await _ourPeerDocumentInDb?.reference.set({'roomOpened': true});
+      final remoteId = _ourPeerDocumentInDb?['remoteId'];
+      final positiveAnswerFromHost =
+          _ourPeerDocumentInDb?['positiveAnswerFromHost'];
+      final joiningRequestMessage =
+          _ourPeerDocumentInDb?['joiningRequestMessage'];
+      await _ourPeerDocumentInDb?.reference.set({
+        'remoteId': remoteId,
+        'positiveAnswerFromHost': positiveAnswerFromHost,
+        'joiningRequestMessage': joiningRequestMessage,
+        'roomOpened': true,
+      });
 
       // Sets ICE candidates handler
       _myConnection.onIceCandidate = (candidate) async {
@@ -121,7 +131,17 @@ class Signaling {
       return CreatingRoomState.success;
     } catch (ex) {
       Logger().e(ex);
-      await _ourPeerDocumentInDb?.reference.set({'roomOpened': false});
+      final remoteId = _ourPeerDocumentInDb?['remoteId'];
+      final positiveAnswerFromHost =
+          _ourPeerDocumentInDb?['positiveAnswerFromHost'];
+      final joiningRequestMessage =
+          _ourPeerDocumentInDb?['joiningRequestMessage'];
+      await _ourPeerDocumentInDb?.reference.set({
+        'remoteId': remoteId,
+        'positiveAnswerFromHost': positiveAnswerFromHost,
+        'joiningRequestMessage': joiningRequestMessage,
+        'roomOpened': false,
+      });
       return CreatingRoomState.miscError;
     }
   }
@@ -137,9 +157,27 @@ class Signaling {
       for (var answer in ourAnswers) {
         await answer.reference.delete();
       }
-      await remotePeer.reference.set({'remoteId': null});
+      final roomOpened = remotePeer['roomOpened'];
+      final positiveAnswerFromHost = remotePeer['positiveAnswerFromHost'];
+      final joiningRequestMessage = remotePeer['joiningRequestMessage'];
+      await remotePeer.reference.set({
+        'roomOpened': roomOpened,
+        'positiveAnswerFromHost': positiveAnswerFromHost,
+        'joiningRequestMessage': joiningRequestMessage,
+        'remoteId': null,
+      });
     }
-    await _ourPeerDocumentInDb?.reference.set({'remoteId': null});
+    final roomOpened = _ourPeerDocumentInDb?['roomOpened'];
+    final positiveAnswerFromHost =
+        _ourPeerDocumentInDb?['positiveAnswerFromHost'];
+    final joiningRequestMessage =
+        _ourPeerDocumentInDb?['joiningRequestMessage'];
+    await _ourPeerDocumentInDb?.reference.set({
+      'roomOpened': roomOpened,
+      'positiveAnswerFromHost': positiveAnswerFromHost,
+      'joiningRequestMessage': joiningRequestMessage,
+      'remoteId': null,
+    });
   }
 
   Future<List<Document>> _getAllDocumentsFromSubCollection({
@@ -199,9 +237,27 @@ class Signaling {
     _myConnection.setRemoteDescription(remoteSessionDescription);
 
     // Registers the joiner of the room in the DB
-    await hostPeerInstance.reference.set({'remoteId': _selfId!});
-    await Future.delayed(const Duration(milliseconds: 200));
-    await _ourPeerDocumentInDb!.reference.set({'remoteId': requestedPeerId});
+    final hostRoomOpened = hostPeerInstance['roomOpened'];
+    final hostPositiveAnswerFromHost =
+        hostPeerInstance['positiveAnswerFromHost'];
+    final hostJoiningRequestMessage = hostPeerInstance['joiningRequestMessage'];
+    await hostPeerInstance.reference.set({
+      'roomOpened': hostRoomOpened,
+      'positiveAnswerFromHost': hostPositiveAnswerFromHost,
+      'joiningRequestMessage': hostJoiningRequestMessage,
+      'remoteId': _selfId!,
+    });
+    final localRoomOpened = _ourPeerDocumentInDb?['roomOpened'];
+    final localPositiveAnswerFromHost =
+        _ourPeerDocumentInDb?['positiveAnswerFromHost'];
+    final localJoiningRequestMessage =
+        _ourPeerDocumentInDb?['joiningRequestMessage'];
+    await _ourPeerDocumentInDb!.reference.set({
+      'roomOpened': localRoomOpened,
+      'positiveAnswerFromlocal': localPositiveAnswerFromHost,
+      'joiningRequestMessage': localJoiningRequestMessage,
+      'remoteId': requestedPeerId,
+    });
 
     // Sets the ICE candidates from the offer
     final matchingCandidates =
@@ -301,7 +357,17 @@ class Signaling {
     }
 
     // Mark room as closed
-    await _ourPeerDocumentInDb?.reference.set({'roomOpened': false});
+    final remoteId = _ourPeerDocumentInDb?['remoteId'];
+    final positiveAnswerFromHost =
+        _ourPeerDocumentInDb?['positiveAnswerFromHost'];
+    final joiningRequestMessage =
+        _ourPeerDocumentInDb?['joiningRequestMessage'];
+    await _ourPeerDocumentInDb?.reference.set({
+      'remoteId': remoteId,
+      'positiveAnswerFromlocal': positiveAnswerFromHost,
+      'joiningRequestMessage': joiningRequestMessage,
+      'roomOpened': false,
+    });
   }
 
   Future<void> removePeerFromDB() async {

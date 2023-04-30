@@ -134,7 +134,14 @@ class _GameScreenState extends State<GameScreen> {
             setState(() {
               _waitingJoiningAnswer = false;
             });
+            final remoteId = ourDocument['remoteId'];
+            final positiveAnswerFromHost =
+                ourDocument['positiveAnswerFromHost'];
+            final roomOpened = ourDocument['roomOpened'];
             await ourDocument.reference.set({
+              'remoteId': remoteId,
+              'positiveAnswerFromHost': positiveAnswerFromHost,
+              'roomOpened': roomOpened,
               'joiningRequestMessage': null,
             });
             if (!mounted) return;
@@ -188,7 +195,15 @@ class _GameScreenState extends State<GameScreen> {
             ourDocument['positiveAnswerFromHost'] != null;
         if (weHaveJustReceivedAJoiningAnswer) {
           final accepted = ourDocument['positiveAnswerFromHost'] == true;
-          await ourDocument.reference.set({'positiveAnswerFromHost': null});
+          final remoteId = ourDocument['remoteId'];
+          final roomOpened = ourDocument['roomOpened'];
+          final joiningRequestMessage = ourDocument['joiningRequestMessage'];
+          await ourDocument.reference.set({
+            'remoteId': remoteId,
+            'roomOpened': roomOpened,
+            'joiningRequestMessage': joiningRequestMessage,
+            'positiveAnswerFromHost': null,
+          });
           setState(() {
             _waitingJoiningAnswer = false;
           });
@@ -229,15 +244,21 @@ class _GameScreenState extends State<GameScreen> {
     });
 
     // Update remote peer with the answer, in DB
+    final remoteId = remoteDocument['remoteId'];
+    final roomOpened = remoteDocument['roomOpened'];
     switch (answer) {
       case true:
         await remoteDocument.reference.set({
+          'remoteId': remoteId,
+          'roomOpened': roomOpened,
           'positiveAnswerFromHost': true,
           'joiningRequestMessage': null,
         });
         break;
       case false:
         await remoteDocument.reference.set({
+          'remoteId': remoteId,
+          'roomOpened': roomOpened,
           'positiveAnswerFromHost': false,
           'joiningRequestMessage': null,
         });
