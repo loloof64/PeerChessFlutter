@@ -114,17 +114,14 @@ class Signaling {
       await _myConnection.setLocalDescription(offer);
 
       // Add offer to our peer document in db
-      await _ourPeerDocumentInDb?.reference.collection('offers').add({
-        'data': {
-          "type": offer.type,
-          "sdp": offer.sdp,
-        },
-        'raw': offer,
-      });
+      await _ourPeerDocumentInDb?.reference
+          .collection('offers')
+          .add(offer.toMap());
 
       return CreatingRoomState.success;
     } catch (ex) {
       Logger().e(ex);
+      await _ourPeerDocumentInDb?.reference.set({'roomOpened': false});
       return CreatingRoomState.miscError;
     }
   }
@@ -241,14 +238,9 @@ class Signaling {
     final answer = await _myConnection.createAnswer();
 
     // Save answer in db
-    await _ourPeerDocumentInDb?.reference.collection('answers').add({
-      'data': {
-        'type': answer.type,
-        'sdp': answer.sdp,
-      },
-      'raw': answer,
-      'ownerId': _selfId
-    });
+    await _ourPeerDocumentInDb?.reference
+        .collection('answers')
+        .add(answer.toMap());
 
     return JoiningRoomState.success;
   }
@@ -261,8 +253,12 @@ class Signaling {
         .get();
     final allRemoteAnswers = await _getAllDocumentsFromSubCollection(
         parentDocument: remoteDocument, collectionName: 'answers');
-    final remoteAnswer = allRemoteAnswers.first['raw'];
-    await _myConnection.setRemoteDescription(remoteAnswer);
+    final remoteAnswer = allRemoteAnswers.first;
+    final answer = RTCSessionDescription(
+      remoteAnswer['sdp'],
+      remoteAnswer['type'],
+    );
+    await _myConnection.setRemoteDescription(answer);
 
     // Set the local description in the local WebRTC connection.
     // Important :
@@ -270,9 +266,12 @@ class Signaling {
     /// local WebRTC connection !
     final allLocalOffers = await _getAllDocumentsFromSubCollection(
         parentDocument: _ourPeerDocumentInDb!, collectionName: 'offers');
-    final localOffer = allLocalOffers.first['raw'];
-
-    await _myConnection.setLocalDescription(localOffer);
+    final localOffer = allLocalOffers.first;
+    final offer = RTCSessionDescription(
+      localOffer['sdp'],
+      localOffer['type'],
+    );
+    await _myConnection.setLocalDescription(offer);
 
     // Delete answers from remote peer
     for (var answer in allRemoteAnswers) {
@@ -310,6 +309,28 @@ class Signaling {
   }
 
   Future<void> removePeerFromDB() async {
+    final allLocalOffers = await _getAllDocumentsFromSubCollection(
+      parentDocument: _ourPeerDocumentInDb!,
+      collectionName: 'offers',
+    );
+    final allLocalAnswers = await _getAllDocumentsFromSubCollection(
+      parentDocument: _ourPeerDocumentInDb!,
+      collectionName: 'answers',
+    );
+    final allLocalCandidates = await _getAllDocumentsFromSubCollection(
+      parentDocument: _ourPeerDocumentInDb!,
+      collectionName: 'candidates',
+    );
+
+    for (var offer in allLocalOffers) {
+      await offer.reference.delete();
+    }
+    for (var answer in allLocalAnswers) {
+      await answer.reference.delete();
+    }
+    for (var candidate in allLocalCandidates) {
+      await candidate.reference.delete();
+    }
     await _ourPeerDocumentInDb?.reference.delete();
   }
 
