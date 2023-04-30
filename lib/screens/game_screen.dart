@@ -188,9 +188,6 @@ class _GameScreenState extends State<GameScreen> {
               answer: answer, remoteDocument: remoteDocument);
           return;
         }
-      }
-      // remoteId is null
-      else {
         final weHaveJustReceivedAJoiningAnswer = _waitingJoiningAnswer &&
             ourDocument['positiveAnswerFromHost'] != null;
         if (weHaveJustReceivedAJoiningAnswer) {
