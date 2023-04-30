@@ -200,7 +200,7 @@ class Signaling {
 
     // Registers the joiner of the room in the DB
     await hostPeerInstance.reference.set({'remoteId': _selfId!});
-    await _ourPeerDocumentInDb?.reference.set({'remoteId': requestedPeerId});
+    await _ourPeerDocumentInDb!.reference.set({'remoteId': requestedPeerId});
 
     // Sets the ICE candidates from the offer
     final matchingCandidates =
