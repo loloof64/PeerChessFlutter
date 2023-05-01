@@ -16,6 +16,8 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+import 'package:firedart/firedart.dart';
+
 extension FanConverter on String {
   String toFan({required bool whiteMove}) {
     const piecesRefs = "NBRQK";
@@ -62,4 +64,23 @@ extension FanConverter on String {
 
     return result;
   }
+}
+
+Future<List<Document>> getAllDocumentsFromSubCollection({
+  required Document parentDocument,
+  required String collectionName,
+}) async {
+  var nextPageToken = '';
+  var results = <Document>[];
+  while (true) {
+    final instances =
+        await parentDocument.reference.collection(collectionName).get(
+              nextPageToken: nextPageToken,
+            );
+    results.addAll(instances);
+    if (!instances.hasNextPage) break;
+    nextPageToken = instances.nextPageToken;
+  }
+
+  return results;
 }

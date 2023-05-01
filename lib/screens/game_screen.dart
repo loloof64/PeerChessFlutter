@@ -24,6 +24,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter_window_close/flutter_window_close.dart';
 import 'package:logger/logger.dart';
+import 'package:peer_chess/logic/utils.dart';
 import 'package:simple_chess_board/models/board_arrow.dart';
 import 'package:simple_chess_board/simple_chess_board.dart';
 import 'package:chess_vectors_flutter/chess_vectors_flutter.dart';
@@ -75,8 +76,7 @@ class _GameScreenState extends State<GameScreen> {
     _signaling = Signaling();
 
     FlutterWindowClose.setWindowShouldCloseHandler(() async {
-      await _signaling.deleteRoom();
-      await _signaling.removePeerFromDB();
+      await _signaling.hangUp();
       return true;
     });
 
@@ -88,228 +88,105 @@ class _GameScreenState extends State<GameScreen> {
   void dispose() {
     _ringingMessageController.dispose();
     _roomIdController.dispose();
-    _signaling.hangUp().then((value) {
-      _signaling.deleteRoom().then((value) {
-        _signaling.removePeerFromDB().then((value) {
-          super.dispose();
-        });
-      });
-    });
+    _signaling.hangUp().then((value) {});
+    super.dispose();
   }
 
   Future<void> _listenSnapshotsInDB() async {
-    Firestore.instance.collection('peers').stream.forEach((peersList) async {
-      if (_signaling.selfId == null) return;
-      final ourDocument = await Firestore.instance
-          .collection('peers')
-          .document(_signaling.selfId!)
-          .get();
-      final remoteId = ourDocument['remoteId'];
+    Firestore.instance.collection('rooms').stream.forEach((roomsList) async {
+      final weHaveARoom = _signaling.ourRoomId != null;
+      final weAreHosted = _signaling.hostRoomId != null;
 
-      if (remoteId != null) {
-        final remoteDocument = await Firestore.instance
-            .collection('peers')
-            .document(remoteId)
+      if (weHaveARoom) {
+        final ourRoomDocument = await Firestore.instance
+            .collection('rooms')
+            .document(_signaling.ourRoomId!)
             .get();
-        final remoteDocumentExists = await remoteDocument.reference.exists;
-
-        final remoteHasDisconnected = remoteId != null &&
-            peersList.where((peerDoc) => peerDoc.id == remoteId).isEmpty;
-
-        if (remoteHasDisconnected) {
-          if (_answeringJoiningRequest) {
-            setState(() {
-              _answeringJoiningRequest = false;
-            });
-            if (!mounted) return;
-            // removing answering dialog
-            Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: I18nText('game.call_cancel.remote_disconnection'),
-              ),
-            );
-            return;
-          } else if (_waitingJoiningAnswer) {
-            setState(() {
-              _waitingJoiningAnswer = false;
-            });
-            final remoteId = ourDocument['remoteId'];
-            final positiveAnswerFromHost =
-                ourDocument['positiveAnswerFromHost'];
-            final roomOpened = ourDocument['roomOpened'];
-            final cancelledJoiningRequest =
-                ourDocument['cancelledJoiningRequest'];
-            await ourDocument.reference.set({
-              'remoteId': remoteId,
-              'positiveAnswerFromHost': positiveAnswerFromHost,
-              'roomOpened': roomOpened,
-              'cancelledJoiningRequest': cancelledJoiningRequest,
-              'joiningRequestMessage': null,
-            });
-            if (!mounted) return;
-            // removing waiting answer dialog
-            Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: I18nText('game.call_cancel.host_disconnection'),
-              ),
-            );
-            return;
-          }
+        final allCalleeCandidates = await getAllDocumentsFromSubCollection(
+            parentDocument: ourRoomDocument,
+            collectionName: 'calleeCandidates');
+        final weHaveAGuest = allCalleeCandidates.isNotEmpty;
+        final weJustHaveHadAGuest = _waitingJoiningAnswer && weHaveAGuest;
+        if (weJustHaveHadAGuest) {
+          await _sendAnswerToRoomGuest(roomDocument: ourRoomDocument);
         }
-
-        final remoteHasCancelledJoiningRequest = remoteDocumentExists &&
-            remoteDocument['cancelledJoiningRequest'] == true;
-        if (remoteHasCancelledJoiningRequest) {
-          if (_answeringJoiningRequest) {
-            final remoteId = remoteDocument['remoteId'];
-            final roomOpened = remoteDocument['roomOpened'];
-            final positiveAnswerFromHost =
-                remoteDocument['positiveAnswerFromHost'];
-            final joiningRequestMessage =
-                remoteDocument['joiningRequestMessage'];
-            await remoteDocument.reference.set({
-              'remoteId': remoteId,
-              'roomOpened': roomOpened,
-              'positiveAnswerFromHost': positiveAnswerFromHost,
-              'joiningRequestMessage': joiningRequestMessage,
-              'cancelledJoiningRequest': null,
-            });
-            if (!mounted) return;
-            // removing answering dialog
-            Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: I18nText('game.call_cancel.remote_cancellation'),
-              ),
-            );
-            return;
-          }
-        }
-
-        final weHaveJustHadAJoinerInOurRoom = !_answeringJoiningRequest &&
-            remoteDocument['joiningRequestMessage'] != null;
-        if (weHaveJustHadAJoinerInOurRoom) {
-          setState(() {
-            _answeringJoiningRequest = true;
-          });
-          final answer = await _showIncomingCall(
-            remoteId: remoteId,
-            message: remoteDocument['joiningRequestMessage'],
-          );
-          await _sendAnswerToRoomHost(
-            answer: answer,
-            remoteDocument: remoteDocument,
-          );
-          if (answer == true) {
-            setState(() {
-              _sessionActive = true;
-            });
-          }
-          return;
-        }
-        final weHaveJustReceivedAJoiningAnswer = _waitingJoiningAnswer &&
-            ourDocument['positiveAnswerFromHost'] != null;
-        if (weHaveJustReceivedAJoiningAnswer) {
-          final accepted = ourDocument['positiveAnswerFromHost'] == true;
-          final remoteId = ourDocument['remoteId'];
-          final roomOpened = ourDocument['roomOpened'];
-          final joiningRequestMessage = ourDocument['joiningRequestMessage'];
-          final cancelledJoiningRequest =
-              ourDocument['cancelledJoiningRequest'];
-          await ourDocument.reference.set({
-            'remoteId': remoteId,
-            'roomOpened': roomOpened,
-            'joiningRequestMessage': joiningRequestMessage,
-            'cancelledJoiningRequest': cancelledJoiningRequest,
-            'positiveAnswerFromHost': null,
-          });
-          setState(() {
-            _waitingJoiningAnswer = false;
-          });
-          if (!mounted) return;
-          // Removes the waiting answer dialog
-          Navigator.of(context).pop();
-          if (accepted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: I18nText('game.accepted_request'),
-              ),
-            );
-            await _signaling.establishConnection();
-            setState(() {
-              _sessionActive = true;
-            });
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: I18nText('game.rejected_request'),
-              ),
-            );
-          }
-          return;
+      } else if (weAreHosted) {
+        final hostRoomDocument = await Firestore.instance
+            .collection('rooms')
+            .document(_signaling.hostRoomId!)
+            .get();
+        final weHaveAnswer = hostRoomDocument['positiveAnswerFromHost'] != null;
+        final weJustHadAnAnswer = _waitingJoiningAnswer && weHaveAnswer;
+        if (weJustHadAnAnswer) {
+          await _handleJoiningAnswer(roomDocument: hostRoomDocument);
         }
       }
     });
   }
 
-  Future<void> _sendAnswerToRoomHost(
-      {required bool? answer, required Document remoteDocument}) async {
-    // Removes the answering choice dialog
-    Navigator.of(context).pop();
+  Future<void> _sendAnswerToRoomGuest({required Document roomDocument}) async {
+    setState(() {
+      _answeringJoiningRequest = true;
+    });
 
-    // Updates state
+    final accepted = await _showIncomingCall(
+      message: roomDocument['joiningRequestMessage'],
+    );
+
     setState(() {
       _answeringJoiningRequest = false;
     });
 
-    // Update remote peer with the answer, in DB
-    final remoteId = remoteDocument['remoteId'];
-    final roomOpened = remoteDocument['roomOpened'];
-    final cancelledJoiningRequest = remoteDocument['cancelledJoiningRequest'];
-    switch (answer) {
+    switch (accepted) {
       case true:
-        await remoteDocument.reference.set({
-          'remoteId': remoteId,
-          'roomOpened': roomOpened,
-          'cancelledJoiningRequest': cancelledJoiningRequest,
-          'positiveAnswerFromHost': true,
+        await roomDocument.reference.set({
+          'offer': roomDocument['offer'],
+          'cancelledJoiningRequest': roomDocument['cancelledJoiningRequest'],
           'joiningRequestMessage': null,
+          'positiveAnswerFromHost': true,
+        });
+        setState(() {
+          _sessionActive = true;
         });
         break;
       case false:
-        await remoteDocument.reference.set({
-          'remoteId': remoteId,
-          'roomOpened': roomOpened,
-          'cancelledJoiningRequest': cancelledJoiningRequest,
-          'positiveAnswerFromHost': false,
+        await roomDocument.reference.set({
+          'offer': roomDocument['offer'],
+          'cancelledJoiningRequest': roomDocument['cancelledJoiningRequest'],
           'joiningRequestMessage': null,
+          'positiveAnswerFromHost': false,
         });
         break;
       case null:
         break;
     }
-    // Update room as closed, in db
-    final ourDocument = await Firestore.instance
-        .collection('peers')
-        .document(_signaling.selfId!)
-        .get();
-    final ourRemoteId = ourDocument['remoteId'];
-    final ourPositiveAnswerFromHost = ourDocument['positiveAnswerFromHost'];
-    final ourJoiningRequestMessage = ourDocument['joiningRequestMessage'];
-    final ourCancelledJoiningRequest = ourDocument['cancelledJoiningRequest'];
-    await ourDocument.reference.set({
-      'remoteId': ourRemoteId,
-      'positiveAnswerFromHost': ourPositiveAnswerFromHost,
-      'joiningRequestMessage': ourJoiningRequestMessage,
-      'cancelledJoiningRequest': ourCancelledJoiningRequest,
-      'roomOpened': false,
+  }
+
+  Future<void> _handleJoiningAnswer({required Document roomDocument}) async {
+    setState(() {
+      _waitingJoiningAnswer = false;
     });
+    final accepted = roomDocument['positiveAnswerFromHost'] == true;
+    if (accepted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: I18nText('game.accepted_request'),
+        ),
+      );
+      setState(() {
+        _sessionActive = true;
+      });
+      await _signaling.establishConnection();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: I18nText('game.rejected_request'),
+        ),
+      );
+    }
   }
 
   Future<bool?> _showIncomingCall({
-    required String remoteId,
     required String message,
   }) async {
     return await showDialog<bool?>(
@@ -660,7 +537,7 @@ class _GameScreenState extends State<GameScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  _signaling.selfId!,
+                  _signaling.ourRoomId!,
                   style: const TextStyle(
                     backgroundColor: Colors.blueGrey,
                   ),
@@ -668,7 +545,7 @@ class _GameScreenState extends State<GameScreen> {
                 IconButton(
                   onPressed: () async {
                     await Clipboard.setData(
-                      ClipboardData(text: _signaling.selfId!),
+                      ClipboardData(text: _signaling.ourRoomId!),
                     );
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -688,7 +565,7 @@ class _GameScreenState extends State<GameScreen> {
             DialogActionButton(
               onPressed: () async {
                 Navigator.of(context).pop();
-                await _signaling.deleteRoom();
+                await _signaling.hangUp();
               },
               textContent: I18nText(
                 'buttons.cancel',
@@ -745,7 +622,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Future<void> _cancelCall() async {
-    await _signaling.removeOurselfFromRoom();
+    await _signaling.leaveRoom();
   }
 
   Future<void> _handleRoomJoiningRequest() async {
@@ -754,7 +631,7 @@ class _GameScreenState extends State<GameScreen> {
 
     if (!mounted) return;
     final success = await _signaling.joinRoom(
-      requestedPeerId: requestedRoomId,
+      requestedRoomId: requestedRoomId,
       requestMessage: requestMessage,
     );
     switch (success) {
@@ -763,6 +640,14 @@ class _GameScreenState extends State<GameScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: I18nText('game.no_matching_room'),
+          ),
+        );
+        return;
+      case JoiningRoomState.alreadyInARoom:
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: I18nText('game.already_a_pending_request'),
           ),
         );
         return;
@@ -786,19 +671,14 @@ class _GameScreenState extends State<GameScreen> {
         break;
     }
 
-    final ourDocument = await Firestore.instance
-        .collection('peers')
-        .document(_signaling.selfId!)
+    final roomDocument = await Firestore.instance
+        .collection('rooms')
+        .document(requestedRoomId)
         .get();
-    final remoteId = ourDocument['remoteId'];
-    final roomOpened = ourDocument['roomOpened'];
-    final positiveAnswerFromHost = ourDocument['positiveAnswerFromHost'];
-    final cancelledJoiningRequest = ourDocument['cancelledJoiningRequest'];
-    await ourDocument.reference.set({
-      'remoteId': remoteId,
-      'roomOpened': roomOpened,
-      'cancelledJoiningRequest': cancelledJoiningRequest,
-      'positiveAnswerFromHost': positiveAnswerFromHost,
+    await roomDocument.reference.set({
+      'offer': roomDocument['offer'],
+      'positiveAnswerFromHost': roomDocument['positiveAnswerFromHost'],
+      'cancelledJoiningRequest': roomDocument['cancelledJoiningRequest'],
       'joiningRequestMessage': requestMessage,
     });
     setState(() {
@@ -823,43 +703,7 @@ class _GameScreenState extends State<GameScreen> {
                   setState(() {
                     _waitingJoiningAnswer = false;
                   });
-                  final hostDocument = await Firestore.instance
-                      .collection('peers')
-                      .document(requestedRoomId)
-                      .get();
-
-                  final hostRemoteId = hostDocument['remoteId'];
-                  final hostRoomOpened = hostDocument['roomOpened'];
-                  final hostPositiveAnswerFromHost =
-                      hostDocument['positiveAnswerFromHost'];
-                  final hostCancelledJoiningRequest =
-                      hostDocument['cancelledJoiningRequest'];
-
-                  await hostDocument.reference.set({
-                    'remoteId': hostRemoteId,
-                    'roomOpened': hostRoomOpened,
-                    'positiveAnswerFromHost': hostPositiveAnswerFromHost,
-                    'cancelledJoiningRequest': hostCancelledJoiningRequest,
-                    'joiningRequestMessage': null,
-                  });
-
-                  final ourDocument = await Firestore.instance
-                      .collection('peers')
-                      .document(_signaling.selfId!)
-                      .get();
-                  final ourRemoteId = ourDocument['remoteId'];
-                  final ourRoomOpened = ourDocument['roomOpened'];
-                  final ourPositiveAnswerFromHost =
-                      ourDocument['positiveAnswerFromHost'];
-                  final ourJoiningRequestMessage =
-                      ourDocument['joiningRequestMessage'];
-                  await ourDocument.reference.set({
-                    'remoteId': ourRemoteId,
-                    'roomOpened': ourRoomOpened,
-                    'positiveAnswerFromHost': ourPositiveAnswerFromHost,
-                    'joiningRequestMessage': ourJoiningRequestMessage,
-                    'cancelledJoiningRequest': true,
-                  });
+                  await _signaling.leaveRoom();
                 },
                 textContent: I18nText(
                   'buttons.cancel',
@@ -940,7 +784,7 @@ class _GameScreenState extends State<GameScreen> {
               DialogActionButton(
                 onPressed: () async {
                   Navigator.of(ctx2).pop();
-                  await _signaling.removeOurselfFromRoom();
+                  await _signaling.leaveRoom();
                 },
                 textContent: I18nText(
                   'buttons.cancel',
