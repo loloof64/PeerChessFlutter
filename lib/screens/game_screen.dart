@@ -141,6 +141,7 @@ class _GameScreenState extends State<GameScreen> {
       case true:
         await roomDocument.reference.set({
           'offer': roomDocument['offer'],
+          'answer': roomDocument['answer'],
           'cancelledJoiningRequest': roomDocument['cancelledJoiningRequest'],
           'joiningRequestMessage': null,
           'positiveAnswerFromHost': true,
@@ -152,6 +153,7 @@ class _GameScreenState extends State<GameScreen> {
       case false:
         await roomDocument.reference.set({
           'offer': roomDocument['offer'],
+          'answer': roomDocument['answer'],
           'cancelledJoiningRequest': roomDocument['cancelledJoiningRequest'],
           'joiningRequestMessage': null,
           'positiveAnswerFromHost': false,
@@ -677,6 +679,7 @@ class _GameScreenState extends State<GameScreen> {
         .get();
     await roomDocument.reference.set({
       'offer': roomDocument['offer'],
+      'answer': roomDocument['answer'],
       'positiveAnswerFromHost': roomDocument['positiveAnswerFromHost'],
       'cancelledJoiningRequest': roomDocument['cancelledJoiningRequest'],
       'joiningRequestMessage': requestMessage,

@@ -120,12 +120,6 @@ class Signaling {
     }
 
     _hostRoomId = hostRoom.id;
-    await hostRoom.reference.set({
-      'offer': hostRoom['offer'],
-      'positiveAnswerFromHost': hostRoom['positiveAnswerFromHost'],
-      'cancelledJoiningRequest': hostRoom['cancelledJoiningRequest'],
-      'joiningRequestMessage': requestMessage,
-    });
 
     _myConnection = await createPeerConnection(_iceServers);
     if (_myConnection != null) {
@@ -140,6 +134,16 @@ class Signaling {
       await _myConnection?.setRemoteDescription(offer);
       final answer = await _myConnection!.createAnswer();
       await _myConnection!.setLocalDescription(answer);
+      await hostRoom.reference.set({
+        'offer': hostRoom['offer'],
+        'positiveAnswerFromHost': hostRoom['positiveAnswerFromHost'],
+        'cancelledJoiningRequest': hostRoom['cancelledJoiningRequest'],
+        'joiningRequestMessage': requestMessage,
+        'answer': {
+          'sdp': answer.sdp,
+          'type': answer.type,
+        }
+      });
       return JoiningRoomState.success;
     } else {
       return JoiningRoomState.miscError;
@@ -162,13 +166,31 @@ class Signaling {
       'positiveAnswerFromHost': hostRoom['positiveAnswerFromHost'],
       'cancelledJoiningRequest': hostRoom['cancelledJoiningRequest'],
       'joiningRequestMessage': null,
+      'answer': null,
     });
     _hostRoomId = null;
   }
 
   Future<void> establishConnection() async {
-    //TODO set the room peer remote description
-    // and create data channel
+    if (_myConnection != null && _hostRoomId != null) {
+      final roomHostDocument = await Firestore.instance
+          .collection('rooms')
+          .document(_hostRoomId!)
+          .get();
+      final answer = roomHostDocument['answer'];
+      await _myConnection!.setRemoteDescription(answer);
+
+      final channelInit = RTCDataChannelInit();
+      channelInit.binaryType = "blob";
+      channelInit.protocol = "json";
+      channelInit.ordered = true;
+      _dataChannel =
+          await _myConnection!.createDataChannel('mainChannel', channelInit);
+
+      _dataChannel?.onMessage = (RTCDataChannelMessage data) {
+        Logger().d("Got channel data : $data");
+      };
+    }
   }
 
   Future<void> hangUp() async {
