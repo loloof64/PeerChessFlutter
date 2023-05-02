@@ -18,7 +18,6 @@
 // Using code from https://github.com/flutter-webrtc/flutter-webrtc-demo/blob/master/lib/src/call_sample/random_string.dart
 
 import 'dart:convert';
-import 'dart:html';
 
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:firedart/firedart.dart';
