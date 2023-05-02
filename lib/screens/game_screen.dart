@@ -106,6 +106,9 @@ class _GameScreenState extends State<GameScreen> {
         final allCalleeCandidates = await getAllDocumentsFromSubCollection(
             parentDocument: ourRoomDocument,
             collectionName: 'calleeCandidates');
+        ////////////////////////////////////////
+        Logger().d("Callee candidates : ${allCalleeCandidates.length}");
+        ////////////////////////////////////////
         final weHaveAGuest = allCalleeCandidates.isNotEmpty;
         final weJustHaveHadAGuest = _waitingJoiningRequest && weHaveAGuest;
         if (weJustHaveHadAGuest) {
@@ -185,6 +188,9 @@ class _GameScreenState extends State<GameScreen> {
         parentDocument: roomDocument,
         collectionName: 'callerCandidates',
       );
+      ////////////////////////////////////////
+      Logger().d("Caller candidates : ${allCallerCandidates.length}");
+      ////////////////////////////////////////
       for (var candidate in allCallerCandidates) {
         _signaling.addCandidate(
           RTCIceCandidate(
