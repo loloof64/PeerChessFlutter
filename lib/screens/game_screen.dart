@@ -57,6 +57,7 @@ class _GameScreenState extends State<GameScreen> {
   bool _sessionActive = false;
   bool _answeringJoiningRequest = false;
   bool _waitingJoiningAnswer = false;
+  bool _waitingJoiningRequest = false;
 
   final ScrollController _historyScrollController =
       ScrollController(initialScrollOffset: 0.0, keepScrollOffset: true);
@@ -106,7 +107,7 @@ class _GameScreenState extends State<GameScreen> {
             parentDocument: ourRoomDocument,
             collectionName: 'calleeCandidates');
         final weHaveAGuest = allCalleeCandidates.isNotEmpty;
-        final weJustHaveHadAGuest = _waitingJoiningAnswer && weHaveAGuest;
+        final weJustHaveHadAGuest = _waitingJoiningRequest && weHaveAGuest;
         if (weJustHaveHadAGuest) {
           await _sendAnswerToRoomGuest(roomDocument: ourRoomDocument);
         }
@@ -126,6 +127,7 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _sendAnswerToRoomGuest({required Document roomDocument}) async {
     setState(() {
+      _waitingJoiningRequest = false;
       _answeringJoiningRequest = true;
     });
 
@@ -520,6 +522,9 @@ class _GameScreenState extends State<GameScreen> {
             SnackBar(content: I18nText('game.misc_room_creation_error')));
         return;
       case CreatingRoomState.success:
+        setState(() {
+          _waitingJoiningRequest = true;
+        });
         break;
     }
 
