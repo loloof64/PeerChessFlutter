@@ -109,6 +109,15 @@ class _GameScreenState extends State<GameScreen> {
         final weHaveAGuest = allCalleeCandidates.isNotEmpty;
         final weJustHaveHadAGuest = _waitingJoiningRequest && weHaveAGuest;
         if (weJustHaveHadAGuest) {
+          for (var candidate in allCalleeCandidates) {
+            _signaling.addCandidate(
+              RTCIceCandidate(
+                candidate['candidate'],
+                candidate['sdpMid'],
+                candidate['sdpMLineIndex'],
+              ),
+            );
+          }
           await _sendAnswerToRoomGuest(roomDocument: ourRoomDocument);
         }
       } else if (weAreHosted) {
@@ -172,6 +181,20 @@ class _GameScreenState extends State<GameScreen> {
     });
     final accepted = roomDocument['positiveAnswerFromHost'] == true;
     if (accepted) {
+      final allCallerCandidates = await getAllDocumentsFromSubCollection(
+        parentDocument: roomDocument,
+        collectionName: 'callerCandidates',
+      );
+      for (var candidate in allCallerCandidates) {
+        _signaling.addCandidate(
+          RTCIceCandidate(
+            candidate['candidate'],
+            candidate['sdpMid'],
+            candidate['sdpMLineIndex'],
+          ),
+        );
+      }
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: I18nText('game.accepted_request'),
@@ -182,6 +205,17 @@ class _GameScreenState extends State<GameScreen> {
       });
       await _signaling.establishConnection();
     } else {
+      // request has been rejected
+      final roomDocument = await Firestore.instance
+          .collection('rooms')
+          .document(_signaling.hostRoomId!)
+          .get();
+      final allCalleeCandidates = await getAllDocumentsFromSubCollection(
+          parentDocument: roomDocument, collectionName: 'calleeCandidates');
+      for (var candidate in allCalleeCandidates) {
+        await candidate.reference.delete();
+      }
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: I18nText('game.rejected_request'),

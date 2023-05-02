@@ -70,6 +70,10 @@ class Signaling {
     _iceServers = {'iceServers': serversJson};
   }
 
+  void addCandidate(RTCIceCandidate candidate) {
+    if (_myConnection != null) _myConnection!.addCandidate(candidate);
+  }
+
   Future<CreatingRoomState> createRoom() async {
     // Checking that this peer is not already in a room
     if (_ourRoomId != null) return CreatingRoomState.alreadyCreatedARoom;
