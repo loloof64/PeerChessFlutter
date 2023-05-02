@@ -106,12 +106,15 @@ class _GameScreenState extends State<GameScreen> {
         final allCalleeCandidates = await getAllDocumentsFromSubCollection(
             parentDocument: ourRoomDocument,
             collectionName: 'calleeCandidates');
-        ////////////////////////////////////////
-        Logger().d("Callee candidates : ${allCalleeCandidates.length}");
-        ////////////////////////////////////////
         final weHaveAGuest = allCalleeCandidates.isNotEmpty;
         final weJustHaveHadAGuest = _waitingJoiningRequest && weHaveAGuest;
         if (weJustHaveHadAGuest) {
+          setState(() {
+            _waitingJoiningRequest = false;
+          });
+          ////////////////////////////////////////
+          Logger().d("Callee candidates : ${allCalleeCandidates.length}");
+          ////////////////////////////////////////
           for (var candidate in allCalleeCandidates) {
             _signaling.addCandidate(
               RTCIceCandidate(
@@ -139,7 +142,6 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _sendAnswerToRoomGuest({required Document roomDocument}) async {
     setState(() {
-      _waitingJoiningRequest = false;
       _answeringJoiningRequest = true;
     });
 
