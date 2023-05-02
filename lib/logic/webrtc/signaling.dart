@@ -18,6 +18,7 @@
 // Using code from https://github.com/flutter-webrtc/flutter-webrtc-demo/blob/master/lib/src/call_sample/random_string.dart
 
 import 'dart:convert';
+import 'dart:html';
 
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:firedart/firedart.dart';
@@ -131,7 +132,9 @@ class Signaling {
       };
 
       final offer = hostRoom['offer'];
-      await _myConnection?.setRemoteDescription(offer);
+      final offerDescription =
+          RTCSessionDescription(offer['sdp'], offer['type']);
+      await _myConnection?.setRemoteDescription(offerDescription);
       final answer = await _myConnection!.createAnswer();
       await _myConnection!.setLocalDescription(answer);
       await hostRoom.reference.set({
@@ -178,7 +181,9 @@ class Signaling {
           .document(_hostRoomId!)
           .get();
       final answer = roomHostDocument['answer'];
-      await _myConnection!.setRemoteDescription(answer);
+      final answerDescription =
+          RTCSessionDescription(answer['sdp'], answer['type']);
+      await _myConnection!.setRemoteDescription(answerDescription);
 
       final channelInit = RTCDataChannelInit();
       channelInit.binaryType = "blob";
