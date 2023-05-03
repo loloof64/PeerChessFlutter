@@ -181,7 +181,7 @@ class Signaling {
   }
 
   Future<void> establishConnection() async {
-    if (_myConnection != null && _hostRoomId != null) {
+    if (_myConnection != null && _ourRoomId != null) {
       final roomHostDocument = await Firestore.instance
           .collection('rooms')
           .document(_hostRoomId!)
