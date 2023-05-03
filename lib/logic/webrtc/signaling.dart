@@ -182,11 +182,11 @@ class Signaling {
 
   Future<void> establishConnection() async {
     if (_myConnection != null && _ourRoomId != null) {
-      final roomHostDocument = await Firestore.instance
+      final ourRoomDocument = await Firestore.instance
           .collection('rooms')
-          .document(_hostRoomId!)
+          .document(_ourRoomId!)
           .get();
-      final answer = roomHostDocument['answer'];
+      final answer = ourRoomDocument['answer'];
       //////////////////////////////////////////////
       Logger().d('Got answer type : ${answer['type']}');
       //////////////////////////////////////////////
