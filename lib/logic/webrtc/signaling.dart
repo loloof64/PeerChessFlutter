@@ -176,6 +176,8 @@ class Signaling {
       'joiningRequestMessage': null,
       'answer': null,
     });
+    _dataChannel?.close();
+    _myConnection?.close();
     _dataChannel = null;
     _myConnection = null;
     _hostRoomId = null;
@@ -191,6 +193,9 @@ class Signaling {
       final answerDescription =
           RTCSessionDescription(answer['sdp'], answer['type']);
       await _myConnection!.setRemoteDescription(answerDescription);
+      //////////////////////////////////
+      Logger().d("Connection successful !");
+      //////////////////////////////////
     }
   }
 
@@ -238,6 +243,8 @@ class Signaling {
         await candidate.reference.delete();
       }
       await ourDocument.reference.delete();
+      _dataChannel?.close();
+      _myConnection?.close();
       _dataChannel = null;
       _myConnection = null;
       _ourRoomId = null;
@@ -250,5 +257,7 @@ class Signaling {
     await _dataChannel?.close();
     _dataChannel = null;
     _myConnection = null;
+    _ourRoomId = null;
+    _hostRoomId = null;
   }
 }
