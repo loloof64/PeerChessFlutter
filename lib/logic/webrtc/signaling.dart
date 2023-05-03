@@ -88,7 +88,9 @@ class Signaling {
     _dataChannel =
         await _myConnection!.createDataChannel('mainChannel', channelInit);
     _dataChannel!.onMessage = (RTCDataChannelMessage data) {
+      /////////////////////////////////////////
       Logger().d("Got channel data : $data");
+      //////////////////////////////////////////
     };
 
     if (_myConnection != null) {
@@ -206,6 +208,11 @@ class Signaling {
       final answerDescription =
           RTCSessionDescription(answer['sdp'], answer['type']);
       await _myConnection!.setRemoteDescription(answerDescription);
+      ////////////////////////////////////////
+      Logger().d('sending data to channel');
+      _dataChannel?.send(RTCDataChannelMessage(
+          jsonEncode({'type': 'message', 'value': 'hello'})));
+      /////////////////////////////////////////
     }
   }
 
