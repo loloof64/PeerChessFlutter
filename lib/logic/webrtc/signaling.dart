@@ -204,6 +204,7 @@ class Signaling {
     channelInit.ordered = true;
     _dataChannel =
         await _myConnection!.createDataChannel('mainChannel', channelInit);
+    _dataChannel!.onDataChannelState = (event) => null;
 
     _dataChannel!.onMessage = (RTCDataChannelMessage data) {
       Logger().d("Got channel data : $data");
