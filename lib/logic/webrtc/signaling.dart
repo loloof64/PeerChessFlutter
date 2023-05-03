@@ -205,6 +205,9 @@ class Signaling {
     _dataChannel =
         await _myConnection!.createDataChannel('mainChannel', channelInit);
     _dataChannel!.onDataChannelState = (event) async {
+      ///////////////////////////
+      Logger().d('data channel state : ${event.name}');
+      ///////////////////////////
       if (event.name == 'open') {
         ///////////////////////////////////
         final message = {'type': 'message', 'value': 'Hello !'};
