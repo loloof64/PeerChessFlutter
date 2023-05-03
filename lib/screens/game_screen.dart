@@ -112,9 +112,6 @@ class _GameScreenState extends State<GameScreen> {
           setState(() {
             _waitingJoiningRequest = false;
           });
-          ////////////////////////////////////////
-          Logger().d("Callee candidates : ${allCalleeCandidates.length}");
-          ////////////////////////////////////////
           for (var candidate in allCalleeCandidates) {
             _signaling.addCandidate(
               RTCIceCandidate(
@@ -163,6 +160,9 @@ class _GameScreenState extends State<GameScreen> {
           'positiveAnswerFromHost': true,
         });
         await _signaling.establishConnection();
+        // Removes the room popup
+        if (!mounted) return;
+        Navigator.of(context).pop();
         setState(() {
           _sessionActive = true;
         });
@@ -191,9 +191,6 @@ class _GameScreenState extends State<GameScreen> {
         parentDocument: roomDocument,
         collectionName: 'callerCandidates',
       );
-      ////////////////////////////////////////
-      Logger().d("Caller candidates : ${allCallerCandidates.length}");
-      ////////////////////////////////////////
       for (var candidate in allCallerCandidates) {
         _signaling.addCandidate(
           RTCIceCandidate(
@@ -209,6 +206,8 @@ class _GameScreenState extends State<GameScreen> {
           content: I18nText('game.accepted_request'),
         ),
       );
+      // Removes the waiting for answer popup
+      Navigator.of(context).pop();
       setState(() {
         _sessionActive = true;
       });

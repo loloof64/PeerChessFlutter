@@ -135,9 +135,6 @@ class Signaling {
       };
 
       final offer = hostRoom['offer'];
-      //////////////////////////////////////////////
-      Logger().d('Got offer type : ${offer['type']}');
-      //////////////////////////////////////////////
       final offerDescription =
           RTCSessionDescription(offer['sdp'], offer['type']);
       await _myConnection?.setRemoteDescription(offerDescription);
@@ -187,9 +184,6 @@ class Signaling {
           .document(_ourRoomId!)
           .get();
       final answer = ourRoomDocument['answer'];
-      //////////////////////////////////////////////
-      Logger().d('Got answer type : ${answer['type']}');
-      //////////////////////////////////////////////
       final answerDescription =
           RTCSessionDescription(answer['sdp'], answer['type']);
       await _myConnection!.setRemoteDescription(answerDescription);
