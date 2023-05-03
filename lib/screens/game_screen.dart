@@ -208,10 +208,10 @@ class _GameScreenState extends State<GameScreen> {
           content: I18nText('game.accepted_request'),
         ),
       );
-      await _signaling.establishConnection();
       setState(() {
         _sessionActive = true;
       });
+      await _signaling.establishConnection();
     } else {
       // request has been rejected
       final roomDocument = await Firestore.instance
