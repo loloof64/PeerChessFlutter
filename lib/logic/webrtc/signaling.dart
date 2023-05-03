@@ -222,25 +222,21 @@ class Signaling {
     channelInit.ordered = true;
     _dataChannel =
         await _myConnection!.createDataChannel('mainChannel', channelInit);
-    _dataChannel!.onDataChannelState = (event) async {
-      if (event == RTCDataChannelState.RTCDataChannelOpen) {
-        ///////////////////////////////////
-        final message = {'type': 'message', 'value': 'Hello !'};
-        await _dataChannel!.send(RTCDataChannelMessage(jsonEncode(message)));
-        ////////////////////////////////////
-      }
-    };
 
-    _dataChannel!.onMessage = (msg) {
+    _dataChannel!.onMessage = (evt) {
+      final data = evt.text;
+      final message = jsonDecode(data);
       //////////////////////////////////////////
-      Logger().d("Got channel data : $msg");
+      Logger().d("Got channel data : $message");
       //////////////////////////////////////////
     };
 
     _myConnection?.onDataChannel = (channel) {
-      channel.onMessage = (msg) {
+      channel.onMessage = (evt) {
+        final data = evt.text;
+        final message = jsonDecode(data);
         //////////////////////////////////////////
-        Logger().d("Got channel data : $msg");
+        Logger().d("Got channel data : $message");
         //////////////////////////////////////////
       };
     };
