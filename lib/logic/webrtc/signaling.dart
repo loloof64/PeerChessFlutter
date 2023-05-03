@@ -81,6 +81,7 @@ class Signaling {
     final newRoom = await Firestore.instance.collection('rooms').add({});
     _ourRoomId = newRoom.id;
     _myConnection = await createPeerConnection(_iceServers);
+    _setupDataChannel();
 
     if (_myConnection != null) {
       // Collecting ice candidates
@@ -126,6 +127,7 @@ class Signaling {
     _hostRoomId = hostRoom.id;
 
     _myConnection = await createPeerConnection(_iceServers);
+    _setupDataChannel();
     if (_myConnection != null) {
       _myConnection!.onIceCandidate = (candidate) async {
         // Add candidate to our peer document in DB
@@ -174,6 +176,8 @@ class Signaling {
       'joiningRequestMessage': null,
       'answer': null,
     });
+    _dataChannel = null;
+    _myConnection = null;
     _hostRoomId = null;
   }
 
@@ -188,17 +192,24 @@ class Signaling {
           RTCSessionDescription(answer['sdp'], answer['type']);
       await _myConnection!.setRemoteDescription(answerDescription);
 
-      final channelInit = RTCDataChannelInit();
-      channelInit.binaryType = "blob";
-      channelInit.protocol = "json";
-      channelInit.ordered = true;
-      _dataChannel =
-          await _myConnection!.createDataChannel('mainChannel', channelInit);
-
-      _dataChannel?.onMessage = (RTCDataChannelMessage data) {
-        Logger().d("Got channel data : $data");
-      };
+      ///////////////////////////////////
+      final message = {'type': 'message', 'value': 'Hello !'};
+      _dataChannel?.send(RTCDataChannelMessage(jsonEncode(message)));
+      ////////////////////////////////////
     }
+  }
+
+  Future<void> _setupDataChannel() async {
+    final channelInit = RTCDataChannelInit();
+    channelInit.binaryType = "blob";
+    channelInit.protocol = "json";
+    channelInit.ordered = true;
+    _dataChannel =
+        await _myConnection!.createDataChannel('mainChannel', channelInit);
+
+    _dataChannel?.onMessage = (RTCDataChannelMessage data) {
+      Logger().d("Got channel data : $data");
+    };
   }
 
   Future<void> hangUp() async {
@@ -226,6 +237,7 @@ class Signaling {
         await candidate.reference.delete();
       }
       await ourDocument.reference.delete();
+      _dataChannel = null;
       _myConnection = null;
       _ourRoomId = null;
     }
