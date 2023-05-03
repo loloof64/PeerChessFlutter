@@ -201,13 +201,11 @@ class Signaling {
 
   Future<void> _setupDataChannel() async {
     final channelInit = RTCDataChannelInit();
-    channelInit.binaryType = "blob";
-    channelInit.protocol = "json";
     channelInit.ordered = true;
     _dataChannel =
         await _myConnection!.createDataChannel('mainChannel', channelInit);
 
-    _dataChannel?.onMessage = (RTCDataChannelMessage data) {
+    _dataChannel!.onMessage = (RTCDataChannelMessage data) {
       Logger().d("Got channel data : $data");
     };
   }
