@@ -194,7 +194,7 @@ class Signaling {
 
       ///////////////////////////////////
       final message = {'type': 'message', 'value': 'Hello !'};
-      _dataChannel?.send(RTCDataChannelMessage(jsonEncode(message)));
+      await _dataChannel!.send(RTCDataChannelMessage(jsonEncode(message)));
       ////////////////////////////////////
     }
   }
