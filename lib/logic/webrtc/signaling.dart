@@ -88,9 +88,10 @@ class Signaling {
     channelInit.ordered = true;
     _dataChannel =
         await _myConnection!.createDataChannel('mainChannel', channelInit);
-    _dataChannel!.onMessage = (RTCDataChannelMessage data) {
+    _dataChannel!.onMessage = (RTCDataChannelMessage evt) {
+      final data = evt.text;
       /////////////////////////////////////////
-      Logger().d("Got channel data : $data");
+      Logger().d("@1 Got channel data : $data");
       //////////////////////////////////////////
     };
 
@@ -206,7 +207,6 @@ class Signaling {
           RTCSessionDescription(answer['sdp'], answer['type']);
       await _myConnection!.setRemoteDescription(answerDescription);
       ////////////////////////////////////////
-      Logger().d('sending data to channel');
       _dataChannel?.send(RTCDataChannelMessage(
           jsonEncode({'type': 'message', 'value': 'hello'})));
       /////////////////////////////////////////
@@ -225,18 +225,16 @@ class Signaling {
 
     _dataChannel!.onMessage = (evt) {
       final data = evt.text;
-      final message = jsonDecode(data);
       //////////////////////////////////////////
-      Logger().d("Got channel data : $message");
+      Logger().d("@2 Got channel data : $data");
       //////////////////////////////////////////
     };
 
     _myConnection?.onDataChannel = (channel) {
       channel.onMessage = (evt) {
         final data = evt.text;
-        final message = jsonDecode(data);
         //////////////////////////////////////////
-        Logger().d("Got channel data : $message");
+        Logger().d("@3 Got channel data : $data");
         //////////////////////////////////////////
       };
     };
