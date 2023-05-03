@@ -81,6 +81,7 @@ class Signaling {
     final newRoom = await Firestore.instance.collection('rooms').add({});
     _ourRoomId = newRoom.id;
     _myConnection = await createPeerConnection(_iceServers);
+    await _setupDataChannel();
 
     // creating data channel
     final channelInit = RTCDataChannelInit();
@@ -137,11 +138,7 @@ class Signaling {
     _hostRoomId = hostRoom.id;
 
     _myConnection = await createPeerConnection(_iceServers);
-
-    // Setting data channel
-    _myConnection?.onDataChannel = (channel) {
-      _dataChannel = channel;
-    };
+    await _setupDataChannel();
 
     if (_myConnection != null) {
       _myConnection!.onIceCandidate = (candidate) async {
@@ -218,6 +215,35 @@ class Signaling {
 
   Future<void> hangUp() async {
     await _closeCall();
+  }
+
+  Future<void> _setupDataChannel() async {
+    final channelInit = RTCDataChannelInit();
+    channelInit.ordered = true;
+    _dataChannel =
+        await _myConnection!.createDataChannel('mainChannel', channelInit);
+    _dataChannel!.onDataChannelState = (event) async {
+      if (event == RTCDataChannelState.RTCDataChannelOpen) {
+        ///////////////////////////////////
+        final message = {'type': 'message', 'value': 'Hello !'};
+        await _dataChannel!.send(RTCDataChannelMessage(jsonEncode(message)));
+        ////////////////////////////////////
+      }
+    };
+
+    _dataChannel!.onMessage = (msg) {
+      //////////////////////////////////////////
+      Logger().d("Got channel data : $msg");
+      //////////////////////////////////////////
+    };
+
+    _myConnection?.onDataChannel = (channel) {
+      channel.onMessage = (msg) {
+        //////////////////////////////////////////
+        Logger().d("Got channel data : $msg");
+        //////////////////////////////////////////
+      };
+    };
   }
 
   Future<void> _deleteRoom() async {
