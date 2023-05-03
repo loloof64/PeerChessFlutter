@@ -242,6 +242,9 @@ class Signaling {
     };
 
     _dataChannel!.onDataChannelState = (state) {
+      ////////////////////////////////////
+      Logger().d("Got new state in data channel : $state");
+      /////////////////////////////////////
       if (state == RTCDataChannelState.RTCDataChannelOpen) {
         _readyToSendMessages = true;
       } else {
