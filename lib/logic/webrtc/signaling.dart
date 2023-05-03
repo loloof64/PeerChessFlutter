@@ -136,7 +136,7 @@ class Signaling {
 
       final offer = hostRoom['offer'];
       //////////////////////////////////////////////
-      Logger().d('Got offer : $offer');
+      Logger().d('Got offer type : ${offer['type']}');
       //////////////////////////////////////////////
       final offerDescription =
           RTCSessionDescription(offer['sdp'], offer['type']);
@@ -188,7 +188,7 @@ class Signaling {
           .get();
       final answer = roomHostDocument['answer'];
       //////////////////////////////////////////////
-      Logger().d('Got answer : $answer');
+      Logger().d('Got answer type : ${answer['type']}');
       //////////////////////////////////////////////
       final answerDescription =
           RTCSessionDescription(answer['sdp'], answer['type']);

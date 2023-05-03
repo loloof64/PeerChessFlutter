@@ -162,6 +162,7 @@ class _GameScreenState extends State<GameScreen> {
           'joiningRequestMessage': null,
           'positiveAnswerFromHost': true,
         });
+        await _signaling.establishConnection();
         setState(() {
           _sessionActive = true;
         });
@@ -211,7 +212,6 @@ class _GameScreenState extends State<GameScreen> {
       setState(() {
         _sessionActive = true;
       });
-      await _signaling.establishConnection();
     } else {
       // request has been rejected
       final roomDocument = await Firestore.instance
