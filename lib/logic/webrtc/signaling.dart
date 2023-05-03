@@ -45,9 +45,11 @@ class Signaling {
   RTCPeerConnection? _myConnection;
   String? _ourRoomId;
   String? _hostRoomId;
+  bool _readyToSendMessages = false;
 
   String? get ourRoomId => _ourRoomId;
   String? get hostRoomId => _hostRoomId;
+  bool get isReadyToSendMessage => _readyToSendMessages;
 
   late Map<String, dynamic> _iceServers;
 
@@ -206,15 +208,15 @@ class Signaling {
       final answerDescription =
           RTCSessionDescription(answer['sdp'], answer['type']);
       await _myConnection!.setRemoteDescription(answerDescription);
-      ////////////////////////////////////////
-      _dataChannel?.send(RTCDataChannelMessage(
-          jsonEncode({'type': 'message', 'value': 'hello'})));
-      /////////////////////////////////////////
     }
   }
 
   Future<void> hangUp() async {
     await _closeCall();
+  }
+
+  Future<void> sendMessage(String message) async {
+    await _dataChannel?.send(RTCDataChannelMessage(message));
   }
 
   Future<void> _setupDataChannel() async {
@@ -237,6 +239,14 @@ class Signaling {
         Logger().d("@3 Got channel data : $data");
         //////////////////////////////////////////
       };
+    };
+
+    _dataChannel!.onDataChannelState = (state) {
+      if (state == RTCDataChannelState.RTCDataChannelOpen) {
+        _readyToSendMessages = true;
+      } else {
+        _readyToSendMessages = false;
+      }
     };
   }
 

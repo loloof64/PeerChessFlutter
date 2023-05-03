@@ -869,14 +869,17 @@ class _GameScreenState extends State<GameScreen> {
                 Icons.door_sliding,
               ),
             ),
-          if (_sessionActive)
+          if (_sessionActive && _signaling.isReadyToSendMessage)
             IconButton(
-              onPressed: _purposeStopGame,
+              onPressed: () async {
+                await _signaling.sendMessage(
+                    jsonEncode({'type': 'message', 'value': 'Hello !'}));
+              },
               icon: const Icon(
-                Icons.stop_circle,
+                Icons.add_circle,
               ),
             ),
-          if (_sessionActive)
+          if (_sessionActive && _signaling.isReadyToSendMessage)
             IconButton(
               onPressed: _toggleBoardOrientation,
               icon: const Icon(
