@@ -193,9 +193,6 @@ class Signaling {
       final answerDescription =
           RTCSessionDescription(answer['sdp'], answer['type']);
       await _myConnection!.setRemoteDescription(answerDescription);
-      //////////////////////////////////
-      Logger().d("Connection successful !");
-      //////////////////////////////////
     }
   }
 
@@ -205,10 +202,7 @@ class Signaling {
     _dataChannel =
         await _myConnection!.createDataChannel('mainChannel', channelInit);
     _dataChannel!.onDataChannelState = (event) async {
-      ///////////////////////////
-      Logger().d('data channel state : ${event.name}');
-      ///////////////////////////
-      if (event.name == 'open') {
+      if (event == RTCDataChannelState.RTCDataChannelOpen) {
         ///////////////////////////////////
         final message = {'type': 'message', 'value': 'Hello !'};
         await _dataChannel!.send(RTCDataChannelMessage(jsonEncode(message)));
