@@ -46,7 +46,7 @@ class Signaling {
   RTCPeerConnection? _myConnection;
   String? _ourRoomId;
   String? _hostRoomId;
-  StreamController<bool> _readyToSendMessagesController =
+  final StreamController<bool> _readyToSendMessagesController =
       StreamController<bool>();
 
   String? get ourRoomId => _ourRoomId;
@@ -92,12 +92,6 @@ class Signaling {
     channelInit.ordered = true;
     _dataChannel =
         await _myConnection!.createDataChannel('mainChannel', channelInit);
-    _dataChannel!.onMessage = (RTCDataChannelMessage evt) {
-      final data = evt.text;
-      /////////////////////////////////////////
-      Logger().d("@1 Got channel data : $data");
-      //////////////////////////////////////////
-    };
 
     if (_myConnection != null) {
       // Collecting ice candidates
@@ -227,26 +221,16 @@ class Signaling {
     _dataChannel =
         await _myConnection!.createDataChannel('mainChannel', channelInit);
 
-    _dataChannel!.onMessage = (evt) {
-      final data = evt.text;
-      //////////////////////////////////////////
-      Logger().d("@2 Got channel data : $data");
-      //////////////////////////////////////////
-    };
-
     _myConnection?.onDataChannel = (channel) {
       channel.onMessage = (evt) {
         final data = evt.text;
         //////////////////////////////////////////
-        Logger().d("@3 Got channel data : $data");
+        Logger().d("Got channel data : $data");
         //////////////////////////////////////////
       };
     };
 
     _dataChannel!.onDataChannelState = (state) {
-      ////////////////////////////////////
-      Logger().d("Got new state in data channel : $state");
-      /////////////////////////////////////
       if (state == RTCDataChannelState.RTCDataChannelOpen) {
         _readyToSendMessagesController.add(true);
       } else {
