@@ -17,6 +17,7 @@
 */
 // Using code from https://github.com/flutter-webrtc/flutter-webrtc-demo/blob/master/lib/src/call_sample/random_string.dart
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_webrtc/flutter_webrtc.dart';
@@ -45,15 +46,16 @@ class Signaling {
   RTCPeerConnection? _myConnection;
   String? _ourRoomId;
   String? _hostRoomId;
-  bool _readyToSendMessages = false;
+  StreamController<bool> _readyToSendMessagesController =
+      StreamController<bool>();
 
   String? get ourRoomId => _ourRoomId;
   String? get hostRoomId => _hostRoomId;
-  bool get isReadyToSendMessage => _readyToSendMessages;
-
+  late Stream<bool> readyToSendMessagesStream;
   late Map<String, dynamic> _iceServers;
 
   Signaling() {
+    readyToSendMessagesStream = _readyToSendMessagesController.stream;
     _initializeIceServers().then((value) => null);
   }
 
@@ -246,9 +248,9 @@ class Signaling {
       Logger().d("Got new state in data channel : $state");
       /////////////////////////////////////
       if (state == RTCDataChannelState.RTCDataChannelOpen) {
-        _readyToSendMessages = true;
+        _readyToSendMessagesController.add(true);
       } else {
-        _readyToSendMessages = false;
+        _readyToSendMessagesController.add(false);
       }
     };
   }
@@ -290,5 +292,9 @@ class Signaling {
     _myConnection = null;
     _ourRoomId = null;
     _hostRoomId = null;
+  }
+
+  Future<void> dispose() async {
+    await _readyToSendMessagesController.close();
   }
 }

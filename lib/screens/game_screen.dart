@@ -55,6 +55,7 @@ class _GameScreenState extends State<GameScreen> {
   late TextEditingController _roomIdController;
   late TextEditingController _ringingMessageController;
   bool _sessionActive = false;
+  bool _readyToSendMessagesToOtherPeer = false;
   bool _answeringJoiningRequest = false;
   bool _waitingJoiningAnswer = false;
   bool _waitingJoiningRequest = false;
@@ -76,8 +77,15 @@ class _GameScreenState extends State<GameScreen> {
 
     _signaling = Signaling();
 
+    _signaling.readyToSendMessagesStream.forEach((newState) {
+      setState(() {
+        _readyToSendMessagesToOtherPeer = newState;
+      });
+    });
+
     FlutterWindowClose.setWindowShouldCloseHandler(() async {
       await _signaling.hangUp();
+      await _signaling.dispose();
       return true;
     });
 
@@ -89,7 +97,9 @@ class _GameScreenState extends State<GameScreen> {
   void dispose() {
     _ringingMessageController.dispose();
     _roomIdController.dispose();
-    _signaling.hangUp().then((value) {});
+    _signaling.hangUp().then((value) {
+      _signaling.dispose().then((value) => null);
+    });
     super.dispose();
   }
 
@@ -869,7 +879,7 @@ class _GameScreenState extends State<GameScreen> {
                 Icons.door_sliding,
               ),
             ),
-          if (_sessionActive && _signaling.isReadyToSendMessage)
+          if (_sessionActive && _readyToSendMessagesToOtherPeer)
             IconButton(
               onPressed: () async {
                 await _signaling.sendMessage(
@@ -879,7 +889,7 @@ class _GameScreenState extends State<GameScreen> {
                 Icons.add_circle,
               ),
             ),
-          if (_sessionActive && _signaling.isReadyToSendMessage)
+          if (_sessionActive && _readyToSendMessagesToOtherPeer)
             IconButton(
               onPressed: _toggleBoardOrientation,
               icon: const Icon(
