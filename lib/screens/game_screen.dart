@@ -74,11 +74,18 @@ class _GameScreenState extends State<GameScreen> {
 
     _signaling = Signaling();
 
-    _signaling.readyToSendMessagesStream.forEach((newState) {
+    _signaling.readyToSendMessagesStream.forEach((newState) async {
       if (!newState) {
         setState(() {
           _sessionActive = false;
         });
+        await _signaling.hangUp();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: I18nText('game.session_finished'),
+          ),
+        );
       }
       setState(() {
         _readyToSendMessagesToOtherPeer = newState;
