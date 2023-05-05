@@ -45,6 +45,7 @@
     },
     "game_session" : {
         "your_color_label": "Vouz jouez: ",
+        "your_old_color_label": "Vous avez joué: ",
         "white_side": "les Blancs",
         "black_side": "les Noirs"
     },

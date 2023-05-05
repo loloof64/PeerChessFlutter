@@ -45,6 +45,7 @@
     },
     "game_session" : {
         "your_color_label": "Su lado: ",
+        "your_old_color_label": "Su antiguo lado: ",
         "white_side": "Blancos",
         "black_side": "Negros"
     },

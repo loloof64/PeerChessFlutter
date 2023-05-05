@@ -34,6 +34,7 @@ class GameManager {
   bool _gameStart = false;
   bool _gameInProgress = false;
   bool _engineThinking = false;
+  bool _atLeastAGameStarted = false;
   double _score = 0.0;
 
   GameManager() {
@@ -42,6 +43,7 @@ class GameManager {
 
   bool get isGameOver => _gameLogic.game_over;
   bool get isGameStart => _gameStart;
+  bool get atLeastAGameStarted => _atLeastAGameStarted;
   String get position => _gameLogic.fen;
   bool get whiteTurn => _gameLogic.turn == chess.Color.WHITE;
   String get startPosition => _startPosition;
@@ -67,6 +69,12 @@ class GameManager {
 
     return moveHasBeenMade;
   }
+
+  /*
+  void leaveSession() {
+    _atLeastAGameStarted = false;
+  }
+  */
 
   void clearGameStartFlag() {
     _gameStart = false;
@@ -97,6 +105,7 @@ class GameManager {
     _gameInProgress = true;
     _gameLogic = chess.Chess();
     _gameLogic.load(_startPosition);
+    _atLeastAGameStarted = true;
   }
 
   void stopGame() {

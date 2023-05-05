@@ -870,6 +870,16 @@ class _GameScreenState extends State<GameScreen> {
                 textAlign: TextAlign.center,
               ),
             ),
+          if (_sessionActive &&
+              !_gameManager.gameInProgress &&
+              _gameManager.atLeastAGameStarted)
+            Center(
+              child: Text(
+                "${FlutterI18n.translate(context, 'game_session.your_old_color_label')}"
+                "${FlutterI18n.translate(context, _playerHasWhite ? 'game_session.white_side' : 'game_session.black_side')}",
+                textAlign: TextAlign.center,
+              ),
+            ),
           if (!_sessionActive)
             IconButton(
               onPressed: _createRoom,
