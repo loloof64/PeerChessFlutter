@@ -76,6 +76,12 @@ class _GameScreenState extends State<GameScreen> {
 
     _signaling.readyToSendMessagesStream.forEach((newState) async {
       if (!newState) {
+        /*
+        Testing if session is active before stopping game
+        because false state may be sent twice in a row :
+        one for our own connection closing, and once for the one on the other side.
+        */
+        if (_sessionActive) _stopCurrentGame();
         setState(() {
           _sessionActive = false;
         });
@@ -86,7 +92,6 @@ class _GameScreenState extends State<GameScreen> {
             content: I18nText('game.session_finished'),
           ),
         );
-        _stopCurrentGame();
       }
       setState(() {
         _readyToSendMessagesToOtherPeer = newState;
@@ -546,11 +551,6 @@ class _GameScreenState extends State<GameScreen> {
           ? BoardColor.black
           : BoardColor.white;
     });
-  }
-
-  void _stopCurrentGameConfirmationAction() {
-    Navigator.of(context).pop();
-    _stopCurrentGame();
   }
 
   void _stopCurrentGame() {
