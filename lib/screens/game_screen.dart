@@ -643,22 +643,6 @@ class _GameScreenState extends State<GameScreen> {
           ),
         );
         return;
-      case JoiningRoomState.alreadyInARoom:
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: I18nText('game.already_a_pending_request'),
-          ),
-        );
-        return;
-      case JoiningRoomState.alreadySomeonePairingWithHost:
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: I18nText('game.busy_room'),
-          ),
-        );
-        return;
       case JoiningRoomState.miscError:
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

@@ -36,8 +36,6 @@ enum CreatingRoomState {
 enum JoiningRoomState {
   success,
   noRoomWithThisId,
-  alreadySomeonePairingWithHost,
-  alreadyInARoom,
   miscError,
 }
 
@@ -122,8 +120,6 @@ class Signaling {
   }
 
   Future<JoiningRoomState> joinRoom({required String requestedRoomId}) async {
-    // Checks that we're not already in a room
-    if (_hostRoomId != null) return JoiningRoomState.alreadyInARoom;
     // Checks that the host peer exists
     final allRooms = await getAllDocumentsFromCollection(
       collectionName: 'rooms',
@@ -170,29 +166,6 @@ class Signaling {
     } else {
       return JoiningRoomState.miscError;
     }
-  }
-
-  Future<void> leaveRoom() async {
-    if (_hostRoomId == null) return;
-    final hostRoom = await Firestore.instance
-        .collection('rooms')
-        .document(_hostRoomId!)
-        .get();
-    final calleeCandidates = await getAllDocumentsFromSubCollection(
-        parentDocument: hostRoom, collectionName: 'calleeCandidates');
-    for (var candidate in calleeCandidates) {
-      await candidate.reference.delete();
-    }
-    await hostRoom.reference.set({
-      'offer': hostRoom['offer'],
-      'positiveAnswerFromHost': hostRoom['positiveAnswerFromHost'],
-      'answer': null,
-    });
-    _dataChannel?.close();
-    _myConnection?.close();
-    _dataChannel = null;
-    _myConnection = null;
-    _hostRoomId = null;
   }
 
   Future<void> establishConnection() async {
