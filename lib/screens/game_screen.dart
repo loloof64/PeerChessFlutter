@@ -82,6 +82,7 @@ class _GameScreenState extends State<GameScreen> {
       if (!newState && _sessionActive) {
         _stopCurrentGame();
         setState(() {
+          _gameManager.leaveSession();
           _sessionActive = false;
         });
         await _signaling.hangUp();
@@ -183,6 +184,18 @@ class _GameScreenState extends State<GameScreen> {
       'positiveAnswerFromHost': true,
     });
     await _signaling.establishConnection();
+    // reset board and history state
+    setState(() {
+      _sessionActive = true;
+      _gameManager.startSession();
+      _historyScrollController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 5),
+        curve: Curves.easeIn,
+      );
+      _historyManager.newGame('');
+      _lastMoveToHighlight = null;
+    });
     // Removes the room popup
     if (!mounted) return;
     Navigator.of(context).pop();
@@ -191,9 +204,6 @@ class _GameScreenState extends State<GameScreen> {
         content: I18nText('game.session_started'),
       ),
     );
-    setState(() {
-      _sessionActive = true;
-    });
   }
 
   Future<void> _handleJoiningAnswer({required Document roomDocument}) async {
@@ -213,6 +223,18 @@ class _GameScreenState extends State<GameScreen> {
         ),
       );
     }
+    // reset board and history state
+    setState(() {
+      _sessionActive = true;
+      _gameManager.startSession();
+      _historyScrollController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 5),
+        curve: Curves.easeIn,
+      );
+      _historyManager.newGame('');
+      _lastMoveToHighlight = null;
+    });
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -221,9 +243,6 @@ class _GameScreenState extends State<GameScreen> {
     );
     // Removes the waiting for answer popup
     Navigator.of(context).pop();
-    setState(() {
-      _sessionActive = true;
-    });
   }
 
   bool _isStartMoveNumber(int moveNumber) {

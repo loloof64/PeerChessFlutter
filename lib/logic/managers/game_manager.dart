@@ -70,11 +70,13 @@ class GameManager {
     return moveHasBeenMade;
   }
 
-  /*
   void leaveSession() {
     _atLeastAGameStarted = false;
   }
-  */
+
+  void startSession() {
+    _gameLogic.load(emptyPosition);
+  }
 
   void clearGameStartFlag() {
     _gameStart = false;
