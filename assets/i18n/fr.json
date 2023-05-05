@@ -34,7 +34,8 @@
             "remote_cancellation": "Appel annulé car l'adversaire a annulé."
         },
         "confirm_exit_session_title": "Interrompre la session courante ?",
-        "confirm_exit_session_message": "Souhaitez-vous interrompre la session courante ?"
+        "confirm_exit_session_message": "Souhaitez-vous interrompre la session courante ?",
+        "session_finished": "Fin de session"
     },
     "game_termination": {
         "black_checkmate_white": "Les Noirs gagnent par échec et mat.",

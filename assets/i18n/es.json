@@ -34,7 +34,8 @@
             "remote_cancellation": "Llamada cancelada porque el par ha cancelado."
         },
         "confirm_exit_session_title": "¿Cerrar la sesión actual?",
-        "confirm_exit_session_message": "¿Quieres ir a la sesión actual?"
+        "confirm_exit_session_message": "¿Quieres ir a la sesión actual?",
+        "session_finished": "Fin de sesión"
     },
     "game_termination": {
         "black_checkmate_white": "Los Negros ha ganado por jaque mate.",

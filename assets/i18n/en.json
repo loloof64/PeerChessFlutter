@@ -34,7 +34,8 @@
             "remote_cancellation": "Call cancelled as peer has cancelled."
         },
         "confirm_exit_session_title": "Close current session ?",
-        "confirm_exit_session_message": "Do you want to current session ?"
+        "confirm_exit_session_message": "Do you want to current session ?",
+        "session_finished": "End of session"
     },
     "game_termination": {
         "black_checkmate_white": "Black has won by checkmate.",
