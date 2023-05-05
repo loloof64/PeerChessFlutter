@@ -205,7 +205,9 @@ class Signaling {
       final answerDescription =
           RTCSessionDescription(answer['sdp'], answer['type']);
       await _myConnection!.setRemoteDescription(answerDescription);
-      await _deleteRoom();
+      Future.delayed(const Duration(seconds: 2)).then((value) async {
+        await _deleteRoom();
+      });
     }
   }
 
