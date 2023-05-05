@@ -45,6 +45,11 @@
         "insufficient_material": "Empate por material insuficiente.",
         "fifty_moves": "Empate por la regla de los 50 movimientos."
     },
+    "game_session" : {
+        "your_color_label": "Su lado: ",
+        "white_side": "Blancos",
+        "black_side": "Negros"
+    },
     "new_game": {
         "title": "Nuevo juego",
         "edit_position": "Editar la posición",

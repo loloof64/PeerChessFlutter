@@ -45,6 +45,11 @@
         "insufficient_material": "Nulle par insuffisance matérielle.",
         "fifty_moves": "Nulle par la règle des 50 coups."
     },
+    "game_session" : {
+        "your_color_label": "Vouz jouez: ",
+        "white_side": "les Blancs",
+        "black_side": "les Noirs"
+    },
     "new_game": {
         "title": "Nouvelle partie",
         "edit_position": "Editer la position",

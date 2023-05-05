@@ -101,3 +101,17 @@ Future<List<Document>> getAllDocumentsFromSubCollection({
 
   return results;
 }
+
+enum ChannelMessagesKeys {
+  type,
+  startPosition,
+  iHaveWhite,
+  moveFrom,
+  moveTo,
+  movePromotion,
+}
+
+enum ChannelMessageValues {
+  newGame,
+  newMove,
+}

@@ -45,14 +45,18 @@ class Signaling {
   String? _hostRoomId;
   final StreamController<bool> _readyToSendMessagesController =
       StreamController<bool>();
+  final StreamController<Map<String, dynamic>> _remoteEventsController =
+      StreamController<Map<String, dynamic>>();
 
   String? get ourRoomId => _ourRoomId;
   String? get hostRoomId => _hostRoomId;
   late Stream<bool> readyToSendMessagesStream;
+  late Stream<Map<String, dynamic>> remoteEventsStream;
   late Map<String, dynamic> _iceServers;
 
   Signaling() {
     readyToSendMessagesStream = _readyToSendMessagesController.stream;
+    remoteEventsStream = _remoteEventsController.stream;
     _initializeIceServers().then((value) => null);
   }
 
@@ -194,9 +198,8 @@ class Signaling {
     _myConnection?.onDataChannel = (channel) {
       channel.onMessage = (evt) {
         final data = evt.text;
-        //////////////////////////////////////////
-        Logger().d("Got channel data : $data");
-        //////////////////////////////////////////
+        final dataAsJson = jsonDecode(data) as Map<String, dynamic>;
+        _remoteEventsController.add(dataAsJson);
       };
     };
 
@@ -252,5 +255,6 @@ class Signaling {
 
   Future<void> dispose() async {
     await _readyToSendMessagesController.close();
+    await _remoteEventsController.close();
   }
 }

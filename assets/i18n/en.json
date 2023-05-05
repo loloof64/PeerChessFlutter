@@ -45,6 +45,11 @@
         "insufficient_material": "Draw by insufficient material.",
         "fifty_moves": "Draw by 50 moves' rule."
     },
+    "game_session" : {
+        "your_color_label": "You play: ",
+        "white_side": "Whites",
+        "black_side": "Blacks"
+    },
     "new_game": {
         "title": "New game",
         "edit_position": "Edit position",

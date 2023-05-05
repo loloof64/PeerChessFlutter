@@ -51,12 +51,12 @@ class _GameScreenState extends State<GameScreen> {
   late GameManager _gameManager;
   late HistoryManager _historyManager;
   late Signaling _signaling;
-  RTCDataChannel? _dataChannel;
   late TextEditingController _roomIdController;
   bool _sessionActive = false;
   bool _readyToSendMessagesToOtherPeer = false;
   bool _waitingJoiningAnswer = false;
   bool _waitingJoiningRequest = false;
+  bool _playerHasWhite = true;
 
   final ScrollController _historyScrollController =
       ScrollController(initialScrollOffset: 0.0, keepScrollOffset: true);
@@ -86,10 +86,27 @@ class _GameScreenState extends State<GameScreen> {
             content: I18nText('game.session_finished'),
           ),
         );
+        _stopCurrentGame();
       }
       setState(() {
         _readyToSendMessagesToOtherPeer = newState;
       });
+    });
+
+    _signaling.remoteEventsStream.forEach((data) {
+      final type = data[ChannelMessagesKeys.type.toString()];
+      if (type == ChannelMessageValues.newGame.toString()) {
+        _startNewGameAsReceiver(
+          startPosition: data[ChannelMessagesKeys.startPosition.toString()],
+          playerHasWhite: data[ChannelMessagesKeys.iHaveWhite.toString()],
+        );
+      } else if (type == ChannelMessageValues.newMove.toString()) {
+        __playPeerMove(
+          from: data[ChannelMessagesKeys.moveFrom.toString()],
+          to: data[ChannelMessagesKeys.moveTo.toString()],
+          promotion: data[ChannelMessagesKeys.movePromotion.toString()],
+        );
+      }
     });
 
     FlutterWindowClose.setWindowShouldCloseHandler(() async {
@@ -269,6 +286,7 @@ class _GameScreenState extends State<GameScreen> {
         promotion: move.promotion.map((t) => t.name).toNullable(),
       );
       if (moveHasBeenMade) {
+        _sendMove(move);
         _addMoveToHistory();
       }
       _gameManager.clearGameStartFlag();
@@ -281,6 +299,8 @@ class _GameScreenState extends State<GameScreen> {
         _gameManager.stopGame();
       });
 
+      // TODO notify other peer
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -292,6 +312,60 @@ class _GameScreenState extends State<GameScreen> {
         ),
       );
     }
+  }
+
+  void __playPeerMove({
+    required String from,
+    required String to,
+    required String promotion,
+  }) {
+    if (!_gameManager.gameInProgress) return;
+    final whiteTurn = _gameManager.whiteTurn;
+    final peerTurn =
+        (whiteTurn && _gameManager.whitePlayerType == PlayerType.computer) ||
+            (!whiteTurn && _gameManager.blackPlayerType == PlayerType.computer);
+    if (!peerTurn) return;
+
+    setState(() {
+      final moveHasBeenMade = _gameManager.processComputerMove(
+        from: from,
+        to: to,
+        promotion: promotion.isNotEmpty ? promotion : null,
+      );
+
+      if (!moveHasBeenMade) return;
+    });
+
+    setState(() {
+      _addMoveToHistory();
+      _gameManager.clearGameStartFlag();
+    });
+
+    if (_gameManager.isGameOver) {
+      final gameResultString = _gameManager.getResultString();
+      setState(() {
+        _addMoveToHistory();
+        _historyManager.addResultString(gameResultString);
+        _gameManager.stopGame();
+      });
+
+      // TODO notify other peer
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _gameManager.getGameEndedType(),
+            ],
+          ),
+        ),
+      );
+    }
+
+    setState(() {
+      _historyManager.updateChildrenWidgets();
+    });
   }
 
   void _updateHistoryChildrenWidgets() {
@@ -401,18 +475,56 @@ class _GameScreenState extends State<GameScreen> {
       arguments: NewGameScreenArguments(editPosition),
     ) as NewGameParameters?;
     if (gameParameters != null) {
-      _startNewGame(
+      await _startNewGameAsInitiator(
         startPosition: gameParameters.startPositionFen,
         playerHasWhite: gameParameters.playerHasWhite,
       );
     }
   }
 
-  Future<void> _startNewGame({
+  Future<void> _startNewGameAsInitiator({
     String startPosition = chess.Chess.DEFAULT_POSITION,
-    bool playerHasWhite = true,
+    required bool playerHasWhite,
+  }) async {
+    _signaling.sendMessage(
+      jsonEncode(
+        {
+          ChannelMessagesKeys.type.toString():
+              ChannelMessageValues.newGame.toString(),
+          ChannelMessagesKeys.startPosition.toString(): startPosition,
+          ChannelMessagesKeys.iHaveWhite.toString(): !playerHasWhite,
+        },
+      ),
+    );
+    setState(() {
+      _playerHasWhite = playerHasWhite;
+      _historyScrollController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 50),
+        curve: Curves.easeIn,
+      );
+
+      _orientation = playerHasWhite ? BoardColor.white : BoardColor.black;
+
+      final parts = startPosition.split(' ');
+      final whiteTurn = parts[1] == 'w';
+      final moveNumber = parts[5];
+      final caption = "$moveNumber${whiteTurn ? '.' : '...'}";
+      _lastMoveToHighlight = null;
+      _historyManager.newGame(caption);
+      _gameManager.startNewGame(
+        startPosition: startPosition,
+        playerHasWhite: playerHasWhite,
+      );
+    });
+  }
+
+  Future<void> _startNewGameAsReceiver({
+    String startPosition = chess.Chess.DEFAULT_POSITION,
+    required bool playerHasWhite,
   }) async {
     setState(() {
+      _playerHasWhite = playerHasWhite;
       _historyScrollController.animateTo(
         0.0,
         duration: const Duration(milliseconds: 50),
@@ -579,14 +691,16 @@ class _GameScreenState extends State<GameScreen> {
 
   void _sendMove(ShortMove move) {
     final moveData = {
-      "from": move.from,
-      "to": move.to,
-      "promotion": move.promotion.isNone()
+      ChannelMessagesKeys.type.toString():
+          ChannelMessageValues.newMove.toString(),
+      ChannelMessagesKeys.moveFrom.toString(): move.from,
+      ChannelMessagesKeys.moveTo.toString(): move.to,
+      ChannelMessagesKeys.movePromotion.toString(): move.promotion.isNone()
           ? ""
           : move.promotion.getOrElse(() => PieceType.queen).name,
     };
     final moveAsJson = jsonEncode(moveData);
-    _dataChannel?.send(RTCDataChannelMessage(moveAsJson));
+    _signaling.sendMessage(moveAsJson);
   }
 
   Future<void> _showCloseSessionConfirmationDialog() async {
@@ -772,10 +886,25 @@ class _GameScreenState extends State<GameScreen> {
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
 
+    final whitePlayerType = _gameManager.whiteTurn && _playerHasWhite
+        ? PlayerType.human
+        : PlayerType.computer;
+    final blackPlayerType = !_gameManager.whiteTurn && !_playerHasWhite
+        ? PlayerType.human
+        : PlayerType.computer;
+
     return Scaffold(
       appBar: AppBar(
         title: I18nText('game_page.title'),
         actions: [
+          if (_sessionActive && _gameManager.gameInProgress)
+            Center(
+              child: Text(
+                "${FlutterI18n.translate(context, 'game_session.your_color_label')}"
+                "${FlutterI18n.translate(context, _playerHasWhite ? 'game_session.white_side' : 'game_session.black_side')}",
+                textAlign: TextAlign.center,
+              ),
+            ),
           if (!_sessionActive)
             IconButton(
               onPressed: _createRoom,
@@ -803,9 +932,8 @@ class _GameScreenState extends State<GameScreen> {
             ),
           if (_sessionActive && _readyToSendMessagesToOtherPeer)
             IconButton(
-              onPressed: () async {
-                await _signaling.sendMessage(
-                    jsonEncode({'type': 'message', 'value': 'Hello !'}));
+              onPressed: () {
+                _goToNewGameOptionsPage();
               },
               icon: const Icon(
                 Icons.add_circle,
@@ -829,8 +957,8 @@ class _GameScreenState extends State<GameScreen> {
                       chessBoardColors: ChessBoardColors()
                         ..lastMoveArrowColor = Colors.blueAccent,
                       engineThinking: false,
-                      whitePlayerType: PlayerType.human,
-                      blackPlayerType: PlayerType.human,
+                      whitePlayerType: whitePlayerType,
+                      blackPlayerType: blackPlayerType,
                       orientation: _orientation,
                       lastMoveToHighlight: _lastMoveToHighlight,
                       fen: _gameManager.position,
@@ -865,8 +993,8 @@ class _GameScreenState extends State<GameScreen> {
                         chessBoardColors: ChessBoardColors()
                           ..lastMoveArrowColor = Colors.blueAccent,
                         engineThinking: false,
-                        whitePlayerType: PlayerType.human,
-                        blackPlayerType: PlayerType.human,
+                        whitePlayerType: whitePlayerType,
+                        blackPlayerType: blackPlayerType,
                         orientation: _orientation,
                         lastMoveToHighlight: _lastMoveToHighlight,
                         fen: _gameManager.position,
