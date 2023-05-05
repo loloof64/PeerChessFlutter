@@ -673,6 +673,18 @@ class _GameScreenState extends State<GameScreen> {
           return AlertDialog(
             title: I18nText('game.waiting_call_answer_title'),
             content: I18nText('game.waiting_call_answer_message'),
+            actions: [
+              DialogActionButton(
+                onPressed: () async {
+                  Navigator.of(ctx2).pop();
+                },
+                textContent: I18nText(
+                  'buttons.cancel',
+                ),
+                textColor: Colors.white,
+                backgroundColor: Colors.redAccent,
+              ),
+            ],
           );
         });
   }
