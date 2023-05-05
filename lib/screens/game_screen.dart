@@ -23,7 +23,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter_window_close/flutter_window_close.dart';
-import 'package:logger/logger.dart';
 import 'package:peer_chess/logic/utils.dart';
 import 'package:simple_chess_board/models/board_arrow.dart';
 import 'package:simple_chess_board/simple_chess_board.dart';
@@ -75,13 +74,13 @@ class _GameScreenState extends State<GameScreen> {
     _signaling = Signaling();
 
     _signaling.readyToSendMessagesStream.forEach((newState) async {
-      if (!newState) {
-        /*
-        Testing if session is active before stopping game
+      /*
+        Testing if session is active before
         because false state may be sent twice in a row :
         one for our own connection closing, and once for the one on the other side.
         */
-        if (_sessionActive) _stopCurrentGame();
+      if (!newState && _sessionActive) {
+        _stopCurrentGame();
         setState(() {
           _sessionActive = false;
         });

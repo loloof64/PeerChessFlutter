@@ -22,7 +22,6 @@ import 'dart:convert';
 
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:firedart/firedart.dart';
-import 'package:logger/logger.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:peer_chess/logic/utils.dart';
