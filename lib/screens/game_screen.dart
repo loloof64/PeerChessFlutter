@@ -653,36 +653,6 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  void _purposeStopGame() {
-    if (!_gameManager.gameInProgress) return;
-    showDialog(
-        context: context,
-        builder: (BuildContext innerCtx) {
-          return AlertDialog(
-            title: I18nText('game.stop_game_title'),
-            content: I18nText('game.stop_game_msg'),
-            actions: [
-              DialogActionButton(
-                onPressed: _stopCurrentGameConfirmationAction,
-                textContent: I18nText(
-                  'buttons.ok',
-                ),
-                backgroundColor: Colors.tealAccent,
-                textColor: Colors.white,
-              ),
-              DialogActionButton(
-                onPressed: () => Navigator.of(context).pop(),
-                textContent: I18nText(
-                  'buttons.cancel',
-                ),
-                textColor: Colors.white,
-                backgroundColor: Colors.redAccent,
-              )
-            ],
-          );
-        });
-  }
-
   void _sendMove(ShortMove move) {
     final moveData = {
       ChannelMessagesKeys.type.toString():

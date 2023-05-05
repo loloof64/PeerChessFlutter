@@ -12,8 +12,6 @@
     },
     "game": {
         "promotion_dialog_title": "Selecciona la pieza de promoción",
-        "stop_game_title": "¿Detener el juego?",
-        "stop_game_msg": "¿Quieres detener el juego actual?",
         "stopped": "Juego terminado.",
         "room_creation_title": "Nueva sala creada",
         "room_creation_msg": "Por favor, comparte esta identificación de sala con su oponente,",

@@ -12,8 +12,6 @@
     },
     "game": {
         "promotion_dialog_title": "Choisissez la pièce de promotion",
-        "stop_game_title": "Terminer la partie?",
-        "stop_game_msg": "Souhaitez-vous interrompre la partie en cours ?",
         "stopped": "Partie interrompue.",
         "room_creation_title": "Nouveau salon créé",
         "room_creation_msg": "Veuillez communiquer cet identifiant de salon à votre adversaire,",
