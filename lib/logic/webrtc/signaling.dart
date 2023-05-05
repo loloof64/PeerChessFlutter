@@ -125,13 +125,19 @@ class Signaling {
     // Checks that we're not already in a room
     if (_hostRoomId != null) return JoiningRoomState.alreadyInARoom;
     // Checks that the host peer exists
+    final allRooms = await getAllDocumentsFromCollection(
+      collectionName: 'rooms',
+    );
+    final noMatchingRoom =
+        allRooms.where((roomDoc) => roomDoc.id == requestedRoomId).isEmpty;
+    if (noMatchingRoom) {
+      return JoiningRoomState.noRoomWithThisId;
+    }
+
     final hostRoom = await Firestore.instance
         .collection('rooms')
         .document(requestedRoomId)
         .get();
-    if (!await hostRoom.reference.exists) {
-      return JoiningRoomState.noRoomWithThisId;
-    }
 
     _hostRoomId = hostRoom.id;
 

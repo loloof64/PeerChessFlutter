@@ -66,6 +66,23 @@ extension FanConverter on String {
   }
 }
 
+Future<List<Document>> getAllDocumentsFromCollection({
+  required String collectionName,
+}) async {
+  var nextPageToken = '';
+  var results = <Document>[];
+  while (true) {
+    final instances = await Firestore.instance.collection(collectionName).get(
+          nextPageToken: nextPageToken,
+        );
+    results.addAll(instances);
+    if (!instances.hasNextPage) break;
+    nextPageToken = instances.nextPageToken;
+  }
+
+  return results;
+}
+
 Future<List<Document>> getAllDocumentsFromSubCollection({
   required Document parentDocument,
   required String collectionName,
