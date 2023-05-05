@@ -75,6 +75,11 @@ class _GameScreenState extends State<GameScreen> {
     _signaling = Signaling();
 
     _signaling.readyToSendMessagesStream.forEach((newState) {
+      if (!newState) {
+        setState(() {
+          _sessionActive = false;
+        });
+      }
       setState(() {
         _readyToSendMessagesToOtherPeer = newState;
       });
