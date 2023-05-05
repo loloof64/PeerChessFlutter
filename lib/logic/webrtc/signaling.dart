@@ -213,32 +213,41 @@ class Signaling {
     };
   }
 
+  Future<void> _deleteRoomById(String id) async {
+    final ourDocument =
+        await Firestore.instance.collection('rooms').document(id).get();
+    final callerCandidates = await getAllDocumentsFromSubCollection(
+      parentDocument: ourDocument,
+      collectionName: 'callerCandidates',
+    );
+    final calleeCandidates = await getAllDocumentsFromSubCollection(
+      parentDocument: ourDocument,
+      collectionName: 'calleeCandidates',
+    );
+    for (var candidate in callerCandidates) {
+      await candidate.reference.delete();
+    }
+    for (var candidate in calleeCandidates) {
+      await candidate.reference.delete();
+    }
+    await ourDocument.reference.delete();
+  }
+
   Future<void> _deleteRoom() async {
     if (_ourRoomId != null) {
-      final ourDocument = await Firestore.instance
-          .collection('rooms')
-          .document(_ourRoomId!)
-          .get();
-      final callerCandidates = await getAllDocumentsFromSubCollection(
-        parentDocument: ourDocument,
-        collectionName: 'callerCandidates',
-      );
-      final calleeCandidates = await getAllDocumentsFromSubCollection(
-        parentDocument: ourDocument,
-        collectionName: 'calleeCandidates',
-      );
-      for (var candidate in callerCandidates) {
-        await candidate.reference.delete();
-      }
-      for (var candidate in calleeCandidates) {
-        await candidate.reference.delete();
-      }
-      await ourDocument.reference.delete();
+      await _deleteRoomById(_ourRoomId!);
       _dataChannel?.close();
       _myConnection?.close();
       _dataChannel = null;
       _myConnection = null;
       _ourRoomId = null;
+    } else if (_hostRoomId != null) {
+      await _deleteRoomById(_hostRoomId!);
+      _dataChannel?.close();
+      _myConnection?.close();
+      _dataChannel = null;
+      _myConnection = null;
+      _hostRoomId = null;
     }
   }
 
