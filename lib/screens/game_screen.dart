@@ -880,12 +880,16 @@ class _GameScreenState extends State<GameScreen> {
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
 
-    final whitePlayerType = _gameManager.whiteTurn && _playerHasWhite
-        ? PlayerType.human
-        : PlayerType.computer;
-    final blackPlayerType = !_gameManager.whiteTurn && !_playerHasWhite
-        ? PlayerType.human
-        : PlayerType.computer;
+    final whitePlayerType = _gameManager.isGameOver
+        ? PlayerType.computer
+        : _gameManager.whiteTurn && _playerHasWhite
+            ? PlayerType.human
+            : PlayerType.computer;
+    final blackPlayerType = _gameManager.isGameOver
+        ? PlayerType.computer
+        : !_gameManager.whiteTurn && !_playerHasWhite
+            ? PlayerType.human
+            : PlayerType.computer;
 
     return Scaffold(
       appBar: AppBar(
