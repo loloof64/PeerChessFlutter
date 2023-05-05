@@ -294,12 +294,9 @@ class _GameScreenState extends State<GameScreen> {
     if (_gameManager.isGameOver) {
       final gameResultString = _gameManager.getResultString();
       setState(() {
-        _addMoveToHistory();
         _historyManager.addResultString(gameResultString);
         _gameManager.stopGame();
       });
-
-      // TODO notify other peer
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -344,12 +341,9 @@ class _GameScreenState extends State<GameScreen> {
     if (_gameManager.isGameOver) {
       final gameResultString = _gameManager.getResultString();
       setState(() {
-        _addMoveToHistory();
         _historyManager.addResultString(gameResultString);
         _gameManager.stopGame();
       });
-
-      // TODO notify other peer
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
