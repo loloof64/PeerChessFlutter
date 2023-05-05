@@ -35,7 +35,9 @@
             "remote_disconnection": "Call cancelled as peer has disconnected.",
             "host_disconnection": "Call cancelled as room's owner has disconnected.",
             "remote_cancellation": "Call cancelled as peer has cancelled."
-        }
+        },
+        "confirm_exit_session_title": "Close current session ?",
+        "confirm_exit_session_message": "Do you want to current session ?"
     },
     "game_termination": {
         "black_checkmate_white": "Black has won by checkmate.",

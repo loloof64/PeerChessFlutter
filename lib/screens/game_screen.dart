@@ -582,6 +582,45 @@ class _GameScreenState extends State<GameScreen> {
     _dataChannel?.send(RTCDataChannelMessage(moveAsJson));
   }
 
+  Future<void> _showCloseSessionConfirmationDialog() async {
+    showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx2) {
+          return AlertDialog(
+            title: I18nText('game.confirm_exit_session_title'),
+            content: I18nText('game.confirm_exit_session_message'),
+            actions: [
+              DialogActionButton(
+                onPressed: () async {
+                  await _closeSession();
+                },
+                textContent: I18nText(
+                  'buttons.ok',
+                ),
+                backgroundColor: Colors.tealAccent,
+                textColor: Colors.white,
+              ),
+              DialogActionButton(
+                onPressed: () => Navigator.of(context).pop(),
+                textContent: I18nText(
+                  'buttons.cancel',
+                ),
+                textColor: Colors.white,
+                backgroundColor: Colors.redAccent,
+              )
+            ],
+          );
+        });
+  }
+
+  Future<void> _closeSession() async {
+    await _signaling.hangUp();
+    setState(() {
+      _sessionActive = false;
+    });
+  }
+
   Future<void> _handleRoomJoiningRequest() async {
     final requestedRoomId = _roomIdController.text;
 
@@ -745,6 +784,15 @@ class _GameScreenState extends State<GameScreen> {
               onPressed: _joinRoom,
               icon: const Icon(
                 Icons.door_sliding,
+              ),
+            ),
+          if (_sessionActive && _readyToSendMessagesToOtherPeer)
+            IconButton(
+              onPressed: () async {
+                await _showCloseSessionConfirmationDialog();
+              },
+              icon: const Icon(
+                Icons.delete,
               ),
             ),
           if (_sessionActive && _readyToSendMessagesToOtherPeer)

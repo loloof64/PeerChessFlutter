@@ -35,7 +35,9 @@
             "remote_disconnection": "Appel annulé car l'adversaire s'est déconnecté.",
             "host_disconnection": "Appel annulé car l'hôte du salon s'est déconnecté.",
             "remote_cancellation": "Appel annulé car l'adversaire a annulé."
-        }
+        },
+        "confirm_exit_session_title": "Interrompre la session courante ?",
+        "confirm_exit_session_message": "Souhaitez-vous interrompre la session courante ?"
     },
     "game_termination": {
         "black_checkmate_white": "Les Noirs gagnent par échec et mat.",
