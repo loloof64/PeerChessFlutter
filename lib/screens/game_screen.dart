@@ -470,11 +470,6 @@ class _GameScreenState extends State<GameScreen> {
 
     final success = await _signaling.createRoom();
     switch (success) {
-      case CreatingRoomState.alreadyCreatedARoom:
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: I18nText('game.already_created_room')));
-        return;
       case CreatingRoomState.miscError:
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

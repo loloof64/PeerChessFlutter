@@ -29,7 +29,6 @@ import 'package:peer_chess/logic/utils.dart';
 
 enum CreatingRoomState {
   success,
-  alreadyCreatedARoom,
   miscError,
 }
 
@@ -77,9 +76,6 @@ class Signaling {
   }
 
   Future<CreatingRoomState> createRoom() async {
-    // Checking that this peer is not already in a room
-    if (_ourRoomId != null) return CreatingRoomState.alreadyCreatedARoom;
-
     final newRoom = await Firestore.instance.collection('rooms').add({});
     _ourRoomId = newRoom.id;
     _myConnection = await createPeerConnection(_iceServers);
