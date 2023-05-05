@@ -121,8 +121,7 @@ class Signaling {
     }
   }
 
-  Future<JoiningRoomState> joinRoom(
-      {required String requestedRoomId, required String requestMessage}) async {
+  Future<JoiningRoomState> joinRoom({required String requestedRoomId}) async {
     // Checks that we're not already in a room
     if (_hostRoomId != null) return JoiningRoomState.alreadyInARoom;
     // Checks that the host peer exists
@@ -156,8 +155,6 @@ class Signaling {
       await hostRoom.reference.set({
         'offer': hostRoom['offer'],
         'positiveAnswerFromHost': hostRoom['positiveAnswerFromHost'],
-        'cancelledJoiningRequest': hostRoom['cancelledJoiningRequest'],
-        'joiningRequestMessage': requestMessage,
         'answer': {
           'sdp': answer.sdp,
           'type': answer.type,
@@ -183,8 +180,6 @@ class Signaling {
     await hostRoom.reference.set({
       'offer': hostRoom['offer'],
       'positiveAnswerFromHost': hostRoom['positiveAnswerFromHost'],
-      'cancelledJoiningRequest': hostRoom['cancelledJoiningRequest'],
-      'joiningRequestMessage': null,
       'answer': null,
     });
     _dataChannel?.close();

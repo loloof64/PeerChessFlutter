@@ -5,8 +5,7 @@
     },
     "buttons": {
         "ok": "D'accord",
-        "cancel": "Annuler",
-        "deny": "Refuser"
+        "cancel": "Annuler"
     },
     "clipboard": {
         "content_copied": "Texte copié dans le presse-papier."
@@ -29,8 +28,6 @@
         "busy_room": "La salle est occupée.",
         "misc_room_joining_error": "Echec d'entrée dans le salon pour une raison inconnue.",
         "already_a_pending_request": "Impossible de passer deux requêtes à la fois.",
-        "incoming_request_title": "Demande de connexion entrante",
-        "incoming_request_message": "Accepter cette demande de connexion ?",
         "accepted_request": "Votre requête a été acceptée.",
         "rejected_request": "Votre requête a été rejetée.",
         "waiting_call_answer_title": "En attente d'une réponse",

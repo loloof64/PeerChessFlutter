@@ -5,8 +5,7 @@
     },
     "buttons": {
         "ok": "De acuerdo",
-        "cancel": "Anular",
-        "deny": "Denegar"
+        "cancel": "Anular"
     },
     "clipboard": {
         "content_copied": "Texto copiado en portapapeles."
@@ -29,8 +28,6 @@
         "busy_room": "La sala ya está ocupada.",
         "misc_room_joining_error": "No se pudo unir a la sala por un motivo desconocido",
         "already_a_pending_request": "No puedes hacer dos solicitas a la vez.",
-        "incoming_request_title": "Solicitud de conexión entrante",
-        "incoming_request_message": "¿Aceptar esta solicitud de conexión?",
         "accepted_request": "Su solicitud ha sido aceptada.",
         "rejected_request": "Su solicitud ha sido rechazada.",
         "waiting_call_answer_title": "Esperando respuesta",

@@ -5,8 +5,7 @@
     },
     "buttons": {
         "ok": "OK",
-        "cancel": "Cancel",
-        "deny": "Deny"
+        "cancel": "Cancel"
     },
     "clipboard": {
         "content_copied": "Text copied into clipboard."
@@ -29,8 +28,6 @@
         "busy_room": "The room is already busy.",
         "misc_room_joining_error": "Failed to join room for an unknown reason",
         "already_a_pending_request": "You can't make two requests at once.",
-        "incoming_request_title": "Incoming connection request",
-        "incoming_request_message": "Accept this connection request ?",
         "accepted_request": "Your request has been accepted.",
         "rejected_request": "Your request has been rejected.",
         "waiting_call_answer_title": "Waiting for answer",

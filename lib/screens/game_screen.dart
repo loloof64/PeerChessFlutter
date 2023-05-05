@@ -53,10 +53,8 @@ class _GameScreenState extends State<GameScreen> {
   late Signaling _signaling;
   RTCDataChannel? _dataChannel;
   late TextEditingController _roomIdController;
-  late TextEditingController _ringingMessageController;
   bool _sessionActive = false;
   bool _readyToSendMessagesToOtherPeer = false;
-  bool _answeringJoiningRequest = false;
   bool _waitingJoiningAnswer = false;
   bool _waitingJoiningRequest = false;
 
@@ -66,7 +64,6 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     _roomIdController = TextEditingController();
-    _ringingMessageController = TextEditingController();
     _gameManager = GameManager();
     _historyManager = HistoryManager(
       onUpdateChildrenWidgets: _updateHistoryChildrenWidgets,
@@ -95,7 +92,6 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   void dispose() {
-    _ringingMessageController.dispose();
     _roomIdController.dispose();
     _signaling.hangUp().then((value) {
       _signaling.dispose().then((value) => null);
@@ -148,146 +144,48 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Future<void> _sendAnswerToRoomGuest({required Document roomDocument}) async {
-    setState(() {
-      _answeringJoiningRequest = true;
+    await roomDocument.reference.set({
+      'offer': roomDocument['offer'],
+      'answer': roomDocument['answer'],
+      'positiveAnswerFromHost': true,
     });
-
-    final accepted = await _showIncomingCall(
-      message: roomDocument['joiningRequestMessage'],
-    );
-
+    await _signaling.establishConnection();
+    // Removes the room popup
+    if (!mounted) return;
+    Navigator.of(context).pop();
     setState(() {
-      _answeringJoiningRequest = false;
+      _sessionActive = true;
     });
-
-    switch (accepted) {
-      case true:
-        await roomDocument.reference.set({
-          'offer': roomDocument['offer'],
-          'answer': roomDocument['answer'],
-          'cancelledJoiningRequest': roomDocument['cancelledJoiningRequest'],
-          'joiningRequestMessage': null,
-          'positiveAnswerFromHost': true,
-        });
-        await _signaling.establishConnection();
-        // Removes the room popup
-        if (!mounted) return;
-        Navigator.of(context).pop();
-        setState(() {
-          _sessionActive = true;
-        });
-        break;
-      case false:
-        await roomDocument.reference.set({
-          'offer': roomDocument['offer'],
-          'answer': roomDocument['answer'],
-          'cancelledJoiningRequest': roomDocument['cancelledJoiningRequest'],
-          'joiningRequestMessage': null,
-          'positiveAnswerFromHost': false,
-        });
-        break;
-      case null:
-        break;
-    }
   }
 
   Future<void> _handleJoiningAnswer({required Document roomDocument}) async {
     setState(() {
       _waitingJoiningAnswer = false;
     });
-    final accepted = roomDocument['positiveAnswerFromHost'] == true;
-    if (accepted) {
-      final allCallerCandidates = await getAllDocumentsFromSubCollection(
-        parentDocument: roomDocument,
-        collectionName: 'callerCandidates',
-      );
-      for (var candidate in allCallerCandidates) {
-        _signaling.addCandidate(
-          RTCIceCandidate(
-            candidate['candidate'],
-            candidate['sdpMid'],
-            candidate['sdpMLineIndex'],
-          ),
-        );
-      }
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: I18nText('game.accepted_request'),
-        ),
-      );
-      // Removes the waiting for answer popup
-      Navigator.of(context).pop();
-      setState(() {
-        _sessionActive = true;
-      });
-    } else {
-      // request has been rejected
-      final roomDocument = await Firestore.instance
-          .collection('rooms')
-          .document(_signaling.hostRoomId!)
-          .get();
-      final allCalleeCandidates = await getAllDocumentsFromSubCollection(
-          parentDocument: roomDocument, collectionName: 'calleeCandidates');
-      for (var candidate in allCalleeCandidates) {
-        await candidate.reference.delete();
-      }
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: I18nText('game.rejected_request'),
+    final allCallerCandidates = await getAllDocumentsFromSubCollection(
+      parentDocument: roomDocument,
+      collectionName: 'callerCandidates',
+    );
+    for (var candidate in allCallerCandidates) {
+      _signaling.addCandidate(
+        RTCIceCandidate(
+          candidate['candidate'],
+          candidate['sdpMid'],
+          candidate['sdpMLineIndex'],
         ),
       );
     }
-  }
-
-  Future<bool?> _showIncomingCall({
-    required String message,
-  }) async {
-    return await showDialog<bool?>(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx2) {
-          return AlertDialog(
-            title: I18nText('game.incoming_request_title'),
-            content: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                I18nText('game.incoming_request_message'),
-                Text(
-                  message,
-                  style: TextStyle(
-                    backgroundColor: Colors.blueGrey[300],
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              DialogActionButton(
-                onPressed: () {
-                  Navigator.of(context).pop(true);
-                },
-                textContent: I18nText(
-                  'buttons.ok',
-                ),
-                backgroundColor: Colors.tealAccent,
-                textColor: Colors.white,
-              ),
-              DialogActionButton(
-                onPressed: () {
-                  Navigator.of(context).pop(false);
-                },
-                textContent: I18nText(
-                  'buttons.deny',
-                ),
-                textColor: Colors.white,
-                backgroundColor: Colors.redAccent,
-              )
-            ],
-          );
-        });
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: I18nText('game.accepted_request'),
+      ),
+    );
+    // Removes the waiting for answer popup
+    Navigator.of(context).pop();
+    setState(() {
+      _sessionActive = true;
+    });
   }
 
   bool _isStartMoveNumber(int moveNumber) {
@@ -679,18 +577,12 @@ class _GameScreenState extends State<GameScreen> {
     _dataChannel?.send(RTCDataChannelMessage(moveAsJson));
   }
 
-  Future<void> _cancelCall() async {
-    await _signaling.leaveRoom();
-  }
-
   Future<void> _handleRoomJoiningRequest() async {
     final requestedRoomId = _roomIdController.text;
-    final requestMessage = _ringingMessageController.text;
 
     if (!mounted) return;
     final success = await _signaling.joinRoom(
       requestedRoomId: requestedRoomId,
-      requestMessage: requestMessage,
     );
     switch (success) {
       case JoiningRoomState.noRoomWithThisId:
@@ -737,8 +629,6 @@ class _GameScreenState extends State<GameScreen> {
       'offer': roomDocument['offer'],
       'answer': roomDocument['answer'],
       'positiveAnswerFromHost': roomDocument['positiveAnswerFromHost'],
-      'cancelledJoiningRequest': roomDocument['cancelledJoiningRequest'],
-      'joiningRequestMessage': requestMessage,
     });
     setState(() {
       _waitingJoiningAnswer = true;
@@ -754,23 +644,6 @@ class _GameScreenState extends State<GameScreen> {
           return AlertDialog(
             title: I18nText('game.waiting_call_answer_title'),
             content: I18nText('game.waiting_call_answer_message'),
-            actions: [
-              DialogActionButton(
-                onPressed: () async {
-                  Navigator.of(ctx2).pop();
-                  await _cancelCall();
-                  setState(() {
-                    _waitingJoiningAnswer = false;
-                  });
-                  await _signaling.leaveRoom();
-                },
-                textContent: I18nText(
-                  'buttons.cancel',
-                ),
-                textColor: Colors.white,
-                backgroundColor: Colors.redAccent,
-              )
-            ],
           );
         });
   }
@@ -778,7 +651,6 @@ class _GameScreenState extends State<GameScreen> {
   Future<void> _joinRoom() async {
     setState(() {
       _roomIdController.text = "";
-      _ringingMessageController.text = "";
     });
 
     if (!mounted) return;
@@ -818,14 +690,6 @@ class _GameScreenState extends State<GameScreen> {
                     ),
                   ],
                 ),
-                TextField(
-                  controller: _ringingMessageController,
-                  maxLines: 6,
-                  decoration: InputDecoration(
-                    hintText: FlutterI18n.translate(
-                        context, "game.joininingMessageHint"),
-                  ),
-                )
               ],
             ),
             actions: [
@@ -843,7 +707,6 @@ class _GameScreenState extends State<GameScreen> {
               DialogActionButton(
                 onPressed: () async {
                   Navigator.of(ctx2).pop();
-                  await _signaling.leaveRoom();
                 },
                 textContent: I18nText(
                   'buttons.cancel',
