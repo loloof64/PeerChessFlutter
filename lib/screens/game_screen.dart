@@ -783,7 +783,9 @@ class _GameScreenState extends State<GameScreen> {
                 Icons.door_sliding,
               ),
             ),
-          if (_sessionActive && _readyToSendMessagesToOtherPeer)
+          if (_sessionActive &&
+              _readyToSendMessagesToOtherPeer &&
+              _signaling.ourRoomId != null)
             IconButton(
               onPressed: () async {
                 await _showCloseSessionConfirmationDialog();

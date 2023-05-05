@@ -237,13 +237,6 @@ class Signaling {
       _dataChannel = null;
       _myConnection = null;
       _ourRoomId = null;
-    } else if (_hostRoomId != null) {
-      await _deleteRoomById(_hostRoomId!);
-      _dataChannel?.close();
-      _myConnection?.close();
-      _dataChannel = null;
-      _myConnection = null;
-      _hostRoomId = null;
     }
   }
 
