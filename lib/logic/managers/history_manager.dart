@@ -99,6 +99,8 @@ class HistoryManager {
 
   void gotoFirst() {
     _selectedHistoryNode = null;
+    updateChildrenWidgets();
+    onSelectStartPosition();
   }
 
   void gotoPrevious() {
