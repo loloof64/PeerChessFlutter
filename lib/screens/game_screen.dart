@@ -593,6 +593,7 @@ class _GameScreenState extends State<GameScreen> {
             actions: [
               DialogActionButton(
                 onPressed: () async {
+                  Navigator.of(context).pop();
                   await _closeSession();
                 },
                 textContent: I18nText(
