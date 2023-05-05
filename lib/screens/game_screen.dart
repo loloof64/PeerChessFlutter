@@ -564,8 +564,6 @@ class _GameScreenState extends State<GameScreen> {
       }
       _historyManager.addResultString('*');
       _gameManager.stopGame();
-    });
-    setState(() {
       _historyManager.updateChildrenWidgets();
     });
     ScaffoldMessenger.of(context).showSnackBar(
@@ -850,12 +848,12 @@ class _GameScreenState extends State<GameScreen> {
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
 
-    final whitePlayerType = _gameManager.isGameOver
+    final whitePlayerType = (_gameManager.isGameOver || !_sessionActive)
         ? PlayerType.computer
         : _gameManager.whiteTurn && _playerHasWhite
             ? PlayerType.human
             : PlayerType.computer;
-    final blackPlayerType = _gameManager.isGameOver
+    final blackPlayerType = (_gameManager.isGameOver || !_sessionActive)
         ? PlayerType.computer
         : !_gameManager.whiteTurn && !_playerHasWhite
             ? PlayerType.human
