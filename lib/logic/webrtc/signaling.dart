@@ -199,6 +199,7 @@ class Signaling {
       final answerDescription =
           RTCSessionDescription(answer['sdp'], answer['type']);
       await _myConnection!.setRemoteDescription(answerDescription);
+      await _deleteRoom();
     }
   }
 
