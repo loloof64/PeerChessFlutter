@@ -28,8 +28,7 @@
         "busy_room": "The room is already busy.",
         "misc_room_joining_error": "Failed to join room for an unknown reason",
         "already_a_pending_request": "You can't make two requests at once.",
-        "accepted_request": "Your request has been accepted.",
-        "rejected_request": "Your request has been rejected.",
+        "session_started": "New session has started",
         "waiting_call_answer_title": "Waiting for answer",
         "waiting_call_answer_message": "Waiting for the answer ...",
         "call_cancel": {

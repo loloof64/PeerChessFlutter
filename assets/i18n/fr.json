@@ -28,8 +28,7 @@
         "busy_room": "La salle est occupée.",
         "misc_room_joining_error": "Echec d'entrée dans le salon pour une raison inconnue.",
         "already_a_pending_request": "Impossible de passer deux requêtes à la fois.",
-        "accepted_request": "Votre requête a été acceptée.",
-        "rejected_request": "Votre requête a été rejetée.",
+        "session_started": "Une nouvelle session a commencé",
         "waiting_call_answer_title": "En attente d'une réponse",
         "waiting_call_answer_message": "En attente d'une réponse ...",
         "call_cancel": {

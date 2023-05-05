@@ -153,6 +153,11 @@ class _GameScreenState extends State<GameScreen> {
     // Removes the room popup
     if (!mounted) return;
     Navigator.of(context).pop();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: I18nText('game.session_started'),
+      ),
+    );
     setState(() {
       _sessionActive = true;
     });
@@ -178,7 +183,7 @@ class _GameScreenState extends State<GameScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: I18nText('game.accepted_request'),
+        content: I18nText('game.session_started'),
       ),
     );
     // Removes the waiting for answer popup

@@ -28,8 +28,7 @@
         "busy_room": "La sala ya está ocupada.",
         "misc_room_joining_error": "No se pudo unir a la sala por un motivo desconocido",
         "already_a_pending_request": "No puedes hacer dos solicitas a la vez.",
-        "accepted_request": "Su solicitud ha sido aceptada.",
-        "rejected_request": "Su solicitud ha sido rechazada.",
+        "session_started": "Nueva sesión ha comenzado",
         "waiting_call_answer_title": "Esperando respuesta",
         "waiting_call_answer_message": "Esperando la respuesta ...",
         "call_cancel": {
