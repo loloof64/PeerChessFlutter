@@ -553,6 +553,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _stopCurrentGame() {
+    if (!_gameManager.gameInProgress) return;
     setState(() {
       if (_historyManager.currentNode?.relatedMove != null) {
         _lastMoveToHighlight = BoardArrow(
