@@ -39,6 +39,12 @@ import '../components/history.dart';
 import '../components/dialog_buttons.dart';
 import '../screens/new_game_screen.dart';
 
+enum GameResult {
+  whiteWon,
+  blackWon,
+  draw,
+}
+
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
 
@@ -58,6 +64,7 @@ class _GameScreenState extends State<GameScreen> {
   bool _waitingJoiningAnswer = false;
   bool _waitingJoiningRequest = false;
   bool _playerHasWhite = true;
+  bool _receivedDrawOffer = false;
   String? _savePgnInitialDirectory;
 
   final ScrollController _historyScrollController =
@@ -116,6 +123,10 @@ class _GameScreenState extends State<GameScreen> {
         );
       } else if (type == ChannelMessageValues.giveUp.toString()) {
         _processRemoteGiveUp();
+      } else if (type == ChannelMessageValues.drawOffer.toString()) {
+        _processDrawOffer();
+      } else if (type == ChannelMessageValues.drawAnswer.toString()) {
+        _processDrawAnswer(data[ChannelMessagesKeys.value.toString()]);
       }
     });
 
@@ -182,11 +193,35 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
+  void _processDrawAnswer(bool accepted) {
+    if (accepted) {
+      _stopCurrentGame(result: GameResult.draw);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: I18nText('game.draw_offer_accepted'),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: I18nText('game.draw_offer_rejected'),
+        ),
+      );
+    }
+  }
+
+  void _processDrawOffer() {
+    setState(() {
+      _receivedDrawOffer = true;
+    });
+  }
+
   void _processRemoteGiveUp() {
     if (!_gameManager.gameInProgress) {
       return;
     }
-    _stopCurrentGame(whiteWon: _playerHasWhite);
+    _stopCurrentGame(
+        result: _playerHasWhite ? GameResult.whiteWon : GameResult.blackWon);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: I18nText('game.opponent_gave_up'),
@@ -316,9 +351,9 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
-  void _makeMove({
+  Future<void> _makeMove({
     required ShortMove move,
-  }) {
+  }) async {
     setState(() {
       final moveHasBeenMade = _gameManager.processPlayerMove(
         from: move.from,
@@ -334,6 +369,7 @@ class _GameScreenState extends State<GameScreen> {
     if (_gameManager.isGameOver) {
       final gameResultString = _gameManager.getResultString();
       setState(() {
+        _receivedDrawOffer = false;
         _historyManager.addResultString(gameResultString);
         _gameManager.stopGame();
       });
@@ -348,6 +384,8 @@ class _GameScreenState extends State<GameScreen> {
           ),
         ),
       );
+    } else {
+      await _refuseDraw();
     }
   }
 
@@ -381,6 +419,7 @@ class _GameScreenState extends State<GameScreen> {
     if (_gameManager.isGameOver) {
       final gameResultString = _gameManager.getResultString();
       setState(() {
+        _receivedDrawOffer = false;
         _historyManager.addResultString(gameResultString);
         _gameManager.stopGame();
       });
@@ -441,7 +480,7 @@ class _GameScreenState extends State<GameScreen> {
         context: context,
         builder: (_) {
           return AlertDialog(
-            title: I18nText('game.promotion_dialog_title'),
+            title: I18nText('fpromotion_dialog_title'),
             alignment: Alignment.center,
             content: FittedBox(
               child: Row(
@@ -531,6 +570,7 @@ class _GameScreenState extends State<GameScreen> {
       ),
     );
     setState(() {
+      _receivedDrawOffer = false;
       _playerHasWhite = playerHasWhite;
       _historyScrollController.animateTo(
         0.0,
@@ -558,6 +598,7 @@ class _GameScreenState extends State<GameScreen> {
     required bool playerHasWhite,
   }) async {
     setState(() {
+      _receivedDrawOffer = false;
       _playerHasWhite = playerHasWhite;
       _historyScrollController.animateTo(
         0.0,
@@ -588,9 +629,10 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
-  void _stopCurrentGame({bool? whiteWon}) {
+  void _stopCurrentGame({GameResult? result}) {
     if (!_gameManager.gameInProgress) return;
     setState(() {
+      _receivedDrawOffer = false;
       if (_historyManager.currentNode?.relatedMove != null) {
         _lastMoveToHighlight = BoardArrow(
           from: _historyManager.currentNode!.relatedMove!.from.toString(),
@@ -598,16 +640,18 @@ class _GameScreenState extends State<GameScreen> {
         );
         _historyManager.selectCurrentNode();
       }
-      _historyManager.addResultString(whiteWon == null
+      _historyManager.addResultString(result == null
           ? '*'
-          : whiteWon == true
+          : result == GameResult.whiteWon
               ? '1-0'
-              : '0-1');
+              : result == GameResult.blackWon
+                  ? '0-1'
+                  : '1/2-1/2');
       _gameManager.stopGame();
       _historyManager.updateChildrenWidgets();
     });
     // Only show game stopped notification on an aborted game
-    if (whiteWon == null) {
+    if (result == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -818,6 +862,15 @@ class _GameScreenState extends State<GameScreen> {
         });
   }
 
+  Future<void> _purposeDraw() async {
+    _signaling.sendMessage(
+      jsonEncode({
+        ChannelMessagesKeys.type.toString():
+            ChannelMessageValues.drawOffer.toString()
+      }),
+    );
+  }
+
   Future<void> _savePgnFile() async {
     final pgnString = _gameManager.getPgn(
       youTranslation: FlutterI18n.translate(context, 'game.players.you'),
@@ -852,7 +905,40 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
-  Future<void> _purposeGiveUp() async {
+  Future<void> _showPurposeDrawConfirmation() async {
+    await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx2) {
+          return AlertDialog(
+            title: I18nText('game.draw_offer_dialog_title'),
+            content: I18nText('game.draw_offer_dialog_message'),
+            actions: [
+              DialogActionButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  await _purposeDraw();
+                },
+                textContent: I18nText(
+                  'buttons.ok',
+                ),
+                backgroundColor: Colors.tealAccent,
+                textColor: Colors.white,
+              ),
+              DialogActionButton(
+                onPressed: () => Navigator.of(context).pop(),
+                textContent: I18nText(
+                  'buttons.cancel',
+                ),
+                textColor: Colors.white,
+                backgroundColor: Colors.redAccent,
+              )
+            ],
+          );
+        });
+  }
+
+  Future<void> _showGiveUpConfirmation() async {
     await showDialog(
         context: context,
         barrierDismissible: false,
@@ -885,6 +971,47 @@ class _GameScreenState extends State<GameScreen> {
         });
   }
 
+  Future<void> _acceptDraw() async {
+    if (!_gameManager.gameInProgress) return;
+    if (!_receivedDrawOffer) return;
+
+    _signaling.sendMessage(
+      jsonEncode({
+        ChannelMessagesKeys.type.toString():
+            ChannelMessageValues.drawAnswer.toString(),
+        ChannelMessagesKeys.value.toString(): true,
+      }),
+    );
+
+    setState(() {
+      _receivedDrawOffer = false;
+    });
+    _stopCurrentGame(result: GameResult.draw);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: I18nText('game.mutual_draw'),
+      ),
+    );
+  }
+
+  Future<void> _refuseDraw() async {
+    if (!_gameManager.gameInProgress) return;
+    if (!_receivedDrawOffer) return;
+
+    _signaling.sendMessage(
+      jsonEncode({
+        ChannelMessagesKeys.type.toString():
+            ChannelMessageValues.drawAnswer.toString(),
+        ChannelMessagesKeys.value.toString(): false,
+      }),
+    );
+
+    setState(() {
+      _receivedDrawOffer = false;
+    });
+  }
+
   Future<void> _giveUp() async {
     if (!_gameManager.gameInProgress) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -900,7 +1027,9 @@ class _GameScreenState extends State<GameScreen> {
             ChannelMessageValues.giveUp.toString()
       }),
     );
-    _stopCurrentGame(whiteWon: !_playerHasWhite);
+    _stopCurrentGame(
+      result: _playerHasWhite ? GameResult.blackWon : GameResult.whiteWon,
+    );
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: I18nText('game.you_gave_up'),
@@ -1051,15 +1180,22 @@ class _GameScreenState extends State<GameScreen> {
                 Icons.add_circle,
               ),
             ),
-          if (_sessionActive &&
-              _readyToSendMessagesToOtherPeer &&
-              _gameManager.gameInProgress)
+          if (_sessionActive && _gameManager.gameInProgress)
             IconButton(
               onPressed: () async {
-                await _purposeGiveUp();
+                await _showGiveUpConfirmation();
               },
               icon: const Icon(
                 Icons.flag_circle,
+              ),
+            ),
+          if (_sessionActive && _gameManager.gameInProgress)
+            IconButton(
+              onPressed: () async {
+                await _showPurposeDrawConfirmation();
+              },
+              icon: const Icon(
+                Icons.handshake,
               ),
             ),
           if (_gameManager.atLeastAGameStarted && !_gameManager.gameInProgress)
@@ -1099,21 +1235,38 @@ class _GameScreenState extends State<GameScreen> {
                     ),
                   ),
                   Expanded(
-                    child: LayoutBuilder(builder: (ctx2, constraints2) {
-                      double fontSize =
-                          constraints2.biggest.shortestSide * 0.09;
-                      if (fontSize < 25) {
-                        fontSize = 25;
-                      }
-                      return ChessHistory(
-                        scrollController: _historyScrollController,
-                        requestGotoFirst: _historyManager.gotoFirst,
-                        requestGotoPrevious: _historyManager.gotoPrevious,
-                        requestGotoNext: _historyManager.gotoNext,
-                        requestGotoLast: _historyManager.gotoLast,
-                        children: _buildHistoryWidgetsTree(fontSize),
-                      );
-                    }),
+                    child: Column(
+                      children: [
+                        if (_sessionActive &&
+                            _gameManager.gameInProgress &&
+                            _receivedDrawOffer)
+                          DrawControls(
+                            onValidation: () async {
+                              await _acceptDraw();
+                            },
+                            onRefusal: () async {
+                              await _refuseDraw();
+                            },
+                          ),
+                        Expanded(
+                          child: LayoutBuilder(builder: (ctx2, constraints2) {
+                            double fontSize =
+                                constraints2.biggest.shortestSide * 0.09;
+                            if (fontSize < 25) {
+                              fontSize = 25;
+                            }
+                            return ChessHistory(
+                              scrollController: _historyScrollController,
+                              requestGotoFirst: _historyManager.gotoFirst,
+                              requestGotoPrevious: _historyManager.gotoPrevious,
+                              requestGotoNext: _historyManager.gotoNext,
+                              requestGotoLast: _historyManager.gotoLast,
+                              children: _buildHistoryWidgetsTree(fontSize),
+                            );
+                          }),
+                        ),
+                      ],
+                    ),
                   )
                 ],
               )
@@ -1134,6 +1287,17 @@ class _GameScreenState extends State<GameScreen> {
                         onPromote: _makePromotion,
                       ),
                     ),
+                    if (_sessionActive &&
+                        _gameManager.gameInProgress &&
+                        _receivedDrawOffer)
+                      DrawControls(
+                        onValidation: () async {
+                          await _acceptDraw();
+                        },
+                        onRefusal: () async {
+                          await _refuseDraw();
+                        },
+                      ),
                     Expanded(
                       child: LayoutBuilder(builder: (ctx2, constraints2) {
                         double fontSize =
@@ -1155,6 +1319,41 @@ class _GameScreenState extends State<GameScreen> {
                 ),
               ),
       ),
+    );
+  }
+}
+
+class DrawControls extends StatelessWidget {
+  final void Function() onValidation;
+  final void Function() onRefusal;
+
+  const DrawControls({
+    super.key,
+    required this.onValidation,
+    required this.onRefusal,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        I18nText('game.accept_draw_question'),
+        IconButton(
+          onPressed: onValidation,
+          icon: const Icon(
+            Icons.thumb_up,
+            color: Colors.green,
+          ),
+        ),
+        IconButton(
+            onPressed: onRefusal,
+            icon: const Icon(
+              Icons.thumb_down,
+              color: Colors.red,
+            ))
+      ],
     );
   }
 }

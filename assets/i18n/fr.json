@@ -44,7 +44,13 @@
         "confirm_give_up_message": "Souhaitez-vous abandonner ?",
         "you_gave_up": "Vous avez perdu par abandon",
         "opponent_gave_up": "Vous avez gagné par abandon de l'adversaire",
-        "unuseful_give_up": "Abandon non appliqué car la partie s'est terminée avant"
+        "unuseful_give_up": "Abandon non appliqué car la partie s'est terminée avant",
+        "accept_draw_question": "Accepter la partie nulle ?",
+        "draw_offer_dialog_title": "Envoyer une proposition de partie nulle ?",
+        "draw_offer_dialog_message": "Souhaitez-vous envoyer une proposition de partie nulle ?",
+        "draw_offer_accepted": "Proposition de nulle acceptée",
+        "draw_offer_rejected": "Proposition de nulle refusée",
+        "mutual_draw": "Partie nulle par accord mutuel"
     },
     "game_termination": {
         "black_checkmate_white": "Les Noirs gagnent par échec et mat.",

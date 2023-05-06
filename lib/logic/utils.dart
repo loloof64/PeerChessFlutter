@@ -109,10 +109,13 @@ enum ChannelMessagesKeys {
   moveFrom,
   moveTo,
   movePromotion,
+  value,
 }
 
 enum ChannelMessageValues {
   newGame,
   newMove,
   giveUp,
+  drawOffer,
+  drawAnswer,
 }

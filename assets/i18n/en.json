@@ -44,7 +44,13 @@
         "confirm_give_up_message": "Do you want to give up ?",
         "you_gave_up": "You lost by having giving up",
         "opponent_gave_up": "You won because your opponent gave up",
-        "unuseful_give_up": "Give up not applied as game has been stopped before."
+        "unuseful_give_up": "Give up not applied as game has been stopped before.",
+        "accept_draw_question": "Accept draw ?",
+        "draw_offer_dialog_title": "Send draw offer ?",
+        "draw_offer_dialog_message": "Do you want to send a draw offer ?",
+        "draw_offer_accepted": "Draw offer accepted",
+        "draw_offer_rejected": "Draw offer rejected",
+        "mutual_draw": "Game ended by mutual draw"
     },
     "game_termination": {
         "black_checkmate_white": "Black has won by checkmate.",

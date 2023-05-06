@@ -44,7 +44,13 @@
         "confirm_give_up_message": "¿Quieres abandonar?",
         "you_gave_up": "Perdiste por haberte dado por vencido",
         "opponent_gave_up": "Ganaste porque tu oponente se rindió",
-        "unuseful_give_up": "Renunciar no aplicado ya que el juego se ha detenido antes"
+        "unuseful_give_up": "Renunciar no aplicado ya que el juego se ha detenido antes",
+        "accept_draw_question": "¿Aceptar el empate?",
+        "draw_offer_dialog_title": "¿Enviar oferta de empate?",
+        "draw_offer_dialog_message": "¿Quieres enviar oferta de empate?",
+        "draw_offer_accepted": "Oferta de empate acceptada",
+        "draw_offer_rejected": "Oferta de empate refusada",
+        "mutual_draw": "Juego terminado por empate mutuo"
     },
     "game_termination": {
         "black_checkmate_white": "Los Negros ha ganado por jaque mate.",
