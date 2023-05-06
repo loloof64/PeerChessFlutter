@@ -724,7 +724,9 @@ class _GameScreenState extends State<GameScreen> {
     await _signaling.hangUp();
     setState(() {
       _sessionActive = false;
+      _historyManager.addResultString('*');
       _gameManager.stopGame();
+      _historyManager.updateChildrenWidgets();
     });
   }
 
