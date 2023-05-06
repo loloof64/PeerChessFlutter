@@ -209,9 +209,12 @@ class GameManager {
       formatter.format(date),
     ]);
 
-    return _gameLogic.pgn({
+    String pgnStr = _gameLogic.pgn({
       'max_width': 80,
       'newline_char': '\n',
     });
+    pgnStr = "$pgnStr ${getResultString()}\n";
+
+    return pgnStr;
   }
 }
