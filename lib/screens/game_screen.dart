@@ -1171,7 +1171,9 @@ class _GameScreenState extends State<GameScreen> {
                 Icons.delete,
               ),
             ),
-          if (_sessionActive && _readyToSendMessagesToOtherPeer)
+          if (_sessionActive &&
+              _readyToSendMessagesToOtherPeer &&
+              !_gameManager.gameInProgress)
             IconButton(
               onPressed: () {
                 _goToNewGameOptionsPage();
