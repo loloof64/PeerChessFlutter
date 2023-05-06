@@ -198,12 +198,16 @@ class GameManager {
       required bool playerHasWhite}) {
     final date = DateTime.now();
     final formatter = DateFormat('yyyy.MM.dd');
-    _gameLogic.set_header({
-      'FEN': _startPosition,
-      'White': playerHasWhite ? youTranslation : opponentTranslation,
-      'Black': playerHasWhite ? opponentTranslation : youTranslation,
-      'Date': formatter.format(date),
-    });
+    _gameLogic.set_header([
+      'FEN',
+      _startPosition,
+      'White',
+      playerHasWhite ? youTranslation : opponentTranslation,
+      'Black',
+      playerHasWhite ? opponentTranslation : youTranslation,
+      'Date',
+      formatter.format(date),
+    ]);
 
     return _gameLogic.pgn({
       'max_width': 80,
