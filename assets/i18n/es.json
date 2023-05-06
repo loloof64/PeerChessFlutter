@@ -33,7 +33,13 @@
         },
         "confirm_exit_session_title": "¿Cerrar la sesión actual?",
         "confirm_exit_session_message": "¿Quieres ir a la sesión actual?",
-        "session_finished": "Fin de sesión"
+        "session_finished": "Fin de sesión",
+        "players": {
+            "you": "Tú",
+            "opponent": "Tu oponente"
+        },
+        "save_pgn_dialog_title": "Guarda el juego como un archivo PGN",
+        "pgn_file_saved": "Archivo guardado"
     },
     "game_termination": {
         "black_checkmate_white": "Los Negros ha ganado por jaque mate.",

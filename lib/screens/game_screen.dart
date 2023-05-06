@@ -17,6 +17,7 @@
 */
 
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:firedart/firedart.dart';
 import 'package:flutter/services.dart';
@@ -29,10 +30,11 @@ import 'package:simple_chess_board/simple_chess_board.dart';
 import 'package:chess_vectors_flutter/chess_vectors_flutter.dart';
 import 'package:chess/chess.dart' as chess;
 import 'package:flutter_i18n/flutter_i18n.dart';
+import 'package:file_picker/file_picker.dart';
 import '../logic/managers/game_manager.dart';
 import '../logic/managers/history_manager.dart';
 import '../logic/webrtc/signaling.dart';
-import '../logic/history_builder.dart';
+import '../logic/history_builder.dart' as history_builder;
 import '../components/history.dart';
 import '../components/dialog_buttons.dart';
 import '../screens/new_game_screen.dart';
@@ -56,6 +58,7 @@ class _GameScreenState extends State<GameScreen> {
   bool _waitingJoiningAnswer = false;
   bool _waitingJoiningRequest = false;
   bool _playerHasWhite = true;
+  String? _savePgnInitialDirectory;
 
   final ScrollController _historyScrollController =
       ScrollController(initialScrollOffset: 0.0, keepScrollOffset: true);
@@ -82,7 +85,6 @@ class _GameScreenState extends State<GameScreen> {
       if (!newState && _sessionActive) {
         _stopCurrentGame();
         setState(() {
-          _gameManager.leaveSession();
           _sessionActive = false;
         });
         await _signaling.hangUp();
@@ -395,7 +397,7 @@ class _GameScreenState extends State<GameScreen> {
         );
       } else {
         if (_historyManager.selectedNode != null) {
-          var selectedNodeIndex = getHistoryNodeIndex(
+          var selectedNodeIndex = history_builder.getHistoryNodeIndex(
               node: _historyManager.selectedNode!,
               rootNode: _historyManager.gameHistoryTree!);
           var selectedLine = selectedNodeIndex ~/ 6;
@@ -472,7 +474,7 @@ class _GameScreenState extends State<GameScreen> {
         ),
       );
 
-      if (currentElement is MoveLinkElement) {
+      if (currentElement is history_builder.MoveLinkElement) {
         return TextButton(
           onPressed: currentElement.onPressed,
           child: textComponent,
@@ -791,6 +793,37 @@ class _GameScreenState extends State<GameScreen> {
         });
   }
 
+  Future<void> _savePgnFile() async {
+    final pgnString = _gameManager.getPgn(
+      youTranslation: FlutterI18n.translate(context, 'game.players.you'),
+      opponentTranslation:
+          FlutterI18n.translate(context, 'game.players.opponent'),
+      playerHasWhite: _playerHasWhite,
+    );
+
+    String? absoluteFilePath = await FilePicker.platform.saveFile(
+      allowedExtensions: <String>['pgn'],
+      dialogTitle: FlutterI18n.translate(context, 'game.save_pgn_dialog_title'),
+      initialDirectory: _savePgnInitialDirectory,
+      type: FileType.custom,
+      lockParentWindow: true,
+    );
+    if (absoluteFilePath != null) {
+      setState(() {
+        _savePgnInitialDirectory = absoluteFilePath;
+      });
+      final fileInstance = File(absoluteFilePath);
+      await fileInstance.writeAsString(pgnString);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: I18nText('game.pgn_file_saved'),
+        ),
+      );
+    }
+  }
+
   Future<void> _joinRoom() async {
     setState(() {
       _roomIdController.text = "";
@@ -932,6 +965,15 @@ class _GameScreenState extends State<GameScreen> {
               },
               icon: const Icon(
                 Icons.add_circle,
+              ),
+            ),
+          if (_gameManager.atLeastAGameStarted && !_gameManager.gameInProgress)
+            IconButton(
+              onPressed: () async {
+                await _savePgnFile();
+              },
+              icon: const Icon(
+                Icons.save,
               ),
             ),
           if (_sessionActive && _readyToSendMessagesToOtherPeer)

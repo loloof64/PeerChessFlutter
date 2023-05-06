@@ -17,11 +17,12 @@
 */
 
 import 'package:chess/chess.dart' as chess;
-import '../history_builder.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_i18n/flutter_i18n.dart';
 import 'package:simple_chess_board/simple_chess_board.dart';
 import '../utils.dart';
+import '../history_builder.dart';
 
 const emptyPosition = '8/8/8/8/8/8/8/8 w - - 0 1';
 
@@ -70,11 +71,8 @@ class GameManager {
     return moveHasBeenMade;
   }
 
-  void leaveSession() {
-    _atLeastAGameStarted = false;
-  }
-
   void startSession() {
+    _atLeastAGameStarted = false;
     _gameLogic.load(emptyPosition);
   }
 
@@ -192,5 +190,24 @@ class GameManager {
       result = I18nText('game_termination.fifty_moves');
     }
     return result;
+  }
+
+  String getPgn(
+      {required String youTranslation,
+      required String opponentTranslation,
+      required bool playerHasWhite}) {
+    final date = DateTime.now();
+    final formatter = DateFormat('yyyy.MM.dd');
+    _gameLogic.set_header({
+      'FEN': _startPosition,
+      'White': playerHasWhite ? youTranslation : opponentTranslation,
+      'Black': playerHasWhite ? opponentTranslation : youTranslation,
+      'Date': formatter.format(date),
+    });
+
+    return _gameLogic.pgn({
+      'max_width': 80,
+      'newline_char': '\n',
+    });
   }
 }

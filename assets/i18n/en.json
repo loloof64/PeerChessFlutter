@@ -33,7 +33,13 @@
         },
         "confirm_exit_session_title": "Close current session ?",
         "confirm_exit_session_message": "Do you want to current session ?",
-        "session_finished": "End of session"
+        "session_finished": "End of session",
+        "players": {
+            "you": "You",
+            "opponent": "Your opponent"
+        },
+        "save_pgn_dialog_title": "Save the game as a PGN file",
+        "pgn_file_saved": "Saved file"
     },
     "game_termination": {
         "black_checkmate_white": "Black has won by checkmate.",

@@ -49,6 +49,8 @@ dependencies:
   flutter_window_close: ^0.2.2
   http: ^0.13.5
   firedart: ^0.9.1+1
+  intl: ^0.17.0
+  file_picker: ^5.2.11
 
 dev_dependencies:
   flutter_test:
