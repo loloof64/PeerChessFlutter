@@ -82,7 +82,8 @@ class _GameScreenState extends State<GameScreen> {
         because false state may be sent twice in a row :
         one for our own connection closing, and once for the one on the other side.
         */
-      if (!newState && _sessionActive) {
+      final weJustLostConnectionToRemotePeer = !newState && _sessionActive;
+      if (weJustLostConnectionToRemotePeer) {
         _stopCurrentGame();
         setState(() {
           _sessionActive = false;
@@ -723,6 +724,7 @@ class _GameScreenState extends State<GameScreen> {
     await _signaling.hangUp();
     setState(() {
       _sessionActive = false;
+      _gameManager.stopGame();
     });
   }
 
