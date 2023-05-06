@@ -39,7 +39,12 @@
             "opponent": "Your opponent"
         },
         "save_pgn_dialog_title": "Save the game as a PGN file",
-        "pgn_file_saved": "Saved file"
+        "pgn_file_saved": "Saved file",
+        "confirm_give_up_title": "Give up ?",
+        "confirm_give_up_message": "Do you want to give up ?",
+        "you_gave_up": "You lost by having giving up",
+        "opponent_gave_up": "You won because your opponent gave up",
+        "unuseful_give_up": "Give up not applied as game has been stopped before."
     },
     "game_termination": {
         "black_checkmate_white": "Black has won by checkmate.",

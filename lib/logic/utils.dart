@@ -114,4 +114,5 @@ enum ChannelMessagesKeys {
 enum ChannelMessageValues {
   newGame,
   newMove,
+  giveUp,
 }

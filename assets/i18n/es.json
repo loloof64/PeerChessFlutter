@@ -39,7 +39,12 @@
             "opponent": "Tu oponente"
         },
         "save_pgn_dialog_title": "Guarda el juego como un archivo PGN",
-        "pgn_file_saved": "Archivo guardado"
+        "pgn_file_saved": "Archivo guardado",
+        "confirm_give_up_title": "¿Abandonar?",
+        "confirm_give_up_message": "¿Quieres abandonar?",
+        "you_gave_up": "Perdiste por haberte dado por vencido",
+        "opponent_gave_up": "Ganaste porque tu oponente se rindió",
+        "unuseful_give_up": "Renunciar no aplicado ya que el juego se ha detenido antes"
     },
     "game_termination": {
         "black_checkmate_white": "Los Negros ha ganado por jaque mate.",

@@ -101,10 +101,10 @@ class _GameScreenState extends State<GameScreen> {
       });
     });
 
-    _signaling.remoteEventsStream.forEach((data) {
+    _signaling.remoteEventsStream.forEach((data) async {
       final type = data[ChannelMessagesKeys.type.toString()];
       if (type == ChannelMessageValues.newGame.toString()) {
-        _startNewGameAsReceiver(
+        await _startNewGameAsReceiver(
           startPosition: data[ChannelMessagesKeys.startPosition.toString()],
           playerHasWhite: data[ChannelMessagesKeys.iHaveWhite.toString()],
         );
@@ -114,6 +114,8 @@ class _GameScreenState extends State<GameScreen> {
           to: data[ChannelMessagesKeys.moveTo.toString()],
           promotion: data[ChannelMessagesKeys.movePromotion.toString()],
         );
+      } else if (type == ChannelMessageValues.giveUp.toString()) {
+        _processRemoteGiveUp();
       }
     });
 
@@ -178,6 +180,18 @@ class _GameScreenState extends State<GameScreen> {
         }
       }
     });
+  }
+
+  void _processRemoteGiveUp() {
+    if (!_gameManager.gameInProgress) {
+      return;
+    }
+    _stopCurrentGame(whiteWon: _playerHasWhite);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: I18nText('game.opponent_gave_up'),
+      ),
+    );
   }
 
   Future<void> _sendAnswerToRoomGuest({required Document roomDocument}) async {
@@ -574,7 +588,7 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
-  void _stopCurrentGame() {
+  void _stopCurrentGame({bool? whiteWon}) {
     if (!_gameManager.gameInProgress) return;
     setState(() {
       if (_historyManager.currentNode?.relatedMove != null) {
@@ -584,18 +598,25 @@ class _GameScreenState extends State<GameScreen> {
         );
         _historyManager.selectCurrentNode();
       }
-      _historyManager.addResultString('*');
+      _historyManager.addResultString(whiteWon == null
+          ? '*'
+          : whiteWon == true
+              ? '1-0'
+              : '0-1');
       _gameManager.stopGame();
       _historyManager.updateChildrenWidgets();
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [I18nText('game.stopped')],
+    // Only show game stopped notification on an aborted game
+    if (whiteWon == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [I18nText('game.stopped')],
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   Future<void> _createRoom() async {
@@ -831,6 +852,62 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
+  Future<void> _purposeGiveUp() async {
+    await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx2) {
+          return AlertDialog(
+            title: I18nText('game.confirm_give_up_title'),
+            content: I18nText('game.confirm_give_up_message'),
+            actions: [
+              DialogActionButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  await _giveUp();
+                },
+                textContent: I18nText(
+                  'buttons.ok',
+                ),
+                backgroundColor: Colors.tealAccent,
+                textColor: Colors.white,
+              ),
+              DialogActionButton(
+                onPressed: () => Navigator.of(context).pop(),
+                textContent: I18nText(
+                  'buttons.cancel',
+                ),
+                textColor: Colors.white,
+                backgroundColor: Colors.redAccent,
+              )
+            ],
+          );
+        });
+  }
+
+  Future<void> _giveUp() async {
+    if (!_gameManager.gameInProgress) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: I18nText('game.unuseful_give_up'),
+        ),
+      );
+      return;
+    }
+    _signaling.sendMessage(
+      jsonEncode({
+        ChannelMessagesKeys.type.toString():
+            ChannelMessageValues.giveUp.toString()
+      }),
+    );
+    _stopCurrentGame(whiteWon: !_playerHasWhite);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: I18nText('game.you_gave_up'),
+      ),
+    );
+  }
+
   Future<void> _joinRoom() async {
     setState(() {
       _roomIdController.text = "";
@@ -972,6 +1049,17 @@ class _GameScreenState extends State<GameScreen> {
               },
               icon: const Icon(
                 Icons.add_circle,
+              ),
+            ),
+          if (_sessionActive &&
+              _readyToSendMessagesToOtherPeer &&
+              _gameManager.gameInProgress)
+            IconButton(
+              onPressed: () async {
+                await _purposeGiveUp();
+              },
+              icon: const Icon(
+                Icons.flag_circle,
               ),
             ),
           if (_gameManager.atLeastAGameStarted && !_gameManager.gameInProgress)
