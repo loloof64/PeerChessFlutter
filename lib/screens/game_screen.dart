@@ -809,6 +809,9 @@ class _GameScreenState extends State<GameScreen> {
       lockParentWindow: true,
     );
     if (absoluteFilePath != null) {
+      if (!absoluteFilePath.endsWith('.pgn')) {
+        absoluteFilePath = "$absoluteFilePath.pgn";
+      }
       setState(() {
         _savePgnInitialDirectory = absoluteFilePath;
       });
