@@ -37,6 +37,7 @@ import '../logic/webrtc/signaling.dart';
 import '../logic/history_builder.dart' as history_builder;
 import '../components/history.dart';
 import '../components/dialog_buttons.dart';
+import '../components/clock.dart';
 import '../screens/new_game_screen.dart';
 
 enum GameResult {
@@ -66,6 +67,10 @@ class _GameScreenState extends State<GameScreen> {
   bool _playerHasWhite = true;
   bool _receivedDrawOffer = false;
   String? _savePgnInitialDirectory;
+
+  int _whiteTimeInDeciSeconds = 200;
+  int _blackTimeInDeciSeconds = 184000;
+  bool _whiteTimeSelected = false;
 
   final ScrollController _historyScrollController =
       ScrollController(initialScrollOffset: 0.0, keepScrollOffset: true);
@@ -1250,6 +1255,11 @@ class _GameScreenState extends State<GameScreen> {
                               await _refuseDraw();
                             },
                           ),
+                        ClockWidget(
+                          whiteTimeInDeciSeconds: _whiteTimeInDeciSeconds,
+                          blackTimeInDeciSeconds: _blackTimeInDeciSeconds,
+                          whiteTimeSelected: _whiteTimeSelected,
+                        ),
                         Expanded(
                           child: LayoutBuilder(builder: (ctx2, constraints2) {
                             double fontSize =
@@ -1300,6 +1310,11 @@ class _GameScreenState extends State<GameScreen> {
                           await _refuseDraw();
                         },
                       ),
+                    ClockWidget(
+                      whiteTimeInDeciSeconds: _whiteTimeInDeciSeconds,
+                      blackTimeInDeciSeconds: _blackTimeInDeciSeconds,
+                      whiteTimeSelected: _whiteTimeSelected,
+                    ),
                     Expanded(
                       child: LayoutBuilder(builder: (ctx2, constraints2) {
                         double fontSize =
