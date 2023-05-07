@@ -1150,14 +1150,14 @@ class _GameScreenState extends State<GameScreen> {
             IconButton(
               onPressed: _createRoom,
               icon: const Icon(
-                Icons.room,
+                Icons.store,
               ),
             ),
           if (!_sessionActive)
             IconButton(
               onPressed: _joinRoom,
               icon: const Icon(
-                Icons.door_sliding,
+                Icons.run_circle_outlined,
               ),
             ),
           if (_sessionActive &&
@@ -1179,7 +1179,7 @@ class _GameScreenState extends State<GameScreen> {
                 _goToNewGameOptionsPage();
               },
               icon: const Icon(
-                Icons.add_circle,
+                Icons.play_arrow,
               ),
             ),
           if (_sessionActive && _gameManager.gameInProgress)
