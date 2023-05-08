@@ -120,6 +120,11 @@ class _GameScreenState extends State<GameScreen> {
         await _startNewGameAsReceiver(
           startPosition: data[ChannelMessagesKeys.startPosition.toString()],
           playerHasWhite: data[ChannelMessagesKeys.iHaveWhite.toString()],
+          useTime: data[ChannelMessagesKeys.useTime.toString()],
+          whiteGameDurationMillis:
+              data[ChannelMessagesKeys.whiteGameDurationMillis.toString()],
+          blackGameDurationMillis:
+              data[ChannelMessagesKeys.blackGameDurationMillis.toString()],
         );
       } else if (type == ChannelMessageValues.newMove.toString()) {
         __playPeerMove(
@@ -557,6 +562,9 @@ class _GameScreenState extends State<GameScreen> {
       await _startNewGameAsInitiator(
         startPosition: gameParameters.startPositionFen,
         playerHasWhite: gameParameters.playerHasWhite,
+        useTime: gameParameters.useTime,
+        whiteGameDuration: gameParameters.whiteGameTime,
+        blackGameDuration: gameParameters.blackGameTime,
       );
     }
   }
@@ -564,6 +572,9 @@ class _GameScreenState extends State<GameScreen> {
   Future<void> _startNewGameAsInitiator({
     String startPosition = chess.Chess.DEFAULT_POSITION,
     required bool playerHasWhite,
+    required bool useTime,
+    required Duration whiteGameDuration,
+    required Duration blackGameDuration,
   }) async {
     _signaling.sendMessage(
       jsonEncode(
@@ -572,12 +583,25 @@ class _GameScreenState extends State<GameScreen> {
               ChannelMessageValues.newGame.toString(),
           ChannelMessagesKeys.startPosition.toString(): startPosition,
           ChannelMessagesKeys.iHaveWhite.toString(): !playerHasWhite,
+          ChannelMessagesKeys.useTime.toString(): useTime,
+          ChannelMessagesKeys.whiteGameDurationMillis.toString():
+              whiteGameDuration.inMilliseconds,
+          ChannelMessagesKeys.blackGameDurationMillis.toString():
+              blackGameDuration.inMilliseconds,
         },
       ),
     );
     setState(() {
       _receivedDrawOffer = false;
       _playerHasWhite = playerHasWhite;
+
+      _isTimedGame = useTime;
+      _whiteTimeSelected = _gameManager.whiteTurn;
+      _whiteTimeInDeciSeconds =
+          (whiteGameDuration.inMilliseconds / 100).floor();
+      _blackTimeInDeciSeconds =
+          (blackGameDuration.inMilliseconds / 100).floor();
+
       _historyScrollController.animateTo(
         0.0,
         duration: const Duration(milliseconds: 50),
@@ -602,10 +626,19 @@ class _GameScreenState extends State<GameScreen> {
   Future<void> _startNewGameAsReceiver({
     String startPosition = chess.Chess.DEFAULT_POSITION,
     required bool playerHasWhite,
+    required bool useTime,
+    required int whiteGameDurationMillis,
+    required int blackGameDurationMillis,
   }) async {
     setState(() {
       _receivedDrawOffer = false;
       _playerHasWhite = playerHasWhite;
+
+      _isTimedGame = useTime;
+      _whiteTimeSelected = _gameManager.whiteTurn;
+      _whiteTimeInDeciSeconds = (whiteGameDurationMillis / 100).floor();
+      _blackTimeInDeciSeconds = (blackGameDurationMillis / 100).floor();
+
       _historyScrollController.animateTo(
         0.0,
         duration: const Duration(milliseconds: 50),
@@ -1259,10 +1292,13 @@ class _GameScreenState extends State<GameScreen> {
                         if (_sessionActive &&
                             _gameManager.gameInProgress &&
                             _isTimedGame)
-                          ClockWidget(
-                            whiteTimeInDeciSeconds: _whiteTimeInDeciSeconds,
-                            blackTimeInDeciSeconds: _blackTimeInDeciSeconds,
-                            whiteTimeSelected: _whiteTimeSelected,
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4.0),
+                            child: ClockWidget(
+                              whiteTimeInDeciSeconds: _whiteTimeInDeciSeconds,
+                              blackTimeInDeciSeconds: _blackTimeInDeciSeconds,
+                              whiteTimeSelected: _whiteTimeSelected,
+                            ),
                           ),
                         Expanded(
                           child: LayoutBuilder(builder: (ctx2, constraints2) {
@@ -1317,10 +1353,13 @@ class _GameScreenState extends State<GameScreen> {
                     if (_sessionActive &&
                         _gameManager.gameInProgress &&
                         _isTimedGame)
-                      ClockWidget(
-                        whiteTimeInDeciSeconds: _whiteTimeInDeciSeconds,
-                        blackTimeInDeciSeconds: _blackTimeInDeciSeconds,
-                        whiteTimeSelected: _whiteTimeSelected,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: ClockWidget(
+                          whiteTimeInDeciSeconds: _whiteTimeInDeciSeconds,
+                          blackTimeInDeciSeconds: _blackTimeInDeciSeconds,
+                          whiteTimeSelected: _whiteTimeSelected,
+                        ),
                       ),
                     Expanded(
                       child: LayoutBuilder(builder: (ctx2, constraints2) {

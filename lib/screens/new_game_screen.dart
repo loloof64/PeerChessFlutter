@@ -26,10 +26,16 @@ import '../components/dialog_buttons.dart';
 class NewGameParameters {
   final String startPositionFen;
   final bool playerHasWhite;
+  final bool useTime;
+  final Duration whiteGameTime;
+  final Duration blackGameTime;
 
   NewGameParameters({
     required this.startPositionFen,
     required this.playerHasWhite,
+    required this.useTime,
+    required this.whiteGameTime,
+    required this.blackGameTime,
   });
 }
 
@@ -264,6 +270,9 @@ class NewGameScreenState extends State<NewGameScreen> {
                                 startPositionFen:
                                     _positionController.currentPosition,
                                 playerHasWhite: _playerHasWhite,
+                                useTime: _useTime,
+                                whiteGameTime: _whiteGameDuration,
+                                blackGameTime: _whiteGameDuration,
                               ),
                             );
                           },

@@ -110,6 +110,9 @@ enum ChannelMessagesKeys {
   moveTo,
   movePromotion,
   value,
+  useTime,
+  whiteGameDurationMillis,
+  blackGameDurationMillis,
 }
 
 enum ChannelMessageValues {
