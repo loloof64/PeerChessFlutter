@@ -13,3 +13,4 @@ Play chess remotely with your friends.
 ## Credits
 
 * Free Serif font has been downloaded from [Fonts2u](https://fr.fonts2u.com/)
+* Using and adapted code from [Duration Picker Dialog](https://github.com/ashutosh2014/duration_picker_dialog_box/)

@@ -68,9 +68,10 @@ class _GameScreenState extends State<GameScreen> {
   bool _receivedDrawOffer = false;
   String? _savePgnInitialDirectory;
 
-  int _whiteTimeInDeciSeconds = 200;
-  int _blackTimeInDeciSeconds = 184000;
+  int _whiteTimeInDeciSeconds = 0;
+  int _blackTimeInDeciSeconds = 0;
   bool _whiteTimeSelected = false;
+  bool _isTimedGame = false;
 
   final ScrollController _historyScrollController =
       ScrollController(initialScrollOffset: 0.0, keepScrollOffset: true);
@@ -1255,11 +1256,14 @@ class _GameScreenState extends State<GameScreen> {
                               await _refuseDraw();
                             },
                           ),
-                        ClockWidget(
-                          whiteTimeInDeciSeconds: _whiteTimeInDeciSeconds,
-                          blackTimeInDeciSeconds: _blackTimeInDeciSeconds,
-                          whiteTimeSelected: _whiteTimeSelected,
-                        ),
+                        if (_sessionActive &&
+                            _gameManager.gameInProgress &&
+                            _isTimedGame)
+                          ClockWidget(
+                            whiteTimeInDeciSeconds: _whiteTimeInDeciSeconds,
+                            blackTimeInDeciSeconds: _blackTimeInDeciSeconds,
+                            whiteTimeSelected: _whiteTimeSelected,
+                          ),
                         Expanded(
                           child: LayoutBuilder(builder: (ctx2, constraints2) {
                             double fontSize =
@@ -1310,11 +1314,14 @@ class _GameScreenState extends State<GameScreen> {
                           await _refuseDraw();
                         },
                       ),
-                    ClockWidget(
-                      whiteTimeInDeciSeconds: _whiteTimeInDeciSeconds,
-                      blackTimeInDeciSeconds: _blackTimeInDeciSeconds,
-                      whiteTimeSelected: _whiteTimeSelected,
-                    ),
+                    if (_sessionActive &&
+                        _gameManager.gameInProgress &&
+                        _isTimedGame)
+                      ClockWidget(
+                        whiteTimeInDeciSeconds: _whiteTimeInDeciSeconds,
+                        blackTimeInDeciSeconds: _blackTimeInDeciSeconds,
+                        whiteTimeSelected: _whiteTimeSelected,
+                      ),
                     Expanded(
                       child: LayoutBuilder(builder: (ctx2, constraints2) {
                         double fontSize =

@@ -5,10 +5,18 @@
     },
     "buttons": {
         "ok": "D'accord",
-        "cancel": "Annuler"
+        "cancel": "Annuler",
+        "modify": "Changer"
     },
     "clipboard": {
         "content_copied": "Texte copié dans le presse-papier."
+    },
+    "duration_picker": {
+        "select": "choisir",
+        "duration": "durée",
+        "hours": "heures",
+        "minutes": "minutes",
+        "seconds": "secondes"
     },
     "game": {
         "promotion_dialog_title": "Choisissez la pièce de promotion",
@@ -69,6 +77,7 @@
     "new_game": {
         "title": "Nouvelle partie",
         "edit_position": "Editer la position",
+        "use_clock": "Utiliser la pendule ?",
         "position_editor": {
             "title": "Editer la position",
             "label_player_turn": "Trait",

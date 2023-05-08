@@ -20,6 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_i18n/flutter_i18n.dart';
 import 'package:simple_chess_board/simple_chess_board.dart';
 import 'package:editable_chess_board/editable_chess_board.dart';
+import '../components/duration_picker_dialog_box.dart';
 import '../components/dialog_buttons.dart';
 
 class NewGameParameters {
@@ -54,6 +55,8 @@ class NewGameScreenState extends State<NewGameScreen> {
   late String _positionFen;
   late bool _playerHasWhite;
   late BoardColor _orientation;
+  bool _useTime = false;
+  Duration _whiteGameDuration = Duration(minutes: 10);
 
   @override
   void initState() {
@@ -62,6 +65,34 @@ class NewGameScreenState extends State<NewGameScreen> {
     _playerHasWhite = _positionFen.split(' ')[1] == 'w';
     _orientation = _playerHasWhite ? BoardColor.white : BoardColor.black;
     super.initState();
+  }
+
+  Translations _getDurationPickerTranslations() {
+    return Translations(
+      duration: FlutterI18n.translate(context, 'duration_picker.duration'),
+      select: FlutterI18n.translate(context, 'duration_picker.select'),
+      hours: FlutterI18n.translate(context, 'duration_picker.hours'),
+      minutes: FlutterI18n.translate(context, 'duration_picker.minutes'),
+      seconds: FlutterI18n.translate(context, 'duration_picker.seconds'),
+    );
+  }
+
+  String _getGameDurationString(int timeMillis) {
+    final deciSeconds = ((timeMillis % 1000) / 10).floor();
+    final timeSeconds = (timeMillis / 1000).floor();
+    final seconds = timeSeconds % 60;
+    final timeMinutes = (timeSeconds / 60).floor();
+    final minutes = timeMinutes % 60;
+    final hours = (timeMinutes / 60).floor();
+
+    final lessThanOneMinute = hours == 0 && minutes == 0;
+    if (lessThanOneMinute) {
+      return "$seconds.$deciSeconds";
+    } else {
+      final minutesStr = minutes < 10 ? "0$minutes" : "$minutes";
+      final secondsStr = seconds < 10 ? "0$seconds" : "$seconds";
+      return "$hours:$minutesStr:$secondsStr";
+    }
   }
 
   Future<void> _showEditPositionPage() async {
@@ -159,6 +190,66 @@ class NewGameScreenState extends State<NewGameScreen> {
                     ),
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ListTile(
+                    title: Text(
+                      FlutterI18n.translate(
+                        context,
+                        'new_game.use_clock',
+                      ),
+                    ),
+                    leading: Checkbox(
+                        value: _useTime,
+                        onChanged: (newState) {
+                          if (newState != null) {
+                            setState(() {
+                              _useTime = newState;
+                            });
+                          }
+                        }),
+                  ),
+                ),
+                if (_useTime)
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Flexible(
+                        child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          _getGameDurationString(
+                              _whiteGameDuration.inMilliseconds),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4.0),
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              final newDuration = await showDurationPicker(
+                                context: context,
+                                initialDuration: _whiteGameDuration,
+                                confirmText: FlutterI18n.translate(
+                                  context,
+                                  'buttons.ok',
+                                ),
+                                cancelText: FlutterI18n.translate(
+                                  context,
+                                  'buttons.cancel',
+                                ),
+                                translations: _getDurationPickerTranslations(),
+                              );
+                              if (newDuration != null) {
+                                setState(() {
+                                  _whiteGameDuration = newDuration;
+                                });
+                              }
+                            },
+                            child: I18nText('buttons.modify'),
+                          ),
+                        )
+                      ],
+                    )),
+                  ),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Row(
