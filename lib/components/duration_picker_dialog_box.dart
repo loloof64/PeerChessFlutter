@@ -918,6 +918,26 @@ class DurationPickerState extends State<DurationPicker> {
 
   double? height;
 
+  double _getButtonsSize(BuildContext context) {
+    final ScreenSize screenSize =
+        getScreenSize(MediaQuery.of(context).size.width);
+    return screenSize == ScreenSize.mobile
+        ? 14.0
+        : screenSize == ScreenSize.tablet
+            ? 38.0
+            : 50.0;
+  }
+
+  double _getFontSize(BuildContext context) {
+    final ScreenSize screenSize =
+        getScreenSize(MediaQuery.of(context).size.width);
+    return screenSize == ScreenSize.mobile
+        ? 10.0
+        : screenSize == ScreenSize.tablet
+            ? 18.0
+            : 24.0;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -963,13 +983,21 @@ class DurationPickerState extends State<DurationPicker> {
                           onChanged: updateDurationFields,
                         ),
                       ),
-                      getFields(),
+                      getFields(
+                        buttonsSize: _getButtonsSize(context),
+                        fontSize: _getFontSize(
+                          context,
+                        ),
+                      ),
                     ])),
           ]));
     });
   }
 
-  Widget getFields() {
+  Widget getFields({
+    required double buttonsSize,
+    required double fontSize,
+  }) {
     return Flexible(
         child: Container(
             padding: const EdgeInsets.only(left: 10, right: 10),
@@ -989,17 +1017,19 @@ class DurationPickerState extends State<DurationPicker> {
                     onTap: () {
                       updateValue(currentDurationType.prev);
                     },
-                    child: const Icon(
+                    child: Icon(
                       Icons.arrow_left_rounded,
                       color: Colors.white,
-                      size: 36,
+                      size: buttonsSize,
                     ),
                   ),
                 ),
                 Text(
                   getCurrentTimeTypeString(),
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w500, fontSize: 16),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: fontSize,
+                  ),
                 ),
                 Container(
                   decoration: BoxDecoration(
@@ -1014,10 +1044,10 @@ class DurationPickerState extends State<DurationPicker> {
                     onTap: () {
                       updateValue(currentDurationType.next);
                     },
-                    child: const Icon(
+                    child: Icon(
                       Icons.arrow_right_rounded,
                       color: Colors.white,
-                      size: 36,
+                      size: buttonsSize,
                     ),
                   ),
                 ),
@@ -1120,7 +1150,12 @@ class DurationPickerState extends State<DurationPicker> {
             ),
             currentDurationType == DurationPickerMode.hour &&
                     orientation == Orientation.landscape
-                ? getFields()
+                ? getFields(
+                    buttonsSize: _getButtonsSize(context),
+                    fontSize: _getFontSize(
+                      context,
+                    ),
+                  )
                 : Container()
           ],
         ));
