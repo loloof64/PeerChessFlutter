@@ -1081,8 +1081,8 @@ class DurationPickerState extends State<DurationPicker> {
 
   Widget getDurationFields(BuildContext context, Orientation orientation) {
     return Container(
-        padding: const EdgeInsets.only(left: 10, right: 10),
-        width: 100,
+        padding: const EdgeInsets.only(left: 2, right: 2),
+        width: 84,
         child: Column(
           children: <Widget>[
             getCurrentSelectionFieldText(),
@@ -1240,15 +1240,15 @@ class DurationPickerState extends State<DurationPicker> {
   Widget getPlusWidget() {
     return Row(children: const [
       SizedBox(
-        width: 4,
+        width: 2,
       ),
       Text(
         "+",
         style:
-            TextStyle(fontWeight: FontWeight.bold, fontSize: 28, height: 1.25),
+            TextStyle(fontWeight: FontWeight.bold, fontSize: 24, height: 1.25),
       ),
       SizedBox(
-        width: 4,
+        width: 2,
       )
     ]);
   }
@@ -1379,7 +1379,7 @@ class _ShowTimeArgsState extends State<_ShowTimeArgs> {
                             widget.durationMode != DurationPickerMode.hour,
                       )
                     ],
-                    style: const TextStyle(fontSize: 20),
+                    style: const TextStyle(fontSize: 14),
                     controller: controller,
                     decoration: InputDecoration(
                       contentPadding:
