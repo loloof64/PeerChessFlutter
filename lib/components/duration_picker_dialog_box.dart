@@ -857,11 +857,11 @@ class DurationPickerState extends State<DurationPicker> {
     super.initState();
     currentDurationType =
         widget.durationPickerMode ?? DurationPickerMode.minute;
-    currentValue = getCurrentValue();
     hours = (widget.duration.duration.inHours) % Duration.hoursPerDay;
     minutes = widget.duration.duration.inMinutes % Duration.minutesPerHour;
     seconds = widget.duration.duration.inSeconds % Duration.secondsPerMinute;
     incrementSeconds = widget.duration.incrementInSeconds;
+    currentValue = getCurrentValue();
 
     width = widget.width ?? _kDurationPickerWidthLandscape;
     height = widget.height ?? _kDurationPickerHeightLandscape;
