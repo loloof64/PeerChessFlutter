@@ -131,6 +131,10 @@ class _GameScreenState extends State<GameScreen> {
         });
         await _signaling.hangUp();
         if (!mounted) return;
+        final navigator = Navigator.of(context);
+        while (navigator.canPop()) {
+          navigator.pop();
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: I18nText('game.session_finished'),
