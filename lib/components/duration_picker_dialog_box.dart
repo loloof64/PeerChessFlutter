@@ -114,7 +114,7 @@ class _DialPainterNew extends CustomPainter {
   final TextDirection textDirection;
   final int selectedValue;
 
-  static const double _labelPadding = 28.0;
+  static const double _labelPadding = 14.0;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -411,7 +411,7 @@ class _DialState extends State<_Dial> with SingleTickerProviderStateMixin {
       int value, String label, VoidCallback onTap) {
     final TextStyle style = textTheme.bodyLarge!.copyWith(color: color);
     final double labelScaleFactor =
-        math.min(MediaQuery.of(context).textScaleFactor, 2.0);
+        math.min(MediaQuery.of(context).textScaleFactor, 0.8);
     return _TappableLabel(
       value: value,
       painter: TextPainter(
