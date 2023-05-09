@@ -141,9 +141,9 @@ class _GameScreenState extends State<GameScreen> {
               data[ChannelMessagesKeys.whiteGameDurationMillis.toString()],
           blackGameDurationMillis:
               data[ChannelMessagesKeys.blackGameDurationMillis.toString()],
-          whiteGameIncrementSeconds:
+          whiteGameIncrementMillis:
               data[ChannelMessagesKeys.whiteGameIncrementMillis.toString()],
-          blackGameIncrementSeconds:
+          blackGameIncrementMillis:
               data[ChannelMessagesKeys.blackGameIncrementMillis.toString()],
         );
       } else if (type == ChannelMessageValues.newMove.toString()) {
@@ -779,8 +779,8 @@ class _GameScreenState extends State<GameScreen> {
     required bool useTime,
     required int whiteGameDurationMillis,
     required int blackGameDurationMillis,
-    required int whiteGameIncrementSeconds,
-    required int blackGameIncrementSeconds,
+    required int whiteGameIncrementMillis,
+    required int blackGameIncrementMillis,
   }) async {
     setState(() {
       _receivedDrawOffer = false;
@@ -790,6 +790,9 @@ class _GameScreenState extends State<GameScreen> {
       _whiteTimeSelected = _gameManager.whiteTurn;
       _whiteTimeInDeciSeconds = (whiteGameDurationMillis / 100).floor();
       _blackTimeInDeciSeconds = (blackGameDurationMillis / 100).floor();
+
+      _whiteIncrementInDeciSeconds = (whiteGameIncrementMillis / 100).floor();
+      _blackIncrementInDeciSeconds = (blackGameIncrementMillis / 100).floor();
 
       _historyScrollController.animateTo(
         0.0,
