@@ -27,12 +27,17 @@ class HistoryManager {
   }) onPositionSelected;
   final void Function() onSelectStartPosition;
   final bool Function(int) isStartMoveNumber;
+  final void Function({
+    required Move historyMove,
+    required HistoryNode? selectedHistoryNode,
+  }) onHistoryMoveRequested;
 
   HistoryManager({
     required this.onUpdateChildrenWidgets,
     required this.onPositionSelected,
     required this.onSelectStartPosition,
     required this.isStartMoveNumber,
+    required this.onHistoryMoveRequested,
   });
 
   HistoryNode? _gameHistoryTree;
@@ -50,6 +55,10 @@ class HistoryManager {
     _gameHistoryTree = HistoryNode(caption: firstNodeCaption);
     _currentGameHistoryNode = _gameHistoryTree;
     updateChildrenWidgets();
+  }
+
+  void setSelectedHistoryNode(HistoryNode? node) {
+    _selectedHistoryNode = node;
   }
 
   /*
@@ -194,21 +203,11 @@ class HistoryManager {
   void updateChildrenWidgets() {
     if (_gameHistoryTree != null) {
       _historyElementsTree = recursivelyBuildElementsFromHistoryTree(
-          fontSize: 40,
-          selectedHistoryNode: _selectedHistoryNode,
-          tree: _gameHistoryTree!,
-          onHistoryMoveRequested: ({
-            required Move historyMove,
-            required HistoryNode? selectedHistoryNode,
-          }) {
-            _selectedHistoryNode = selectedHistoryNode;
-            updateChildrenWidgets();
-            onPositionSelected(
-              from: historyMove.from.toString(),
-              to: historyMove.to.toString(),
-              position: selectedHistoryNode!.fen!,
-            );
-          });
+        fontSize: 40,
+        selectedHistoryNode: _selectedHistoryNode,
+        tree: _gameHistoryTree!,
+        onHistoryMoveRequested: onHistoryMoveRequested,
+      );
       onUpdateChildrenWidgets();
     }
   }

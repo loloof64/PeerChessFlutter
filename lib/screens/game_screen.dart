@@ -97,11 +97,23 @@ class _GameScreenState extends State<GameScreen> {
     _roomIdController = TextEditingController();
     _gameManager = GameManager();
     _historyManager = HistoryManager(
-      onUpdateChildrenWidgets: _updateHistoryChildrenWidgets,
-      onPositionSelected: _selectPosition,
-      onSelectStartPosition: _selectStartPosition,
-      isStartMoveNumber: _isStartMoveNumber,
-    );
+        onUpdateChildrenWidgets: _updateHistoryChildrenWidgets,
+        onPositionSelected: _selectPosition,
+        onSelectStartPosition: _selectStartPosition,
+        isStartMoveNumber: _isStartMoveNumber,
+        onHistoryMoveRequested: ({
+          required history_builder.Move historyMove,
+          required history_builder.HistoryNode? selectedHistoryNode,
+        }) {
+          if (_gameManager.gameInProgress) return;
+          _historyManager.setSelectedHistoryNode(selectedHistoryNode);
+          _historyManager.updateChildrenWidgets();
+          _historyManager.onPositionSelected(
+            from: historyMove.from.toString(),
+            to: historyMove.to.toString(),
+            position: selectedHistoryNode!.fen!,
+          );
+        });
 
     _signaling = Signaling();
 
@@ -1310,6 +1322,26 @@ class _GameScreenState extends State<GameScreen> {
         });
   }
 
+  void _handleRequestGotoFirst() {
+    if (_gameManager.gameInProgress) return;
+    _historyManager.gotoFirst();
+  }
+
+  void _handleRequestGotoLast() {
+    if (_gameManager.gameInProgress) return;
+    _historyManager.gotoLast();
+  }
+
+  void _handleRequestGotoPrevious() {
+    if (_gameManager.gameInProgress) return;
+    _historyManager.gotoPrevious();
+  }
+
+  void _handleRequestGotoNext() {
+    if (_gameManager.gameInProgress) return;
+    _historyManager.gotoNext();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isLandscape =
@@ -1470,10 +1502,10 @@ class _GameScreenState extends State<GameScreen> {
                             }
                             return ChessHistory(
                               scrollController: _historyScrollController,
-                              requestGotoFirst: _historyManager.gotoFirst,
-                              requestGotoPrevious: _historyManager.gotoPrevious,
-                              requestGotoNext: _historyManager.gotoNext,
-                              requestGotoLast: _historyManager.gotoLast,
+                              requestGotoFirst: _handleRequestGotoFirst,
+                              requestGotoPrevious: _handleRequestGotoPrevious,
+                              requestGotoNext: _handleRequestGotoNext,
+                              requestGotoLast: _handleRequestGotoLast,
                               children: _buildHistoryWidgetsTree(fontSize),
                             );
                           }),
@@ -1529,10 +1561,10 @@ class _GameScreenState extends State<GameScreen> {
                         }
                         return ChessHistory(
                           scrollController: _historyScrollController,
-                          requestGotoFirst: _historyManager.gotoFirst,
-                          requestGotoPrevious: _historyManager.gotoPrevious,
-                          requestGotoNext: _historyManager.gotoNext,
-                          requestGotoLast: _historyManager.gotoLast,
+                          requestGotoFirst: _handleRequestGotoFirst,
+                          requestGotoPrevious: _handleRequestGotoPrevious,
+                          requestGotoNext: _handleRequestGotoNext,
+                          requestGotoLast: _handleRequestGotoLast,
                           children: _buildHistoryWidgetsTree(fontSize),
                         );
                       }),
