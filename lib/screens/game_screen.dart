@@ -766,6 +766,7 @@ class _GameScreenState extends State<GameScreen> {
 
   void _stopCurrentGame({GameResult? result}) {
     if (!_gameManager.gameInProgress) return;
+    _gameManager.stopGame();
     setState(() {
       _whiteTimer?.cancel();
       _whiteTimer = null;
@@ -788,7 +789,6 @@ class _GameScreenState extends State<GameScreen> {
               : result == GameResult.blackWon
                   ? '0-1'
                   : '1/2-1/2');
-      _gameManager.stopGame();
       _historyManager.updateChildrenWidgets();
     });
     // Only show game stopped notification on an aborted game
@@ -1254,12 +1254,12 @@ class _GameScreenState extends State<GameScreen> {
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
 
-    final whitePlayerType = (_gameManager.isGameOver || !_sessionActive)
+    final whitePlayerType = (!_gameManager.gameInProgress || !_sessionActive)
         ? PlayerType.computer
         : _gameManager.whiteTurn && _playerHasWhite
             ? PlayerType.human
             : PlayerType.computer;
-    final blackPlayerType = (_gameManager.isGameOver || !_sessionActive)
+    final blackPlayerType = (!_gameManager.gameInProgress || !_sessionActive)
         ? PlayerType.computer
         : !_gameManager.whiteTurn && !_playerHasWhite
             ? PlayerType.human
