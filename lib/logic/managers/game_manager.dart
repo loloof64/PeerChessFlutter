@@ -214,6 +214,8 @@ class GameManager {
       playerHasWhite ? opponentTranslation : youTranslation,
       'Date',
       formatter.format(date),
+      'Result',
+      getResultString(),
     ]);
 
     String pgnStr = _gameLogic.pgn({
