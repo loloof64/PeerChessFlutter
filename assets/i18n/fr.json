@@ -84,6 +84,7 @@
         "title": "Nouvelle partie",
         "edit_position": "Editer la position",
         "use_clock": "Utiliser la pendule ?",
+        "use_different_clocks": "Un temps différent pour les Noirs ?",
         "position_editor": {
             "title": "Editer la position",
             "label_player_turn": "Trait",

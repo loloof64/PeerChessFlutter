@@ -73,6 +73,7 @@ class NewGameScreenState extends State<NewGameScreen> {
   late bool _playerHasWhite;
   late BoardColor _orientation;
   bool _useTime = false;
+  bool _differentTimes = false;
   late ExtendedDuration _whiteGameDuration;
   late ExtendedDuration _blackGameDuration;
 
@@ -240,48 +241,121 @@ class NewGameScreenState extends State<NewGameScreen> {
                   ),
                 ),
                 if (_useTime)
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Flexible(
-                        child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          _getGameDurationString(
-                            timeMillis:
-                                _whiteGameDuration.duration.inMilliseconds,
-                            incrementTimeSeconds:
-                                _whiteGameDuration.incrementInSeconds,
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Flexible(
+                            child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              _getGameDurationString(
+                                timeMillis:
+                                    _whiteGameDuration.duration.inMilliseconds,
+                                incrementTimeSeconds:
+                                    _whiteGameDuration.incrementInSeconds,
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 4.0),
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  final newDuration = await showDurationPicker(
+                                    context: context,
+                                    initialDuration: _whiteGameDuration,
+                                    confirmText: FlutterI18n.translate(
+                                      context,
+                                      'buttons.ok',
+                                    ),
+                                    cancelText: FlutterI18n.translate(
+                                      context,
+                                      'buttons.cancel',
+                                    ),
+                                    translations:
+                                        _getDurationPickerTranslations(),
+                                  );
+                                  if (newDuration != null) {
+                                    setState(() {
+                                      _whiteGameDuration = newDuration;
+                                    });
+                                  }
+                                },
+                                child: I18nText('buttons.modify'),
+                              ),
+                            )
+                          ],
+                        )),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: ListTile(
+                          title: Text(
+                            FlutterI18n.translate(
+                              context,
+                              'new_game.use_different_clocks',
+                            ),
                           ),
+                          leading: Checkbox(
+                              value: _differentTimes,
+                              onChanged: (newState) {
+                                if (newState != null) {
+                                  setState(() {
+                                    _differentTimes = newState;
+                                  });
+                                }
+                              }),
                         ),
+                      ),
+                      if (_differentTimes)
                         Padding(
-                          padding: const EdgeInsets.only(left: 4.0),
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              final newDuration = await showDurationPicker(
-                                context: context,
-                                initialDuration: _whiteGameDuration,
-                                confirmText: FlutterI18n.translate(
-                                  context,
-                                  'buttons.ok',
+                          padding: const EdgeInsets.all(8.0),
+                          child: Flexible(
+                              child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                _getGameDurationString(
+                                  timeMillis: _blackGameDuration
+                                      .duration.inMilliseconds,
+                                  incrementTimeSeconds:
+                                      _blackGameDuration.incrementInSeconds,
                                 ),
-                                cancelText: FlutterI18n.translate(
-                                  context,
-                                  'buttons.cancel',
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 4.0),
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    final newDuration =
+                                        await showDurationPicker(
+                                      context: context,
+                                      initialDuration: _blackGameDuration,
+                                      confirmText: FlutterI18n.translate(
+                                        context,
+                                        'buttons.ok',
+                                      ),
+                                      cancelText: FlutterI18n.translate(
+                                        context,
+                                        'buttons.cancel',
+                                      ),
+                                      translations:
+                                          _getDurationPickerTranslations(),
+                                    );
+                                    if (newDuration != null) {
+                                      setState(() {
+                                        _blackGameDuration = newDuration;
+                                      });
+                                    }
+                                  },
+                                  child: I18nText('buttons.modify'),
                                 ),
-                                translations: _getDurationPickerTranslations(),
-                              );
-                              if (newDuration != null) {
-                                setState(() {
-                                  _whiteGameDuration = newDuration;
-                                });
-                              }
-                            },
-                            child: I18nText('buttons.modify'),
-                          ),
-                        )
-                      ],
-                    )),
+                              )
+                            ],
+                          )),
+                        ),
+                    ],
                   ),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -299,7 +373,9 @@ class NewGameScreenState extends State<NewGameScreen> {
                                 playerHasWhite: _playerHasWhite,
                                 useTime: _useTime,
                                 whiteGameTime: _whiteGameDuration,
-                                blackGameTime: _whiteGameDuration,
+                                blackGameTime: _differentTimes
+                                    ? _blackGameDuration
+                                    : _whiteGameDuration,
                               ),
                             );
                           },

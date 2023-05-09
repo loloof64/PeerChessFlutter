@@ -84,6 +84,7 @@
         "title": "Nuevo juego",
         "edit_position": "Editar la posición",
         "use_clock": "¿Usar cronómetro?",
+        "use_different_clocks": "¿Usar un cronómetro diferente para los negros?",
         "position_editor": {
             "title": "Editar la posición",
             "label_player_turn": "Turno del jugador",

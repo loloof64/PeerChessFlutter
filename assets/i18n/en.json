@@ -84,6 +84,7 @@
         "title": "New game",
         "edit_position": "Edit position",
         "use_clock": "Use clock ?",
+        "use_different_clocks": "Use different clock for Blacks ?",
         "position_editor": {
             "title": "Edit position",
             "label_player_turn": "Player turn",

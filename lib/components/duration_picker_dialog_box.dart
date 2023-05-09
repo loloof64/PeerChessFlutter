@@ -9,6 +9,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:equatable/equatable.dart';
 
 class Translations {
   final String duration;
@@ -736,9 +737,15 @@ void _announceToAccessibility(BuildContext context, String message) {
   SemanticsService.announce(message, Directionality.of(context));
 }
 
-class ExtendedDuration {
+class ExtendedDuration extends Equatable {
   final Duration duration;
   final int incrementInSeconds;
+
+  @override
+  List<Object> get props => [duration, incrementInSeconds];
+
+  @override
+  bool get stringify => true;
 
   const ExtendedDuration({
     required this.duration,
