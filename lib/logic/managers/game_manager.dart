@@ -36,7 +36,6 @@ class GameManager {
   bool _gameInProgress = false;
   bool _engineThinking = false;
   bool _atLeastAGameStarted = false;
-  double _score = 0.0;
 
   GameManager() {
     _gameLogic.load(emptyPosition);
@@ -53,7 +52,20 @@ class GameManager {
   PlayerType get whitePlayerType => _whitePlayerType;
   PlayerType get blackPlayerType => _blackPlayerType;
   bool get engineThiking => _engineThinking;
-  double get score => _score;
+
+  bool whiteHasCheckmated() {
+    if (_gameLogic.in_checkmate) return false;
+    return _gameLogic.turn == chess.Color.BLACK;
+  }
+
+  bool blackHasCheckmated() {
+    if (_gameLogic.in_checkmate) return false;
+    return _gameLogic.turn == chess.Color.WHITE;
+  }
+
+  bool isDrawOnBoard() {
+    return _gameLogic.in_draw;
+  }
 
   bool processComputerMove({
     required String from,
@@ -97,7 +109,6 @@ class GameManager {
     String startPosition = chess.Chess.DEFAULT_POSITION,
     bool playerHasWhite = true,
   }) {
-    _score = 0.0;
     _startPosition = startPosition;
     _whitePlayerType = playerHasWhite ? PlayerType.human : PlayerType.computer;
     _blackPlayerType = playerHasWhite ? PlayerType.computer : PlayerType.human;
@@ -133,10 +144,6 @@ class GameManager {
   void forbidCpuThinking() {
     _engineThinking = false;
     _cpuCanPlay = false;
-  }
-
-  void updateScore(double score) {
-    _score = score;
   }
 
   String getLastMoveFan() {

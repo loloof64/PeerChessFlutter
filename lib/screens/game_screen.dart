@@ -421,12 +421,12 @@ class _GameScreenState extends State<GameScreen> {
       _gameManager.clearGameStartFlag();
     });
     if (_gameManager.isGameOver) {
-      final gameResultString = _gameManager.getResultString();
-      setState(() {
-        _receivedDrawOffer = false;
-        _historyManager.addResultString(gameResultString);
-        _gameManager.stopGame();
-      });
+      final result = _gameManager.isDrawOnBoard()
+          ? GameResult.draw
+          : _gameManager.whiteHasCheckmated()
+              ? GameResult.whiteWon
+              : GameResult.blackWon;
+      _stopCurrentGame(result: result);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -473,12 +473,12 @@ class _GameScreenState extends State<GameScreen> {
     });
 
     if (_gameManager.isGameOver) {
-      final gameResultString = _gameManager.getResultString();
-      setState(() {
-        _receivedDrawOffer = false;
-        _historyManager.addResultString(gameResultString);
-        _gameManager.stopGame();
-      });
+      final result = _gameManager.isDrawOnBoard()
+          ? GameResult.draw
+          : _gameManager.whiteHasCheckmated()
+              ? GameResult.whiteWon
+              : GameResult.blackWon;
+      _stopCurrentGame(result: result);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
