@@ -30,6 +30,21 @@ class Translations {
   });
 }
 
+enum _ScreenSize { mobile, desktop, tablet }
+
+const _smallBreakPoint = 700.0;
+const _mediumBreakPoint = 940.0;
+
+_ScreenSize getScreenSize(double width) {
+  if (width < _smallBreakPoint) {
+    return _ScreenSize.mobile;
+  } else if (width < _mediumBreakPoint) {
+    return _ScreenSize.tablet;
+  } else {
+    return _ScreenSize.desktop;
+  }
+}
+
 const Duration _kDialAnimateDuration = Duration(milliseconds: 200);
 
 const double _kDurationPickerWidthPortrait = 650.0;
@@ -862,18 +877,25 @@ class DurationPickerState extends State<DurationPicker> {
 
   @override
   Widget build(BuildContext context) {
+    _ScreenSize screenSize = getScreenSize(MediaQuery.of(context).size.width);
     return OrientationBuilder(builder: (context, orientation) {
       return SizedBox(
           width: width,
           height: height,
           child: Row(children: [
-            Expanded(flex: 5, child: getDurationFields(context, orientation)),
+            screenSize != _ScreenSize.mobile
+                ? Expanded(
+                    flex: 5, child: getDurationFields(context, orientation))
+                : Container(),
             Expanded(
                 flex: 5,
                 child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      screenSize == _ScreenSize.mobile
+                          ? getCurrentSelectionFieldText()
+                          : Container(),
                       SizedBox(
                         width: 350,
                         height: 200,
