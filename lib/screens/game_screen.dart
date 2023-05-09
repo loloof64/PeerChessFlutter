@@ -197,6 +197,9 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _handleWhiteLossOnTime() {
+    setState(() {
+      _gameManager.setGameEndStatus(EndStatus.whiteLossOnTime);
+    });
     _stopCurrentGame(result: GameResult.blackWon);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: I18nText(
@@ -216,6 +219,9 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _handleBlackLossOnTime() {
+    setState(() {
+      _gameManager.setGameEndStatus(EndStatus.blackLossOnTime);
+    });
     _stopCurrentGame(result: GameResult.whiteWon);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: I18nText(
@@ -280,6 +286,9 @@ class _GameScreenState extends State<GameScreen> {
 
   void _processDrawAnswer(bool accepted) {
     if (accepted) {
+      setState(() {
+        _gameManager.setGameEndStatus(EndStatus.drawByAgreement);
+      });
       _stopCurrentGame(result: GameResult.draw);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -305,6 +314,10 @@ class _GameScreenState extends State<GameScreen> {
     if (!_gameManager.gameInProgress) {
       return;
     }
+    setState(() {
+      _gameManager.setGameEndStatus(
+          _playerHasWhite ? EndStatus.blackGaveUp : EndStatus.whiteGaveUp);
+    });
     _stopCurrentGame(
         result: _playerHasWhite ? GameResult.whiteWon : GameResult.blackWon);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -1203,6 +1216,7 @@ class _GameScreenState extends State<GameScreen> {
 
     setState(() {
       _receivedDrawOffer = false;
+      _gameManager.setGameEndStatus(EndStatus.drawByAgreement);
     });
     _stopCurrentGame(result: GameResult.draw);
 
@@ -1245,6 +1259,11 @@ class _GameScreenState extends State<GameScreen> {
             ChannelMessageValues.giveUp.toString()
       }),
     );
+    setState(() {
+      _gameManager.setGameEndStatus(
+        _playerHasWhite ? EndStatus.whiteGaveUp : EndStatus.blackGaveUp,
+      );
+    });
     _stopCurrentGame(
       result: _playerHasWhite ? GameResult.blackWon : GameResult.whiteWon,
     );

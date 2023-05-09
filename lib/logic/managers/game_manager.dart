@@ -26,6 +26,15 @@ import '../history_builder.dart';
 
 const emptyPosition = '8/8/8/8/8/8/8/8 w - - 0 1';
 
+enum EndStatus {
+  followGameLogic,
+  drawByAgreement,
+  whiteGaveUp,
+  blackGaveUp,
+  whiteLossOnTime,
+  blackLossOnTime,
+}
+
 class GameManager {
   chess.Chess _gameLogic = chess.Chess();
   PlayerType _whitePlayerType = PlayerType.computer;
@@ -36,6 +45,7 @@ class GameManager {
   bool _gameInProgress = false;
   bool _engineThinking = false;
   bool _atLeastAGameStarted = false;
+  EndStatus _endStatus = EndStatus.followGameLogic;
 
   GameManager() {
     _gameLogic.load(emptyPosition);
@@ -52,6 +62,10 @@ class GameManager {
   PlayerType get whitePlayerType => _whitePlayerType;
   PlayerType get blackPlayerType => _blackPlayerType;
   bool get engineThiking => _engineThinking;
+
+  void setGameEndStatus(EndStatus endStatus) {
+    _endStatus = endStatus;
+  }
 
   bool whiteHasCheckmated() {
     if (_gameLogic.in_checkmate) return false;
@@ -109,6 +123,7 @@ class GameManager {
     String startPosition = chess.Chess.DEFAULT_POSITION,
     bool playerHasWhite = true,
   }) {
+    _endStatus = EndStatus.followGameLogic;
     _startPosition = startPosition;
     _whitePlayerType = playerHasWhite ? PlayerType.human : PlayerType.computer;
     _blackPlayerType = playerHasWhite ? PlayerType.computer : PlayerType.human;
@@ -127,11 +142,13 @@ class GameManager {
   }
 
   void loadStartPosition() {
+    _endStatus = EndStatus.followGameLogic;
     _gameLogic = chess.Chess();
     _gameLogic.load(_startPosition);
   }
 
   void loadPosition(String position) {
+    _endStatus = EndStatus.followGameLogic;
     _gameLogic = chess.Chess();
     _gameLogic.load(position);
   }
@@ -172,13 +189,26 @@ class GameManager {
   }
 
   String getResultString() {
-    if (_gameLogic.in_checkmate) {
-      return _gameLogic.turn == chess.Color.WHITE ? '0-1' : '1-0';
+    switch (_endStatus) {
+      case EndStatus.followGameLogic:
+        if (_gameLogic.in_checkmate) {
+          return _gameLogic.turn == chess.Color.WHITE ? '0-1' : '1-0';
+        }
+        if (_gameLogic.in_draw) {
+          return '1/2-1/2';
+        }
+        return '*';
+      case EndStatus.drawByAgreement:
+        return '1/2-1/2';
+      case EndStatus.whiteGaveUp:
+        return '0-1';
+      case EndStatus.blackGaveUp:
+        return '1-0';
+      case EndStatus.whiteLossOnTime:
+        return '0-1';
+      case EndStatus.blackLossOnTime:
+        return '1-0';
     }
-    if (_gameLogic.in_draw) {
-      return '1/2-1/2';
-    }
-    return '*';
   }
 
   Widget getGameEndedType() {
