@@ -106,7 +106,6 @@ class NewGameScreenState extends State<NewGameScreen> {
     required int timeMillis,
     required int incrementTimeSeconds,
   }) {
-    final deciSeconds = ((timeMillis % 1000) / 10).floor();
     final timeSeconds = (timeMillis / 1000).floor();
     final seconds = timeSeconds % 60;
     final timeMinutes = (timeSeconds / 60).floor();

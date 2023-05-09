@@ -30,18 +30,18 @@ class Translations {
   });
 }
 
-enum _ScreenSize { mobile, desktop, tablet }
+enum ScreenSize { mobile, desktop, tablet }
 
 const _smallBreakPoint = 700.0;
 const _mediumBreakPoint = 940.0;
 
-_ScreenSize getScreenSize(double width) {
+ScreenSize getScreenSize(double width) {
   if (width < _smallBreakPoint) {
-    return _ScreenSize.mobile;
+    return ScreenSize.mobile;
   } else if (width < _mediumBreakPoint) {
-    return _ScreenSize.tablet;
+    return ScreenSize.tablet;
   } else {
-    return _ScreenSize.desktop;
+    return ScreenSize.desktop;
   }
 }
 
@@ -103,6 +103,7 @@ class _DialPainterNew extends CustomPainter {
     required this.theta,
     required this.textDirection,
     required this.selectedValue,
+    required this.labelPadding,
   }) : super(repaint: PaintingBinding.instance.systemFonts);
 
   final List<_TappableLabel> primaryLabels;
@@ -113,8 +114,7 @@ class _DialPainterNew extends CustomPainter {
   final double theta;
   final TextDirection textDirection;
   final int selectedValue;
-
-  static const double _labelPadding = 14.0;
+  final double labelPadding;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -123,7 +123,7 @@ class _DialPainterNew extends CustomPainter {
     final Offset centerPoint = center;
     canvas.drawCircle(centerPoint, radius, Paint()..color = backgroundColor);
 
-    final double labelRadius = radius - _labelPadding;
+    final double labelRadius = radius - labelPadding;
     Offset getOffsetForTheta(double theta) {
       return center +
           Offset(labelRadius * math.cos(theta), -labelRadius * math.sin(theta));
@@ -146,7 +146,7 @@ class _DialPainterNew extends CustomPainter {
 
     final Paint selectorPaint = Paint()..color = accentColor;
     final Offset focusedPoint = getOffsetForTheta(theta);
-    const double focusedRadius = _labelPadding - 4.0;
+    final double focusedRadius = labelPadding - 4.0;
     canvas.drawCircle(centerPoint, 4.0, selectorPaint);
     canvas.drawCircle(focusedPoint, focusedRadius, selectorPaint);
     selectorPaint.strokeWidth = 2.0;
@@ -407,11 +407,15 @@ class _DialState extends State<_Dial> with SingleTickerProviderStateMixin {
     22
   ];
 
-  _TappableLabel _buildTappableLabel(TextTheme textTheme, Color color,
-      int value, String label, VoidCallback onTap) {
+  _TappableLabel _buildTappableLabel({
+    required TextTheme textTheme,
+    required Color color,
+    required int value,
+    required String label,
+    required double labelScaleFactor,
+    required VoidCallback onTap,
+  }) {
     final TextStyle style = textTheme.bodyLarge!.copyWith(color: color);
-    final double labelScaleFactor =
-        math.min(MediaQuery.of(context).textScaleFactor, 0.8);
     return _TappableLabel(
       value: value,
       painter: TextPainter(
@@ -423,21 +427,30 @@ class _DialState extends State<_Dial> with SingleTickerProviderStateMixin {
     );
   }
 
-  List<_TappableLabel> _build24HourRing(TextTheme textTheme, Color color) =>
+  List<_TappableLabel> _build24HourRing({
+    required TextTheme textTheme,
+    required Color color,
+    required double labelScaleFactor,
+  }) =>
       <_TappableLabel>[
         for (final int hour in _twentyFourHours)
           _buildTappableLabel(
-            textTheme,
-            color,
-            hour,
-            hour.toString(),
-            () {
+            textTheme: textTheme,
+            labelScaleFactor: labelScaleFactor,
+            color: color,
+            value: hour,
+            label: hour.toString(),
+            onTap: () {
               _selectValue(hour);
             },
           ),
       ];
 
-  List<_TappableLabel> _buildMinutes(TextTheme textTheme, Color color) {
+  List<_TappableLabel> _buildMinutes({
+    required TextTheme textTheme,
+    required Color color,
+    required double labelScaleFactor,
+  }) {
     const List<int> minuteMarkerValues = <int>[
       0,
       5,
@@ -456,11 +469,12 @@ class _DialState extends State<_Dial> with SingleTickerProviderStateMixin {
     return <_TappableLabel>[
       for (final int minute in minuteMarkerValues)
         _buildTappableLabel(
-          textTheme,
-          color,
-          minute,
-          minute.toString(),
-          () {
+          labelScaleFactor: labelScaleFactor,
+          textTheme: textTheme,
+          color: color,
+          value: minute,
+          label: minute.toString(),
+          onTap: () {
             _selectValue(minute);
           },
         ),
@@ -470,7 +484,19 @@ class _DialState extends State<_Dial> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final ScreenSize screenSize =
+        getScreenSize(MediaQuery.of(context).size.width);
     final TimePickerThemeData pickerTheme = TimePickerTheme.of(context);
+    final double labelScaleFactor = screenSize == ScreenSize.mobile
+        ? 0.8
+        : screenSize == ScreenSize.tablet
+            ? 1.4
+            : 1.6;
+    final double labelPadding = screenSize == ScreenSize.mobile
+        ? 14.0
+        : screenSize == ScreenSize.tablet
+            ? 22.0
+            : 26.0;
     final Color backgroundColor = pickerTheme.dialBackgroundColor ??
         themeData!.colorScheme.onBackground.withOpacity(0.12);
     final Color accentColor =
@@ -488,24 +514,55 @@ class _DialState extends State<_Dial> with SingleTickerProviderStateMixin {
     switch (widget.mode) {
       case DurationPickerMode.hour:
         selectedDialValue = widget.value;
-        primaryLabels = _build24HourRing(theme.textTheme, primaryLabelColor);
-        secondaryLabels =
-            _build24HourRing(theme.textTheme, secondaryLabelColor);
+        primaryLabels = _build24HourRing(
+          textTheme: theme.textTheme,
+          color: primaryLabelColor,
+          labelScaleFactor: labelScaleFactor,
+        );
+        secondaryLabels = _build24HourRing(
+          textTheme: theme.textTheme,
+          color: secondaryLabelColor,
+          labelScaleFactor: labelScaleFactor,
+        );
         break;
       case DurationPickerMode.minute:
         selectedDialValue = widget.value;
-        primaryLabels = _buildMinutes(theme.textTheme, primaryLabelColor);
-        secondaryLabels = _buildMinutes(theme.textTheme, secondaryLabelColor);
+        primaryLabels = _buildMinutes(
+          textTheme: theme.textTheme,
+          color: primaryLabelColor,
+          labelScaleFactor: labelScaleFactor,
+        );
+        secondaryLabels = _buildMinutes(
+          textTheme: theme.textTheme,
+          color: secondaryLabelColor,
+          labelScaleFactor: labelScaleFactor,
+        );
         break;
       case DurationPickerMode.second:
         selectedDialValue = widget.value;
-        primaryLabels = _buildMinutes(theme.textTheme, primaryLabelColor);
-        secondaryLabels = _buildMinutes(theme.textTheme, secondaryLabelColor);
+        primaryLabels = _buildMinutes(
+          textTheme: theme.textTheme,
+          color: primaryLabelColor,
+          labelScaleFactor: labelScaleFactor,
+        );
+        secondaryLabels = _buildMinutes(
+          textTheme: theme.textTheme,
+          color: secondaryLabelColor,
+          labelScaleFactor: labelScaleFactor,
+        );
         break;
       case DurationPickerMode.increment:
         selectedDialValue = widget.value;
-        primaryLabels = _buildMinutes(theme.textTheme, primaryLabelColor);
-        secondaryLabels = _buildMinutes(theme.textTheme, secondaryLabelColor);
+        primaryLabels = _buildMinutes(
+          textTheme: theme.textTheme,
+          color: primaryLabelColor,
+          labelScaleFactor: labelScaleFactor,
+        );
+        secondaryLabels = _buildMinutes(
+          textTheme: theme.textTheme,
+          color: secondaryLabelColor,
+          labelScaleFactor: labelScaleFactor,
+        );
         break;
       default:
         selectedDialValue = -1;
@@ -530,6 +587,7 @@ class _DialState extends State<_Dial> with SingleTickerProviderStateMixin {
           dotColor: theme.colorScheme.surface,
           theta: _theta!.value,
           textDirection: Directionality.of(context),
+          labelPadding: labelPadding,
         ),
       ),
     );
@@ -877,13 +935,13 @@ class DurationPickerState extends State<DurationPicker> {
 
   @override
   Widget build(BuildContext context) {
-    _ScreenSize screenSize = getScreenSize(MediaQuery.of(context).size.width);
+    ScreenSize screenSize = getScreenSize(MediaQuery.of(context).size.width);
     return OrientationBuilder(builder: (context, orientation) {
       return SizedBox(
           width: width,
           height: height,
           child: Row(children: [
-            screenSize != _ScreenSize.mobile
+            screenSize != ScreenSize.mobile
                 ? Expanded(
                     flex: 5, child: getDurationFields(context, orientation))
                 : Container(),
@@ -893,7 +951,7 @@ class DurationPickerState extends State<DurationPicker> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      screenSize == _ScreenSize.mobile
+                      screenSize == ScreenSize.mobile
                           ? getCurrentSelectionFieldText()
                           : Container(),
                       SizedBox(
