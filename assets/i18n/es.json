@@ -16,7 +16,9 @@
         "duration": "duración",
         "hours": "horas",
         "minutes": "minutos",
-        "seconds": "segundos"
+        "seconds": "segundos",
+        "increment_seconds": "incremento (s)",
+        "seconds_unit": "s"
     },
     "game": {
         "promotion_dialog_title": "Selecciona la pieza de promoción",

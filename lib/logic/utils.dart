@@ -113,6 +113,8 @@ enum ChannelMessagesKeys {
   useTime,
   whiteGameDurationMillis,
   blackGameDurationMillis,
+  whiteGameIncrementMillis,
+  blackGameIncrementMillis
 }
 
 enum ChannelMessageValues {

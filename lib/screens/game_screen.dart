@@ -25,6 +25,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter_window_close/flutter_window_close.dart';
+import 'package:peer_chess/components/duration_picker_dialog_box.dart';
 import 'package:peer_chess/logic/utils.dart';
 import 'package:simple_chess_board/models/board_arrow.dart';
 import 'package:simple_chess_board/simple_chess_board.dart';
@@ -69,11 +70,19 @@ class _GameScreenState extends State<GameScreen> {
   bool _receivedDrawOffer = false;
   String? _savePgnInitialDirectory;
 
-  Duration _oldWhiteGameTime = Duration(minutes: 10);
-  Duration _oldBlackGameTime = Duration(minutes: 10);
+  ExtendedDuration _oldWhiteGameTime = const ExtendedDuration(
+    duration: Duration(minutes: 10),
+    incrementInSeconds: 0,
+  );
+  ExtendedDuration _oldBlackGameTime = const ExtendedDuration(
+    duration: Duration(minutes: 10),
+    incrementInSeconds: 0,
+  );
 
   int _whiteTimeInDeciSeconds = 0;
   int _blackTimeInDeciSeconds = 0;
+  int _whiteIncrementInDeciSeconds = 0;
+  int _blackIncrementInDeciSeconds = 0;
   bool _whiteTimeSelected = false;
   bool _isTimedGame = false;
 
@@ -132,6 +141,10 @@ class _GameScreenState extends State<GameScreen> {
               data[ChannelMessagesKeys.whiteGameDurationMillis.toString()],
           blackGameDurationMillis:
               data[ChannelMessagesKeys.blackGameDurationMillis.toString()],
+          whiteGameIncrementSeconds:
+              data[ChannelMessagesKeys.whiteGameIncrementMillis.toString()],
+          blackGameIncrementSeconds:
+              data[ChannelMessagesKeys.blackGameIncrementMillis.toString()],
         );
       } else if (type == ChannelMessageValues.newMove.toString()) {
         __playPeerMove(
@@ -417,6 +430,7 @@ class _GameScreenState extends State<GameScreen> {
         promotion: move.promotion.map((t) => t.name).toNullable(),
       );
       if (moveHasBeenMade) {
+        _incrementClockIfNeeded();
         _toggleClockIfNeeded();
         _sendMove(move);
         _addMoveToHistory();
@@ -468,6 +482,7 @@ class _GameScreenState extends State<GameScreen> {
       if (!moveHasBeenMade) return;
     });
 
+    _incrementClockIfNeeded();
     _toggleClockIfNeeded();
 
     setState(() {
@@ -619,8 +634,12 @@ class _GameScreenState extends State<GameScreen> {
         startPosition: gameParameters.startPositionFen,
         playerHasWhite: gameParameters.playerHasWhite,
         useTime: gameParameters.useTime,
-        whiteGameDuration: gameParameters.whiteGameTime,
-        blackGameDuration: gameParameters.blackGameTime,
+        whiteGameDuration: gameParameters.whiteGameTime.duration,
+        whiteGameIncrementSeconds:
+            gameParameters.whiteGameTime.incrementInSeconds,
+        blackGameDuration: gameParameters.blackGameTime.duration,
+        blackGameIncrementSeconds:
+            gameParameters.blackGameTime.incrementInSeconds,
       );
     }
   }
@@ -645,7 +664,24 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
-  // Imporant : must be called after move has been registered in Game manager !
+  // Important : must be called after move has been registered in Game manager and
+  // before toggling the clock side !
+  void _incrementClockIfNeeded() {
+    if (_isTimedGame) {
+      // Move has been made, so be careful to increment the right side !
+      if (_gameManager.whiteTurn) {
+        setState(() {
+          _blackTimeInDeciSeconds += _blackIncrementInDeciSeconds;
+        });
+      } else {
+        setState(() {
+          _whiteTimeInDeciSeconds += _whiteIncrementInDeciSeconds;
+        });
+      }
+    }
+  }
+
+  // Important : must be called after move has been registered in Game manager !
   void _toggleClockIfNeeded() {
     if (_isTimedGame) {
       if (_gameManager.whiteTurn) {
@@ -677,7 +713,9 @@ class _GameScreenState extends State<GameScreen> {
     required bool playerHasWhite,
     required bool useTime,
     required Duration whiteGameDuration,
+    required int whiteGameIncrementSeconds,
     required Duration blackGameDuration,
+    required int blackGameIncrementSeconds,
   }) async {
     _signaling.sendMessage(
       jsonEncode(
@@ -689,11 +727,16 @@ class _GameScreenState extends State<GameScreen> {
           ChannelMessagesKeys.useTime.toString(): useTime,
           ChannelMessagesKeys.whiteGameDurationMillis.toString():
               whiteGameDuration.inMilliseconds,
+          ChannelMessagesKeys.whiteGameIncrementMillis.toString():
+              whiteGameIncrementSeconds * 1000,
           ChannelMessagesKeys.blackGameDurationMillis.toString():
               blackGameDuration.inMilliseconds,
+          ChannelMessagesKeys.blackGameIncrementMillis.toString():
+              blackGameIncrementSeconds * 1000,
         },
       ),
     );
+
     setState(() {
       _receivedDrawOffer = false;
       _playerHasWhite = playerHasWhite;
@@ -704,6 +747,8 @@ class _GameScreenState extends State<GameScreen> {
           (whiteGameDuration.inMilliseconds / 100).floor();
       _blackTimeInDeciSeconds =
           (blackGameDuration.inMilliseconds / 100).floor();
+      _whiteIncrementInDeciSeconds = (whiteGameIncrementSeconds * 10).floor();
+      _blackIncrementInDeciSeconds = (blackGameIncrementSeconds * 10).floor();
 
       _historyScrollController.animateTo(
         0.0,
@@ -734,6 +779,8 @@ class _GameScreenState extends State<GameScreen> {
     required bool useTime,
     required int whiteGameDurationMillis,
     required int blackGameDurationMillis,
+    required int whiteGameIncrementSeconds,
+    required int blackGameIncrementSeconds,
   }) async {
     setState(() {
       _receivedDrawOffer = false;

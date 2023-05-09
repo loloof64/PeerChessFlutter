@@ -27,8 +27,8 @@ class NewGameParameters {
   final String startPositionFen;
   final bool playerHasWhite;
   final bool useTime;
-  final Duration whiteGameTime;
-  final Duration blackGameTime;
+  final ExtendedDuration whiteGameTime;
+  final ExtendedDuration blackGameTime;
 
   NewGameParameters({
     required this.startPositionFen,
@@ -41,8 +41,8 @@ class NewGameParameters {
 
 class NewGameScreenArguments {
   final String initialFen;
-  final Duration initialWhiteGameDuration;
-  final Duration initialBlackGameDuration;
+  final ExtendedDuration initialWhiteGameDuration;
+  final ExtendedDuration initialBlackGameDuration;
 
   NewGameScreenArguments({
     required this.initialFen,
@@ -53,8 +53,8 @@ class NewGameScreenArguments {
 
 class NewGameScreen extends StatefulWidget {
   final String initialFen;
-  final Duration initialWhiteGameDuration;
-  final Duration initialBlackGameDuration;
+  final ExtendedDuration initialWhiteGameDuration;
+  final ExtendedDuration initialBlackGameDuration;
 
   const NewGameScreen({
     Key? key,
@@ -73,8 +73,8 @@ class NewGameScreenState extends State<NewGameScreen> {
   late bool _playerHasWhite;
   late BoardColor _orientation;
   bool _useTime = false;
-  late Duration _whiteGameDuration;
-  late Duration _blackGameDuration;
+  late ExtendedDuration _whiteGameDuration;
+  late ExtendedDuration _blackGameDuration;
 
   @override
   void initState() {
@@ -94,10 +94,17 @@ class NewGameScreenState extends State<NewGameScreen> {
       hours: FlutterI18n.translate(context, 'duration_picker.hours'),
       minutes: FlutterI18n.translate(context, 'duration_picker.minutes'),
       seconds: FlutterI18n.translate(context, 'duration_picker.seconds'),
+      incrementInSeconds:
+          FlutterI18n.translate(context, 'duration_picker.increment_seconds'),
+      secondsUnit:
+          FlutterI18n.translate(context, 'duration_picker.seconds_unit'),
     );
   }
 
-  String _getGameDurationString(int timeMillis) {
+  String _getGameDurationString({
+    required int timeMillis,
+    required int incrementTimeSeconds,
+  }) {
     final deciSeconds = ((timeMillis % 1000) / 10).floor();
     final timeSeconds = (timeMillis / 1000).floor();
     final seconds = timeSeconds % 60;
@@ -111,7 +118,9 @@ class NewGameScreenState extends State<NewGameScreen> {
     } else {
       final minutesStr = minutes < 10 ? "0$minutes" : "$minutes";
       final secondsStr = seconds < 10 ? "0$seconds" : "$seconds";
-      return "$hours:$minutesStr:$secondsStr";
+      return "$hours:$minutesStr:$secondsStr +"
+          "$incrementTimeSeconds"
+          "${FlutterI18n.translate(context, 'duration_picker.seconds_unit')}";
     }
   }
 
@@ -239,7 +248,11 @@ class NewGameScreenState extends State<NewGameScreen> {
                       children: [
                         Text(
                           _getGameDurationString(
-                              _whiteGameDuration.inMilliseconds),
+                            timeMillis:
+                                _whiteGameDuration.duration.inMilliseconds,
+                            incrementTimeSeconds:
+                                _whiteGameDuration.incrementInSeconds,
+                          ),
                         ),
                         Padding(
                           padding: const EdgeInsets.only(left: 4.0),

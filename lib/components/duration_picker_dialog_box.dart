@@ -16,6 +16,8 @@ class Translations {
   final String hours;
   final String minutes;
   final String seconds;
+  final String incrementInSeconds;
+  final String secondsUnit;
 
   const Translations({
     required this.duration,
@@ -23,6 +25,8 @@ class Translations {
     required this.hours,
     required this.minutes,
     required this.seconds,
+    required this.incrementInSeconds,
+    required this.secondsUnit,
   });
 }
 
@@ -36,18 +40,20 @@ const double _kDurationPickerHeightLandscape = 310.0;
 
 const double _kTwoPi = 2 * math.pi;
 
-enum DurationPickerMode { hour, minute, second }
+enum DurationPickerMode { hour, minute, second, increment }
 
 extension _DurationPickerModeExtenstion on DurationPickerMode {
   static const nextItems = {
     DurationPickerMode.hour: DurationPickerMode.minute,
     DurationPickerMode.minute: DurationPickerMode.second,
-    DurationPickerMode.second: DurationPickerMode.hour,
+    DurationPickerMode.second: DurationPickerMode.increment,
+    DurationPickerMode.increment: DurationPickerMode.hour,
   };
   static const prevItems = {
-    DurationPickerMode.hour: DurationPickerMode.second,
+    DurationPickerMode.hour: DurationPickerMode.increment,
     DurationPickerMode.minute: DurationPickerMode.hour,
     DurationPickerMode.second: DurationPickerMode.minute,
+    DurationPickerMode.increment: DurationPickerMode.second,
   };
 
   DurationPickerMode? get next => nextItems[this];
@@ -262,6 +268,10 @@ class _DialState extends State<_Dial> with SingleTickerProviderStateMixin {
         fraction =
             (value / Duration.secondsPerMinute) % Duration.secondsPerMinute;
         break;
+      case DurationPickerMode.increment:
+        fraction =
+            (value / Duration.secondsPerMinute) % Duration.secondsPerMinute;
+        break;
       default:
         fraction = -1;
         break;
@@ -282,6 +292,10 @@ class _DialState extends State<_Dial> with SingleTickerProviderStateMixin {
             Duration.minutesPerHour;
         break;
       case DurationPickerMode.second:
+        result = (fraction * Duration.secondsPerMinute).round() %
+            Duration.secondsPerMinute;
+        break;
+      case DurationPickerMode.increment:
         result = (fraction * Duration.secondsPerMinute).round() %
             Duration.secondsPerMinute;
         break;
@@ -473,6 +487,11 @@ class _DialState extends State<_Dial> with SingleTickerProviderStateMixin {
         primaryLabels = _buildMinutes(theme.textTheme, primaryLabelColor);
         secondaryLabels = _buildMinutes(theme.textTheme, secondaryLabelColor);
         break;
+      case DurationPickerMode.increment:
+        selectedDialValue = widget.value;
+        primaryLabels = _buildMinutes(theme.textTheme, primaryLabelColor);
+        secondaryLabels = _buildMinutes(theme.textTheme, secondaryLabelColor);
+        break;
       default:
         selectedDialValue = -1;
         primaryLabels = <_TappableLabel>[];
@@ -525,7 +544,7 @@ class _DurationPickerDialog extends StatefulWidget {
   final Translations translations;
 
   /// The duration initially selected when the dialog is shown.
-  final Duration initialDuration;
+  final ExtendedDuration initialDuration;
 
   /// Optionally provide your own text for the cancel button.
   ///
@@ -546,8 +565,8 @@ class _DurationPickerDialog extends StatefulWidget {
 }
 
 class _DurationPickerState extends State<_DurationPickerDialog> {
-  Duration? get selectedDuration => _selectedDuration;
-  Duration? _selectedDuration;
+  ExtendedDuration? get selectedDuration => _selectedDuration;
+  ExtendedDuration? _selectedDuration;
 
   @override
   void initState() {
@@ -555,7 +574,7 @@ class _DurationPickerState extends State<_DurationPickerDialog> {
     _selectedDuration = widget.initialDuration;
   }
 
-  void _handleDurationChanged(Duration value) {
+  void _handleDurationChanged(ExtendedDuration value) {
     setState(() {
       _selectedDuration = value;
     });
@@ -566,7 +585,14 @@ class _DurationPickerState extends State<_DurationPickerDialog> {
   }
 
   void _handleOk() {
-    Navigator.pop(context, _selectedDuration ?? const Duration());
+    Navigator.pop(
+      context,
+      _selectedDuration ??
+          const ExtendedDuration(
+            duration: Duration(),
+            incrementInSeconds: 0,
+          ),
+    );
   }
 
   @override
@@ -592,7 +618,11 @@ class _DurationPickerState extends State<_DurationPickerDialog> {
         padding:
             const EdgeInsets.only(left: 16.0, right: 16, top: 8, bottom: 8),
         child: DurationPicker(
-          duration: _selectedDuration ?? const Duration(),
+          duration: _selectedDuration ??
+              const ExtendedDuration(
+                duration: Duration.zero,
+                incrementInSeconds: 0,
+              ),
           onChange: _handleDurationChanged,
           translations: widget.translations,
         ));
@@ -706,6 +736,16 @@ void _announceToAccessibility(BuildContext context, String message) {
   SemanticsService.announce(message, Directionality.of(context));
 }
 
+class ExtendedDuration {
+  final Duration duration;
+  final int incrementInSeconds;
+
+  const ExtendedDuration({
+    required this.duration,
+    required this.incrementInSeconds,
+  });
+}
+
 /// Shows a dialog containing the duration picker.
 ///
 /// The returned Future resolves to the duration selected by the user when the user
@@ -730,15 +770,15 @@ void _announceToAccessibility(BuildContext context, String message) {
 ///   cancelText: cancelText,
 ///    );
 /// ```
-Future<Duration?> showDurationPicker(
+Future<ExtendedDuration?> showDurationPicker(
     {required BuildContext context,
-    required Duration initialDuration,
+    required ExtendedDuration initialDuration,
     required Translations translations,
     DurationPickerMode? durationPickerMode,
     bool showHead = true,
     String? confirmText,
     String? cancelText}) async {
-  return await showDialog<Duration>(
+  return await showDialog<ExtendedDuration>(
     context: context,
     builder: (BuildContext context) => _DurationPickerDialog(
       initialDuration: initialDuration,
@@ -768,8 +808,8 @@ Future<Duration?> showDurationPicker(
 /// );
 /// ```
 class DurationPicker extends StatefulWidget {
-  final Duration duration;
-  final ValueChanged<Duration> onChange;
+  final ExtendedDuration duration;
+  final ValueChanged<ExtendedDuration> onChange;
   final DurationPickerMode? durationPickerMode;
 
   final Translations translations;
@@ -780,7 +820,7 @@ class DurationPicker extends StatefulWidget {
   const DurationPicker({
     super.key,
     required this.translations,
-    this.duration = const Duration(minutes: 0),
+    required this.duration,
     required this.onChange,
     this.width,
     this.height,
@@ -795,10 +835,10 @@ class DurationPickerState extends State<DurationPicker> {
   late DurationPickerMode currentDurationType;
   var boxShadow = const BoxShadow(
       color: Color(0x07000000), offset: Offset(3, 0), blurRadius: 12);
-  int days = 0;
   int hours = 0;
   int minutes = 0;
   int seconds = 0;
+  int incrementSeconds = 0;
   int currentValue = 0;
   Duration duration = const Duration();
   double? width;
@@ -811,10 +851,10 @@ class DurationPickerState extends State<DurationPicker> {
     currentDurationType =
         widget.durationPickerMode ?? DurationPickerMode.minute;
     currentValue = getCurrentValue();
-    days = widget.duration.inDays;
-    hours = (widget.duration.inHours) % Duration.hoursPerDay;
-    minutes = widget.duration.inMinutes % Duration.minutesPerHour;
-    seconds = widget.duration.inSeconds % Duration.secondsPerMinute;
+    hours = (widget.duration.duration.inHours) % Duration.hoursPerDay;
+    minutes = widget.duration.duration.inMinutes % Duration.minutesPerHour;
+    seconds = widget.duration.duration.inSeconds % Duration.secondsPerMinute;
+    incrementSeconds = widget.duration.incrementInSeconds;
 
     width = widget.width ?? _kDurationPickerWidthLandscape;
     height = widget.height ?? _kDurationPickerHeightLandscape;
@@ -835,7 +875,7 @@ class DurationPickerState extends State<DurationPicker> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       SizedBox(
-                        width: 300,
+                        width: 350,
                         height: 200,
                         child: _Dial(
                           value: currentValue,
@@ -913,6 +953,8 @@ class DurationPickerState extends State<DurationPicker> {
         return widget.translations.minutes;
       case DurationPickerMode.second:
         return widget.translations.seconds;
+      case DurationPickerMode.increment:
+        return widget.translations.incrementInSeconds;
     }
   }
 
@@ -975,7 +1017,21 @@ class DurationPickerState extends State<DurationPicker> {
                   isEditable: currentDurationType == DurationPickerMode.second,
                   start: 0,
                   end: 59,
-                )
+                ),
+                getPlusWidget(),
+                _ShowTimeArgs(
+                  durationMode: DurationPickerMode.increment,
+                  onChanged: updateValue,
+                  onTextChanged: updateDurationFields,
+                  value: incrementSeconds,
+                  formatWidth: 2,
+                  desc: widget.translations.incrementInSeconds,
+                  isEditable:
+                      currentDurationType == DurationPickerMode.increment,
+                  start: 0,
+                  end: 59,
+                ),
+                getSecondWidget(),
               ],
             ),
             const SizedBox(
@@ -998,6 +1054,8 @@ class DurationPickerState extends State<DurationPicker> {
         return minutes;
       case DurationPickerMode.second:
         return seconds;
+      case DurationPickerMode.increment:
+        return incrementSeconds;
       default:
         return -1;
     }
@@ -1015,18 +1073,23 @@ class DurationPickerState extends State<DurationPicker> {
         case DurationPickerMode.second:
           seconds = value;
           break;
+        case DurationPickerMode.increment:
+          incrementSeconds = value;
       }
       currentValue = value;
     });
 
     widget.onChange(
-      Duration(
-        days: days,
-        hours: hours,
-        minutes: minutes,
-        seconds: seconds,
-        milliseconds: 0,
-        microseconds: 0,
+      ExtendedDuration(
+        duration: Duration(
+          days: 0,
+          hours: hours,
+          minutes: minutes,
+          seconds: seconds,
+          milliseconds: 0,
+          microseconds: 0,
+        ),
+        incrementInSeconds: incrementSeconds,
       ),
     );
   }
@@ -1056,6 +1119,38 @@ class DurationPickerState extends State<DurationPicker> {
       SizedBox(
         width: 4,
       )
+    ]);
+  }
+
+  Widget getPlusWidget() {
+    return Row(children: const [
+      SizedBox(
+        width: 4,
+      ),
+      Text(
+        "+",
+        style:
+            TextStyle(fontWeight: FontWeight.bold, fontSize: 28, height: 1.25),
+      ),
+      SizedBox(
+        width: 4,
+      )
+    ]);
+  }
+
+  Widget getSecondWidget() {
+    return Row(children: [
+      const SizedBox(
+        width: 1.5,
+      ),
+      Text(
+        widget.translations.secondsUnit,
+        style: const TextStyle(
+            fontWeight: FontWeight.bold, fontSize: 28, height: 1.25),
+      ),
+      const SizedBox(
+        width: 4,
+      ),
     ]);
   }
 
@@ -1256,6 +1351,7 @@ class _ShowTimeArgsState extends State<_ShowTimeArgs> {
       case DurationPickerMode.hour:
       case DurationPickerMode.minute:
       case DurationPickerMode.second:
+      case DurationPickerMode.increment:
         return 45;
       default:
         return 0;
