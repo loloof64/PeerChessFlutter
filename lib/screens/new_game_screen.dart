@@ -62,7 +62,7 @@ class NewGameScreenState extends State<NewGameScreen> {
   late bool _playerHasWhite;
   late BoardColor _orientation;
   bool _useTime = false;
-  Duration _whiteGameDuration = Duration(minutes: 10);
+  Duration _whiteGameDuration = const Duration(minutes: 10);
 
   @override
   void initState() {

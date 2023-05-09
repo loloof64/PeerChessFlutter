@@ -58,7 +58,11 @@
         "draw_offer_dialog_message": "¿Quieres enviar oferta de empate?",
         "draw_offer_accepted": "Oferta de empate acceptada",
         "draw_offer_rejected": "Oferta de empate refusada",
-        "mutual_draw": "Juego terminado por empate mutuo"
+        "mutual_draw": "Juego terminado por empate mutuo",
+        "time_loss": {
+            "you": "Perdiste porque se acabó el tiempo",
+            "opponent": "Su oponente perdió porque se acabó el tiempo"
+        }
     },
     "game_termination": {
         "black_checkmate_white": "Los Negros ha ganado por jaque mate.",

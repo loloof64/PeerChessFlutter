@@ -18,6 +18,7 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
 
 import 'package:firedart/firedart.dart';
 import 'package:flutter/services.dart';
@@ -72,6 +73,9 @@ class _GameScreenState extends State<GameScreen> {
   int _blackTimeInDeciSeconds = 0;
   bool _whiteTimeSelected = false;
   bool _isTimedGame = false;
+
+  Timer? _whiteTimer;
+  Timer? _blackTimer;
 
   final ScrollController _historyScrollController =
       ScrollController(initialScrollOffset: 0.0, keepScrollOffset: true);
@@ -158,6 +162,44 @@ class _GameScreenState extends State<GameScreen> {
       _signaling.dispose().then((value) => null);
     });
     super.dispose();
+  }
+
+  void _handleWhiteLossOnTime() {
+    _stopCurrentGame(result: GameResult.blackWon);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: I18nText(
+      _playerHasWhite ? 'game.time_loss.you' : 'game.time_loss.opponent',
+    )));
+  }
+
+  void _handleWhiteTimerTick() {
+    if (_whiteTimeInDeciSeconds > 0) {
+      setState(() {
+        _whiteTimeInDeciSeconds--;
+      });
+    }
+    if (_whiteTimeInDeciSeconds <= 0) {
+      _handleWhiteLossOnTime();
+    }
+  }
+
+  void _handleBlackLossOnTime() {
+    _stopCurrentGame(result: GameResult.whiteWon);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: I18nText(
+      _playerHasWhite ? 'game.time_loss.opponent' : 'game.time_loss.you',
+    )));
+  }
+
+  void _handleBlackTimerTick() {
+    if (_blackTimeInDeciSeconds > 0) {
+      setState(() {
+        _blackTimeInDeciSeconds--;
+      });
+    }
+    if (_blackTimeInDeciSeconds <= 0) {
+      _handleBlackLossOnTime();
+    }
   }
 
   Future<void> _listenSnapshotsInDB() async {
@@ -372,6 +414,7 @@ class _GameScreenState extends State<GameScreen> {
         promotion: move.promotion.map((t) => t.name).toNullable(),
       );
       if (moveHasBeenMade) {
+        _toggleClockIfNeeded();
         _sendMove(move);
         _addMoveToHistory();
       }
@@ -421,6 +464,8 @@ class _GameScreenState extends State<GameScreen> {
 
       if (!moveHasBeenMade) return;
     });
+
+    _toggleClockIfNeeded();
 
     setState(() {
       _addMoveToHistory();
@@ -569,6 +614,53 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
+  void _startClockIfNeeded() {
+    if (_isTimedGame) {
+      if (_gameManager.whiteTurn) {
+        setState(() {
+          _whiteTimer =
+              Timer.periodic(const Duration(milliseconds: 100), (timer) {
+            _handleWhiteTimerTick();
+          });
+        });
+      } else {
+        setState(() {
+          _blackTimer =
+              Timer.periodic(const Duration(milliseconds: 100), (timer) {
+            _handleBlackTimerTick();
+          });
+        });
+      }
+    }
+  }
+
+  // Imporant : must be called after move has been registered in Game manager !
+  void _toggleClockIfNeeded() {
+    if (_isTimedGame) {
+      if (_gameManager.whiteTurn) {
+        _blackTimer?.cancel();
+        setState(() {
+          _blackTimer = null;
+          _whiteTimeSelected = true;
+          _whiteTimer =
+              Timer.periodic(const Duration(milliseconds: 100), (timer) {
+            _handleWhiteTimerTick();
+          });
+        });
+      } else {
+        _whiteTimer?.cancel();
+        setState(() {
+          _whiteTimer = null;
+          _whiteTimeSelected = false;
+          _blackTimer =
+              Timer.periodic(const Duration(milliseconds: 100), (timer) {
+            _handleBlackTimerTick();
+          });
+        });
+      }
+    }
+  }
+
   Future<void> _startNewGameAsInitiator({
     String startPosition = chess.Chess.DEFAULT_POSITION,
     required bool playerHasWhite,
@@ -616,11 +708,13 @@ class _GameScreenState extends State<GameScreen> {
       final caption = "$moveNumber${whiteTurn ? '.' : '...'}";
       _lastMoveToHighlight = null;
       _historyManager.newGame(caption);
+
       _gameManager.startNewGame(
         startPosition: startPosition,
         playerHasWhite: playerHasWhite,
       );
     });
+    _startClockIfNeeded();
   }
 
   Future<void> _startNewGameAsReceiver({
@@ -653,11 +747,13 @@ class _GameScreenState extends State<GameScreen> {
       final caption = "$moveNumber${whiteTurn ? '.' : '...'}";
       _lastMoveToHighlight = null;
       _historyManager.newGame(caption);
+
       _gameManager.startNewGame(
         startPosition: startPosition,
         playerHasWhite: playerHasWhite,
       );
     });
+    _startClockIfNeeded();
   }
 
   void _toggleBoardOrientation() {
@@ -671,6 +767,12 @@ class _GameScreenState extends State<GameScreen> {
   void _stopCurrentGame({GameResult? result}) {
     if (!_gameManager.gameInProgress) return;
     setState(() {
+      _whiteTimer?.cancel();
+      _whiteTimer = null;
+
+      _blackTimer?.cancel();
+      _blackTimer = null;
+
       _receivedDrawOffer = false;
       if (_historyManager.currentNode?.relatedMove != null) {
         _lastMoveToHighlight = BoardArrow(
@@ -1289,9 +1391,7 @@ class _GameScreenState extends State<GameScreen> {
                               await _refuseDraw();
                             },
                           ),
-                        if (_sessionActive &&
-                            _gameManager.gameInProgress &&
-                            _isTimedGame)
+                        if (_isTimedGame)
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4.0),
                             child: ClockWidget(
@@ -1350,9 +1450,7 @@ class _GameScreenState extends State<GameScreen> {
                           await _refuseDraw();
                         },
                       ),
-                    if (_sessionActive &&
-                        _gameManager.gameInProgress &&
-                        _isTimedGame)
+                    if (_isTimedGame)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4.0),
                         child: ClockWidget(

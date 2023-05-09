@@ -58,7 +58,11 @@
         "draw_offer_dialog_message": "Souhaitez-vous envoyer une proposition de partie nulle ?",
         "draw_offer_accepted": "Proposition de nulle acceptée",
         "draw_offer_rejected": "Proposition de nulle refusée",
-        "mutual_draw": "Partie nulle par accord mutuel"
+        "mutual_draw": "Partie nulle par accord mutuel",
+        "time_loss": {
+            "you": "Vous avez perdu au temps",
+            "opponent": "Votre adversaire a perdu au temps"
+        }
     },
     "game_termination": {
         "black_checkmate_white": "Les Noirs gagnent par échec et mat.",

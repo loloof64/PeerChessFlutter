@@ -58,7 +58,11 @@
         "draw_offer_dialog_message": "Do you want to send a draw offer ?",
         "draw_offer_accepted": "Draw offer accepted",
         "draw_offer_rejected": "Draw offer rejected",
-        "mutual_draw": "Game ended by mutual draw"
+        "mutual_draw": "Game ended by mutual draw",
+        "time_loss": {
+            "you": "You lost on time",
+            "opponent": "Your opponent has lost on time"
+        }
     },
     "game_termination": {
         "black_checkmate_white": "Black has won by checkmate.",
