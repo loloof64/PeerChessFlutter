@@ -113,16 +113,11 @@ class NewGameScreenState extends State<NewGameScreen> {
     final minutes = timeMinutes % 60;
     final hours = (timeMinutes / 60).floor();
 
-    final lessThanOneMinute = hours == 0 && minutes == 0;
-    if (lessThanOneMinute) {
-      return "$seconds.$deciSeconds";
-    } else {
-      final minutesStr = minutes < 10 ? "0$minutes" : "$minutes";
-      final secondsStr = seconds < 10 ? "0$seconds" : "$seconds";
-      return "$hours:$minutesStr:$secondsStr +"
-          "$incrementTimeSeconds"
-          "${FlutterI18n.translate(context, 'duration_picker.seconds_unit')}";
-    }
+    final minutesStr = minutes < 10 ? "0$minutes" : "$minutes";
+    final secondsStr = seconds < 10 ? "0$seconds" : "$seconds";
+    return "$hours:$minutesStr:$secondsStr +"
+        "$incrementTimeSeconds"
+        "${FlutterI18n.translate(context, 'duration_picker.seconds_unit')}";
   }
 
   Future<void> _showEditPositionPage() async {
