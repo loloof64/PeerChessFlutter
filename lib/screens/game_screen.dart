@@ -69,6 +69,9 @@ class _GameScreenState extends State<GameScreen> {
   bool _receivedDrawOffer = false;
   String? _savePgnInitialDirectory;
 
+  Duration _oldWhiteGameTime = Duration(minutes: 10);
+  Duration _oldBlackGameTime = Duration(minutes: 10);
+
   int _whiteTimeInDeciSeconds = 0;
   int _blackTimeInDeciSeconds = 0;
   bool _whiteTimeSelected = false;
@@ -601,9 +604,17 @@ class _GameScreenState extends State<GameScreen> {
     if (editPositionEmpty) editPosition = chess.Chess.DEFAULT_POSITION;
     final gameParameters = await Navigator.of(context).pushNamed(
       '/new_game',
-      arguments: NewGameScreenArguments(editPosition),
+      arguments: NewGameScreenArguments(
+        initialFen: editPosition,
+        initialWhiteGameDuration: _oldWhiteGameTime,
+        initialBlackGameDuration: _oldBlackGameTime,
+      ),
     ) as NewGameParameters?;
     if (gameParameters != null) {
+      setState(() {
+        _oldWhiteGameTime = gameParameters.whiteGameTime;
+        _oldBlackGameTime = gameParameters.blackGameTime;
+      });
       await _startNewGameAsInitiator(
         startPosition: gameParameters.startPositionFen,
         playerHasWhite: gameParameters.playerHasWhite,

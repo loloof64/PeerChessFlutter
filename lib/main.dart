@@ -88,6 +88,8 @@ class MyApp extends StatelessWidget {
           return MaterialPageRoute(
             builder: (context) => NewGameScreen(
               initialFen: args.initialFen,
+              initialWhiteGameDuration: args.initialWhiteGameDuration,
+              initialBlackGameDuration: args.initialBlackGameDuration,
             ),
           );
         } else if (settings.name == '/new_game_editor') {

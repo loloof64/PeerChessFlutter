@@ -41,15 +41,26 @@ class NewGameParameters {
 
 class NewGameScreenArguments {
   final String initialFen;
+  final Duration initialWhiteGameDuration;
+  final Duration initialBlackGameDuration;
 
-  NewGameScreenArguments(this.initialFen);
+  NewGameScreenArguments({
+    required this.initialFen,
+    required this.initialWhiteGameDuration,
+    required this.initialBlackGameDuration,
+  });
 }
 
 class NewGameScreen extends StatefulWidget {
   final String initialFen;
+  final Duration initialWhiteGameDuration;
+  final Duration initialBlackGameDuration;
+
   const NewGameScreen({
     Key? key,
     required this.initialFen,
+    required this.initialWhiteGameDuration,
+    required this.initialBlackGameDuration,
   }) : super(key: key);
 
   @override
@@ -62,10 +73,13 @@ class NewGameScreenState extends State<NewGameScreen> {
   late bool _playerHasWhite;
   late BoardColor _orientation;
   bool _useTime = false;
-  Duration _whiteGameDuration = const Duration(minutes: 10);
+  late Duration _whiteGameDuration;
+  late Duration _blackGameDuration;
 
   @override
   void initState() {
+    _whiteGameDuration = widget.initialWhiteGameDuration;
+    _blackGameDuration = widget.initialBlackGameDuration;
     _positionController = PositionController(widget.initialFen);
     _positionFen = _positionController.currentPosition;
     _playerHasWhite = _positionFen.split(' ')[1] == 'w';
