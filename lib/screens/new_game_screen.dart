@@ -241,8 +241,7 @@ class NewGameScreenState extends State<NewGameScreen> {
                     children: [
                       Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: Flexible(
-                            child: Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
@@ -281,7 +280,7 @@ class NewGameScreenState extends State<NewGameScreen> {
                               ),
                             )
                           ],
-                        )),
+                        ),
                       ),
                       Padding(
                         padding: const EdgeInsets.all(8.0),
