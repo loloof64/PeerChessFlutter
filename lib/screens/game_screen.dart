@@ -1538,62 +1538,60 @@ class _GameScreenState extends State<GameScreen> {
                   )
                 ],
               )
-            : Expanded(
-                child: Column(
-                  children: [
-                    Flexible(
-                      child: SimpleChessBoard(
-                        chessBoardColors: ChessBoardColors()
-                          ..lastMoveArrowColor = Colors.blueAccent,
-                        engineThinking: false,
-                        whitePlayerType: whitePlayerType,
-                        blackPlayerType: blackPlayerType,
-                        orientation: _orientation,
-                        lastMoveToHighlight: _lastMoveToHighlight,
-                        fen: _gameManager.position,
-                        onMove: _makeMove,
-                        onPromote: _makePromotion,
+            : Column(
+                children: [
+                  Flexible(
+                    child: SimpleChessBoard(
+                      chessBoardColors: ChessBoardColors()
+                        ..lastMoveArrowColor = Colors.blueAccent,
+                      engineThinking: false,
+                      whitePlayerType: whitePlayerType,
+                      blackPlayerType: blackPlayerType,
+                      orientation: _orientation,
+                      lastMoveToHighlight: _lastMoveToHighlight,
+                      fen: _gameManager.position,
+                      onMove: _makeMove,
+                      onPromote: _makePromotion,
+                    ),
+                  ),
+                  if (_sessionActive &&
+                      _gameManager.gameInProgress &&
+                      _receivedDrawOffer)
+                    DrawControls(
+                      onValidation: () async {
+                        await _acceptDraw();
+                      },
+                      onRefusal: () async {
+                        await _refuseDraw();
+                      },
+                    ),
+                  if (_isTimedGame)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: ClockWidget(
+                        whiteTimeInDeciSeconds: _whiteTimeInDeciSeconds,
+                        blackTimeInDeciSeconds: _blackTimeInDeciSeconds,
+                        whiteTimeSelected: _whiteTimeSelected,
                       ),
                     ),
-                    if (_sessionActive &&
-                        _gameManager.gameInProgress &&
-                        _receivedDrawOffer)
-                      DrawControls(
-                        onValidation: () async {
-                          await _acceptDraw();
-                        },
-                        onRefusal: () async {
-                          await _refuseDraw();
-                        },
-                      ),
-                    if (_isTimedGame)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4.0),
-                        child: ClockWidget(
-                          whiteTimeInDeciSeconds: _whiteTimeInDeciSeconds,
-                          blackTimeInDeciSeconds: _blackTimeInDeciSeconds,
-                          whiteTimeSelected: _whiteTimeSelected,
-                        ),
-                      ),
-                    Expanded(
-                      child: LayoutBuilder(builder: (ctx2, constraints2) {
-                        double fontSize =
-                            constraints2.biggest.shortestSide * 0.09;
-                        if (fontSize < 25) {
-                          fontSize = 25;
-                        }
-                        return ChessHistory(
-                          scrollController: _historyScrollController,
-                          requestGotoFirst: _handleRequestGotoFirst,
-                          requestGotoPrevious: _handleRequestGotoPrevious,
-                          requestGotoNext: _handleRequestGotoNext,
-                          requestGotoLast: _handleRequestGotoLast,
-                          children: _buildHistoryWidgetsTree(fontSize),
-                        );
-                      }),
-                    )
-                  ],
-                ),
+                  Expanded(
+                    child: LayoutBuilder(builder: (ctx2, constraints2) {
+                      double fontSize =
+                          constraints2.biggest.shortestSide * 0.09;
+                      if (fontSize < 25) {
+                        fontSize = 25;
+                      }
+                      return ChessHistory(
+                        scrollController: _historyScrollController,
+                        requestGotoFirst: _handleRequestGotoFirst,
+                        requestGotoPrevious: _handleRequestGotoPrevious,
+                        requestGotoNext: _handleRequestGotoNext,
+                        requestGotoLast: _handleRequestGotoLast,
+                        children: _buildHistoryWidgetsTree(fontSize),
+                      );
+                    }),
+                  )
+                ],
               ),
       ),
     );
